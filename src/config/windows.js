@@ -35,12 +35,34 @@ const sharedWindowTemplate = {
 };
 
 const windowTemplates = {
+  onboarding: {
+    id: "onboarding",
+    title: "SideClick - Welcome",
+    description: "First-run startup window for onboarding or setup.",
+    layout: {
+      expanded: {
+        width: 560,
+        height: 420,
+      },
+      compact: {
+        width: 280,
+        height: 80,
+      },
+    },
+  },
   chat: {
     id: "chat",
     title: "SideClick - Chat & Assistant",
     description: "Chat window.",
   },
 };
+
+const firstRunStartupWindows = [
+  {
+    windowKey: "onboarding",
+    template: "onboarding",
+  },
+];
 
 const startupWindows = [
   {
@@ -82,8 +104,8 @@ function resolveWindowTemplate(templateKey) {
   return mergeObjects(sharedWindowTemplate, template);
 }
 
-function getStartupWindowConfigs() {
-  return startupWindows.map((entry) => {
+function resolveStartupWindowConfigs(entries) {
+  return entries.map((entry) => {
     const normalizedEntry =
       typeof entry === "string" ? { template: entry } : entry;
     const templateKey = normalizedEntry.template;
@@ -99,10 +121,20 @@ function getStartupWindowConfigs() {
   });
 }
 
+function getStartupWindowConfigs() {
+  return resolveStartupWindowConfigs(startupWindows);
+}
+
+function getFirstRunStartupWindowConfigs() {
+  return resolveStartupWindowConfigs(firstRunStartupWindows);
+}
+
 module.exports = {
   sharedWindowTemplate,
   windowTemplates,
+  firstRunStartupWindows,
   startupWindows,
   resolveWindowTemplate,
+  getFirstRunStartupWindowConfigs,
   getStartupWindowConfigs,
 };

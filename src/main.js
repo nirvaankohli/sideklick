@@ -8,6 +8,7 @@ const {
   screen,
 } = require("electron");
 const {
+  getFirstRunStartupWindowConfigs,
   getStartupWindowConfigs,
   resolveWindowTemplate,
 } = require("./config/windows");
@@ -20,28 +21,55 @@ function getThemePreferencePath() {
   return path.join(app.getPath("userData"), "preferences.json");
 }
 
-function readStoredThemeSource() {
+function readPreferences() {
   try {
     const preferencePath = getThemePreferencePath();
     if (!fs.existsSync(preferencePath)) {
-      return "system";
+      return {};
     }
 
     const raw = fs.readFileSync(preferencePath, "utf8");
-    const parsed = JSON.parse(raw);
-    return ALLOWED_THEME_SOURCES.has(parsed.themeSource)
-      ? parsed.themeSource
-      : "system";
+    return JSON.parse(raw);
   } catch {
-    return "system";
+    return {};
   }
 }
 
-function persistThemeSource(themeSource) {
+function writePreferences(nextPreferences) {
   const preferencePath = getThemePreferencePath();
-  const payload = JSON.stringify({ themeSource }, null, 2);
   fs.mkdirSync(path.dirname(preferencePath), { recursive: true });
-  fs.writeFileSync(preferencePath, payload, "utf8");
+  fs.writeFileSync(
+    preferencePath,
+    JSON.stringify(nextPreferences, null, 2),
+    "utf8",
+  );
+}
+
+function readStoredThemeSource() {
+  const parsed = readPreferences();
+  return ALLOWED_THEME_SOURCES.has(parsed.themeSource)
+    ? parsed.themeSource
+    : "system";
+}
+
+function persistThemeSource(themeSource) {
+  const nextPreferences = {
+    ...readPreferences(),
+    themeSource,
+  };
+  writePreferences(nextPreferences);
+}
+
+function hasLaunchedBefore() {
+  return Boolean(readPreferences().hasLaunchedBefore);
+}
+
+function markAppLaunched() {
+  const nextPreferences = {
+    ...readPreferences(),
+    hasLaunchedBefore: true,
+  };
+  writePreferences(nextPreferences);
 }
 
 function getThemeState() {
@@ -211,21 +239,29 @@ function createManagedWindow(
   return win;
 }
 
-function createStartupWindows() {
-  for (const { windowKey, templateKey, config } of getStartupWindowConfigs()) {
+function createStartupWindows(isFirstRun) {
+  const startupConfigs = isFirstRun
+    ? getFirstRunStartupWindowConfigs()
+    : getStartupWindowConfigs();
+
+  for (const { windowKey, templateKey, config } of startupConfigs) {
     createManagedWindow(windowKey, templateKey, config);
   }
 }
 
 app.whenReady().then(() => {
+  const isFirstRun = !hasLaunchedBefore();
   applyThemeSource(readStoredThemeSource());
-  createStartupWindows();
+  createStartupWindows(isFirstRun);
+  if (isFirstRun) {
+    markAppLaunched();
+  }
   
   nativeTheme.on("updated", sendThemeState);
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createStartupWindows();
+      createStartupWindows(false);
     }
   });
 });

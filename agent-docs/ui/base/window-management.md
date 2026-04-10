@@ -21,6 +21,7 @@ The file now has three main sections:
 
 - `sharedWindowTemplate`
 - `windowTemplates`
+- `firstRunStartupWindows`
 - `startupWindows`
 
 This is the intended place to manage nearly everything about a window.
@@ -116,18 +117,33 @@ This means:
 - `template` picks which reusable template to use
 - `overrides` lets you customize that one startup instance without changing the template itself
 
+### `firstRunStartupWindows`
+
+This controls which windows are created only on the first launch ever for that user profile.
+
+Use this for:
+
+- onboarding
+- welcome screens
+- setup flows
+- first-time explanation windows
+
+After the first run, the app uses `startupWindows` instead.
+
 ## Recommended Way To Manage Windows
 
 If you want easy control over windows, use this workflow:
 
 1. Put shared defaults in `sharedWindowTemplate`
 2. Create a named preset in `windowTemplates`
-3. Add a startup entry in `startupWindows`
-4. Use `overrides` only for one-off startup tweaks
+3. Add a first-run entry in `firstRunStartupWindows` if needed
+4. Add a normal startup entry in `startupWindows`
+5. Use `overrides` only for one-off startup tweaks
 
 Example use cases:
 
-- `home` for the main default overlay
+- `onboarding` for first launch only
+- `chat` for the normal default overlay
 - `focus` for a smaller meeting overlay
 - `agenda` for a taller reading-oriented overlay
 - `debug` for a development-only variant
@@ -330,6 +346,17 @@ const startupWindows = [
 ```
 
 This lets you boot multiple named windows from reusable templates.
+
+## First-Run Behavior
+
+First-run detection is stored in the same Electron `userData` preferences file used for theme preference persistence.
+
+Current behavior:
+
+- if `hasLaunchedBefore` is not set, the app launches `firstRunStartupWindows`
+- after that launch, `hasLaunchedBefore` is written as `true`
+- all future launches use `startupWindows`
+- theme preference still remains shared across all windows
 
 ## What To Edit For "Everything About That Window"
 

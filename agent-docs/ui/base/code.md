@@ -24,8 +24,10 @@ Current exports include:
 
 - `sharedWindowTemplate`
 - `windowTemplates`
+- `firstRunStartupWindows`
 - `startupWindows`
 - `resolveWindowTemplate(templateKey)`
+- `getFirstRunStartupWindowConfigs()`
 - `getStartupWindowConfigs()`
 
 Why it exists:
@@ -63,6 +65,10 @@ Each entry resolves to:
 - `windowKey`
 - `templateKey`
 - final merged `config`
+
+### `firstRunStartupWindows`
+
+Defines which windows are created only on the very first app launch.
 
 ## `src/main.js`
 
@@ -162,10 +168,23 @@ Resolves every startup entry from `windows.js` and creates each managed window.
 
 The app:
 
-- creates all configured startup windows on `app.whenReady()`
+- chooses first-run startup windows or normal startup windows on `app.whenReady()`
 - resends theme updates when the native theme changes
 - recreates the configured startup windows on macOS-style activation if no windows are open
 - quits on non-macOS platforms when all windows are closed
+
+### Preference helpers
+
+The main process now has shared preference helpers for:
+
+- reading preferences
+- writing preferences
+- reading stored theme source
+- persisting theme source
+- checking whether the app has launched before
+- marking the app as launched
+
+This is how both theme persistence and first-run startup selection are implemented.
 
 ### IPC handlers
 

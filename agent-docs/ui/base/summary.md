@@ -43,12 +43,13 @@ This means you can:
 - define reusable template presets such as `home` and `focus`
 - override layout and BrowserWindow behavior per template
 - choose which named windows start automatically
+- choose a separate startup window set for the very first launch
 - attach per-startup overrides without rewriting the main process
 
 The current startup model is set up so you can declare entries like:
 
-- a `home` window
-- a `focus` window
+- a first-run `onboarding` window
+- a default `chat` window for all later launches
 - future specialized windows with their own sizes and compact behavior
 
 ## Window Behavior
