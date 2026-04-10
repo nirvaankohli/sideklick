@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+agents.md
+/agent-docs
+/tasks
+
 # C extensions
 *.so
 
