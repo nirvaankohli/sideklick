@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const {
   app,
   BrowserWindow,
@@ -13,6 +14,52 @@ const {
 
 const windowsByKey = new Map();
 const windowState = new Map();
+const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
+
+function getThemePreferencePath() {
+  return path.join(app.getPath("userData"), "preferences.json");
+}
+
+function readStoredThemeSource() {
+  try {
+    const preferencePath = getThemePreferencePath();
+    if (!fs.existsSync(preferencePath)) {
+      return "system";
+    }
+
+    const raw = fs.readFileSync(preferencePath, "utf8");
+    const parsed = JSON.parse(raw);
+    return ALLOWED_THEME_SOURCES.has(parsed.themeSource)
+      ? parsed.themeSource
+      : "system";
+  } catch {
+    return "system";
+  }
+}
+
+function persistThemeSource(themeSource) {
+  const preferencePath = getThemePreferencePath();
+  const payload = JSON.stringify({ themeSource }, null, 2);
+  fs.mkdirSync(path.dirname(preferencePath), { recursive: true });
+  fs.writeFileSync(preferencePath, payload, "utf8");
+}
+
+function getThemeState() {
+  return {
+    themeSource:
+      nativeTheme.themeSource === "system" ? "system" : nativeTheme.themeSource,
+    shouldUseDarkColors: nativeTheme.shouldUseDarkColors,
+  };
+}
+
+function applyThemeSource(themeSource) {
+  const nextSource = ALLOWED_THEME_SOURCES.has(themeSource)
+    ? themeSource
+    : "system";
+  nativeTheme.themeSource = nextSource;
+  persistThemeSource(nextSource);
+  return getThemeState();
+}
 
 function getAnchorBounds(config) {
   const display = screen.getPrimaryDisplay();
@@ -43,16 +90,11 @@ function getDefaultBounds(config) {
 }
 
 function sendThemeState() {
-  const themeSource =
-    nativeTheme.themeSource === "system" ? "system" : nativeTheme.themeSource;
-  const shouldUseDarkColors = nativeTheme.shouldUseDarkColors;
+  const themeState = getThemeState();
 
   for (const { win } of windowState.values()) {
     if (win && !win.isDestroyed()) {
-      win.webContents.send("theme:changed", {
-        themeSource,
-        shouldUseDarkColors,
-      });
+      win.webContents.send("theme:changed", themeState);
     }
   }
 }
@@ -176,6 +218,7 @@ function createStartupWindows() {
 }
 
 app.whenReady().then(() => {
+  applyThemeSource(readStoredThemeSource());
   createStartupWindows();
   
   nativeTheme.on("updated", sendThemeState);
@@ -234,12 +277,10 @@ ipcMain.handle("window:close", (event) => {
 });
 
 ipcMain.handle("theme:setSource", (_event, source) => {
-  const allowed = new Set(["system", "light", "dark"]);
-  nativeTheme.themeSource = allowed.has(source) ? source : "system";
+  const themeState = applyThemeSource(source);
   sendThemeState();
   return {
     ok: true,
-    themeSource: nativeTheme.themeSource,
-    shouldUseDarkColors: nativeTheme.shouldUseDarkColors,
+    ...themeState,
   };
 });
