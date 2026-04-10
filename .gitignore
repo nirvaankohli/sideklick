@@ -3,8 +3,20 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Dependency directories
+node_modules/
+
+# Build and Packaging
+dist/
+build/
+out/
+release-builds/
+
+# Log files
+*.log
+npm-debug.log*
+
 agents.md
-/agent-docs
 /tasks
 
 # C extensions

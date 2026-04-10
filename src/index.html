@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Big Red Hacks Overlay</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="window-shell" data-mode="expanded" data-tone="light">
+      <section class="overlay-card">
+        <div class="glow glow-one" aria-hidden="true"></div>
+        <div class="glow glow-two" aria-hidden="true"></div>
+        <header class="topbar">
+          <div class="title-group">
+            <p class="eyebrow">Meeting Copilot</p>
+            <h1>Stay in the conversation without leaving the screen.</h1>
+          </div>
+          <div class="window-actions no-drag">
+            <button id="shrink-window" class="icon-button" type="button" aria-label="Pin overlay">
+              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 6h10v2H7zM7 11h10v2H7zM7 16h10v2H7z"></path>
+              </svg>
+            </button>
+            <button id="close-window" class="icon-button danger" type="button" aria-label="Close window">
+              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <section class="content">
+          <div class="scroll-area no-drag">
+            <article class="copy-block">
+              <div class="hero-chip">
+                <span class="chip-dot"></span>
+                Live overlay
+              </div>
+              <p class="lead">
+                Transparent, resizable, and always-on-top. The shell stays legible over bright or dark backgrounds
+                without feeling like a full desktop window.
+              </p>
+              <div class="sample-note">
+                <p class="sample-label">Sample text</p>
+                <p class="sample-line">Ship the first UI pass before 6:00 PM.</p>
+                <p class="sample-line">Keep the overlay draggable and clean while taking notes.</p>
+                <p class="sample-line">Use compact mode when the user only needs a pinned reminder.</p>
+              </div>
+            </article>
+
+            <aside class="dev-panel">
+              <p class="panel-label">Window Presets</p>
+              <div class="panel-grid">
+                <button id="theme-toggle" class="panel-button" type="button">Backdrop: Light</button>
+                <button id="preset-light" class="panel-button" type="button">Light Tint</button>
+                <button id="preset-dark" class="panel-button" type="button">Dark Tint</button>
+                <button id="preset-system" class="panel-button" type="button">System</button>
+              </div>
+              <p class="panel-help">
+                Resize from any window edge. Update `src/config/windows.js` to tune the default and compact dimensions.
+              </p>
+            </aside>
+          </div>
+        </section>
+
+        <section class="compact-strip no-drag">
+          <div class="compact-copy">
+            <p class="compact-title">Pinned</p>
+          </div>
+          <div class="compact-actions">
+            <button id="restore-window" class="restore-button" type="button" aria-label="Expand overlay">
+              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 8h8v2h-4v4h-2V8zm8 8H8v-2h4v-4h2v6z"></path>
+              </svg>
+            </button>
+            <button id="compact-close-window" class="icon-button danger" type="button" aria-label="Close window">
+              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
+              </svg>
+            </button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>
