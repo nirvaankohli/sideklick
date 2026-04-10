@@ -38,11 +38,14 @@ const windowTemplates = {
   onboarding: {
     id: "onboarding",
     title: "SideClick - Welcome",
+    htmlFile: "onboarding.html",
     description: "First-run startup window for onboarding or setup.",
     layout: {
       expanded: {
-        width: 560,
-        height: 420,
+        width: 980,
+        height: 690,
+        minWidth: 820,
+        minHeight: 620,
       },
       compact: {
         width: 280,

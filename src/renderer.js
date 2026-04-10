@@ -1,5 +1,6 @@
 const root = document.querySelector(".window-shell");
 const themeToggle = document.querySelector("#theme-toggle");
+const themeIconToggle = document.querySelector("#theme-icon-toggle");
 const shrinkWindow = document.querySelector("#shrink-window");
 const closeWindow = document.querySelector("#close-window");
 const compactCloseWindow = document.querySelector("#compact-close-window");
@@ -10,6 +11,7 @@ const restoreWindow = document.querySelector("#restore-window");
 
 const sources = ["light", "dark", "system"];
 let currentSourceIndex = 0;
+let currentTone = "light";
 
 function labelForSource(source, isDark) {
   if (source === "system") {
@@ -20,7 +22,8 @@ function labelForSource(source, isDark) {
 }
 
 function applyThemeState({ themeSource, shouldUseDarkColors }) {
-  root.dataset.tone = shouldUseDarkColors ? "dark" : "light";
+  currentTone = shouldUseDarkColors ? "dark" : "light";
+  root.dataset.tone = currentTone;
   currentSourceIndex = sources.indexOf(themeSource);
   if (currentSourceIndex < 0) {
     currentSourceIndex = 0;
@@ -36,6 +39,12 @@ function setMode(mode) {
 themeToggle.addEventListener("click", async () => {
   currentSourceIndex = (currentSourceIndex + 1) % sources.length;
   const nextSource = sources[currentSourceIndex];
+  const result = await window.overlayApi.setThemeSource(nextSource);
+  applyThemeState(result);
+});
+
+themeIconToggle.addEventListener("click", async () => {
+  const nextSource = currentTone === "dark" ? "light" : "dark";
   const result = await window.overlayApi.setThemeSource(nextSource);
   applyThemeState(result);
 });

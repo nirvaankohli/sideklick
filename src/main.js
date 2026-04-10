@@ -45,6 +45,18 @@ function writePreferences(nextPreferences) {
   );
 }
 
+function getPreferenceSnapshot() {
+  const preferences = readPreferences();
+  return {
+    themeSource: ALLOWED_THEME_SOURCES.has(preferences.themeSource)
+      ? preferences.themeSource
+      : "system",
+    hasLaunchedBefore: Boolean(preferences.hasLaunchedBefore),
+    discoverySource: preferences.discoverySource || "",
+    customerProfile: preferences.customerProfile || "",
+  };
+}
+
 function readStoredThemeSource() {
   const parsed = readPreferences();
   return ALLOWED_THEME_SOURCES.has(parsed.themeSource)
@@ -61,7 +73,7 @@ function persistThemeSource(themeSource) {
 }
 
 function hasLaunchedBefore() {
-  return Boolean(readPreferences().hasLaunchedBefore);
+  return !Boolean(readPreferences().hasLaunchedBefore);
 }
 
 function markAppLaunched() {
@@ -245,7 +257,9 @@ function createStartupWindows(isFirstRun) {
     : getStartupWindowConfigs();
 
   for (const { windowKey, templateKey, config } of startupConfigs) {
-    createManagedWindow(windowKey, templateKey, config);
+    if (!windowsByKey.has(windowKey)) {
+      createManagedWindow(windowKey, templateKey, config);
+    }
   }
 }
 
@@ -256,7 +270,7 @@ app.whenReady().then(() => {
   if (isFirstRun) {
     markAppLaunched();
   }
-  
+
   nativeTheme.on("updated", sendThemeState);
 
   app.on("activate", () => {
@@ -319,4 +333,26 @@ ipcMain.handle("theme:setSource", (_event, source) => {
     ok: true,
     ...themeState,
   };
+});
+
+ipcMain.handle("preferences:get", () => {
+  return getPreferenceSnapshot();
+});
+
+ipcMain.handle("preferences:update", (_event, patch) => {
+  const nextPreferences = {
+    ...readPreferences(),
+    ...patch,
+  };
+  writePreferences(nextPreferences);
+  return getPreferenceSnapshot();
+});
+
+ipcMain.handle("onboarding:complete", (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  createStartupWindows(false);
+  if (win && !win.isDestroyed()) {
+    win.close();
+  }
+  return { ok: true };
 });
