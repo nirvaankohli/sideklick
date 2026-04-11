@@ -38,6 +38,10 @@ const MAX_SCREENSHOT_EDGE = 1280;
 const SCREENSHOT_JPEG_QUALITY = 72;
 let incomingMessageServer = null;
 
+function getAppLogoPath() {
+  return path.join(process.cwd(), "assets", "images", "logo", "logo.png");
+}
+
 function getThemePreferencePath() {
   return path.join(app.getPath("userData"), "preferences.json");
 }
@@ -244,6 +248,7 @@ function createManagedWindow(
     ...bounds,
     minWidth,
     minHeight,
+    icon: getAppLogoPath(),
     frame: browserWindow.frame,
     transparent: browserWindow.transparent,
     backgroundColor: "#00000000",

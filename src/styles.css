@@ -667,9 +667,21 @@ button {
   border: 1px solid rgba(143, 211, 255, 0.24);
 }
 
-.home-title-icon .icon-svg {
-  width: 20px;
-  height: 20px;
+.app-logo-image {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.session-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.session-logo-icon {
+  flex: 0 0 auto;
 }
 
 .home-workspace {
