@@ -45,6 +45,25 @@ function writePreferences(nextPreferences) {
   );
 }
 
+function getPreferenceSnapshot() {
+  const preferences = readPreferences();
+  return {
+    themeSource: ALLOWED_THEME_SOURCES.has(preferences.themeSource)
+      ? preferences.themeSource
+      : "system",
+    hasLaunchedBefore: Boolean(preferences.hasLaunchedBefore),
+    discoverySource: preferences.discoverySource || "",
+    customerProfile: preferences.customerProfile || "",
+    classFolders: Array.isArray(preferences.classFolders)
+      ? preferences.classFolders
+      : [],
+    currentSession:
+      preferences.currentSession && typeof preferences.currentSession === "object"
+        ? preferences.currentSession
+        : null,
+  };
+}
+
 function readStoredThemeSource() {
   const parsed = readPreferences();
   return ALLOWED_THEME_SOURCES.has(parsed.themeSource)
@@ -245,7 +264,9 @@ function createStartupWindows(isFirstRun) {
     : getStartupWindowConfigs();
 
   for (const { windowKey, templateKey, config } of startupConfigs) {
-    createManagedWindow(windowKey, templateKey, config);
+    if (!windowsByKey.has(windowKey)) {
+      createManagedWindow(windowKey, templateKey, config);
+    }
   }
 }
 
@@ -256,7 +277,7 @@ app.whenReady().then(() => {
   if (isFirstRun) {
     markAppLaunched();
   }
-  
+
   nativeTheme.on("updated", sendThemeState);
 
   app.on("activate", () => {
@@ -312,6 +333,35 @@ ipcMain.handle("window:close", (event) => {
   return { ok: true };
 });
 
+ipcMain.handle("window:getBounds", (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) {
+    return null;
+  }
+
+  return win.getBounds();
+});
+
+ipcMain.handle("window:resize", (event, nextBounds) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  const state = win ? windowState.get(win.id) : null;
+  if (!win || !state || !nextBounds) {
+    return null;
+  }
+
+  const minWidth = state.config.layout.expanded.minWidth;
+  const minHeight = state.config.layout.expanded.minHeight;
+  win.setBounds(
+    {
+      ...win.getBounds(),
+      width: Math.max(nextBounds.width, minWidth),
+      height: Math.max(nextBounds.height, minHeight),
+    },
+    true,
+  );
+  return win.getBounds();
+});
+
 ipcMain.handle("theme:setSource", (_event, source) => {
   const themeState = applyThemeSource(source);
   sendThemeState();
@@ -319,4 +369,85 @@ ipcMain.handle("theme:setSource", (_event, source) => {
     ok: true,
     ...themeState,
   };
+});
+
+ipcMain.handle("preferences:get", () => {
+  return getPreferenceSnapshot();
+});
+
+ipcMain.handle("preferences:update", (_event, patch) => {
+  const nextPreferences = {
+    ...readPreferences(),
+    ...patch,
+  };
+  writePreferences(nextPreferences);
+  return getPreferenceSnapshot();
+});
+
+ipcMain.handle("class-folders:get", () => {
+  return getPreferenceSnapshot().classFolders;
+});
+
+ipcMain.handle("class-folders:update", (_event, classFolders) => {
+  const nextPreferences = {
+    ...readPreferences(),
+    classFolders: Array.isArray(classFolders) ? classFolders : [],
+  };
+  writePreferences(nextPreferences);
+  return nextPreferences.classFolders;
+});
+
+ipcMain.handle("onboarding:complete", (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  createStartupWindows(false);
+  if (win && !win.isDestroyed()) {
+    win.close();
+  }
+  return { ok: true };
+});
+
+ipcMain.handle("session:getCurrent", () => {
+  return getPreferenceSnapshot().currentSession;
+});
+
+ipcMain.handle("session:start", (_event, session) => {
+  const nextPreferences = {
+    ...readPreferences(),
+    currentSession: session,
+  };
+  writePreferences(nextPreferences);
+
+  if (!windowsByKey.has("chat")) {
+    createManagedWindow("chat", "chat");
+  } else {
+    const existingChat = windowsByKey.get("chat");
+    if (existingChat && !existingChat.isDestroyed()) {
+      existingChat.show();
+      existingChat.focus();
+      existingChat.webContents.send("session:changed", session);
+    }
+  }
+
+  return { ok: true, currentSession: session };
+});
+
+ipcMain.handle("session:stop", () => {
+  const nextPreferences = {
+    ...readPreferences(),
+    currentSession: null,
+  };
+  writePreferences(nextPreferences);
+
+  const chatWindow = windowsByKey.get("chat");
+  if (chatWindow && !chatWindow.isDestroyed()) {
+    chatWindow.close();
+  }
+
+  const homeWindow = windowsByKey.get("home");
+  if (homeWindow && !homeWindow.isDestroyed()) {
+    homeWindow.show();
+    homeWindow.focus();
+  }
+
+  return { ok: true };
 });
