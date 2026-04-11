@@ -11,6 +11,7 @@ import type {
   AssistRequest,
   BuiltContext,
   ModelAssistOutput,
+  SessionMode,
 } from "../type";
 
 const DEFAULT_OPENAI_MODEL = "gpt-5-mini";
@@ -53,7 +54,22 @@ function getOpenAIModel(): string {
   return process.env.OPENAI_MODEL ?? DEFAULT_OPENAI_MODEL;
 }
 
-function buildSystemPrompt(): string {
+function buildModeInstruction(mode: SessionMode): string {
+  if (mode === "review") {
+    return [
+      "The current session is in review mode.",
+      "Lean heavily on active gaps, repeated confusion, and recent weak spots.",
+      "Prefer concise correction, retrieval prompts, and what-to-fix-next guidance over broad explanations.",
+    ].join(" ");
+  }
+
+  return [
+    "The current session is in study mode.",
+    "Balance explanation, clarification, and actionable next steps.",
+  ].join(" ");
+}
+
+function buildSystemPrompt(mode: SessionMode): string {
   return [
     "You are a study assistant inside a local Electron app.",
     "Use the provided class context, browser selection metadata, optional screenshot, recent session summaries, and saved student memory to help the student.",
@@ -78,6 +94,7 @@ function buildSystemPrompt(): string {
     "next_step should be one concrete thing the student should do immediately.",
     "Do not give filler, throat-clearing, or generic encouragement.",
     "Do not solve graded work outright if the request appears to ask for a final answer; explain the idea instead.",
+    buildModeInstruction(mode),
   ].join(" ");
 }
 
@@ -96,6 +113,7 @@ function buildUserTextPayload(
         user_note: requestInput.userNote ?? null,
         has_screenshot: Boolean(requestInput.screenshotDataUrl),
         session_id: requestInput.sessionId ?? null,
+        mode: requestInput.mode,
         class_id: requestInput.classId ?? null,
       },
       response_style: {
@@ -152,7 +170,7 @@ export async function requestAssistFromOpenAI(
     input: [
       {
         role: "system",
-        content: buildSystemPrompt(),
+        content: buildSystemPrompt(requestInput.mode),
       },
       {
         role: "user",

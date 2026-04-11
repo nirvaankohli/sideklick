@@ -576,6 +576,14 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.session-mode-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.session-mode-button {
+  min-height: 0;
+}
+
 .info-choice-button {
   -webkit-app-region: no-drag;
   display: grid;
@@ -1207,6 +1215,27 @@ button {
 
 .session-title-group h1 {
   font-size: clamp(1.08rem, 1.5vw, 1.28rem);
+}
+
+.session-mode-label {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(143, 211, 255, 0.12);
+  border: 1px solid rgba(143, 211, 255, 0.2);
+  color: var(--dark-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.window-shell[data-tone="light"] .session-mode-label {
+  color: var(--light-muted);
+  background: rgba(87, 180, 255, 0.1);
+  border-color: rgba(77, 156, 234, 0.16);
 }
 
 .stop-session-button {

@@ -17,6 +17,7 @@ function createDom() {
       <button id="restore-window"></button>
       <p id="session-class-label"></p>
       <h1 id="session-name-label"></h1>
+      <p id="session-mode-label"></p>
       <div id="chat-thread"></div>
       <form id="chat-form"><textarea id="chat-input"></textarea></form>
       <button id="resize-handle"></button>

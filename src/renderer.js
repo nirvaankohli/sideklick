@@ -7,6 +7,7 @@ const compactCloseWindow = document.querySelector("#compact-close-window");
 const restoreWindow = document.querySelector("#restore-window");
 const sessionClassLabel = document.querySelector("#session-class-label");
 const sessionNameLabel = document.querySelector("#session-name-label");
+const sessionModeLabel = document.querySelector("#session-mode-label");
 const chatThread = document.querySelector("#chat-thread");
 const chatForm = document.querySelector("#chat-form");
 const chatInput = document.querySelector("#chat-input");
@@ -63,10 +64,19 @@ function fitTextToBox(element, minimumFontSize = 11) {
 
 function scheduleFitText() {
   if (fitTextFrame !== null) {
-    window.cancelAnimationFrame(fitTextFrame);
+    if (typeof window.cancelAnimationFrame === "function") {
+      window.cancelAnimationFrame(fitTextFrame);
+    } else {
+      window.clearTimeout(fitTextFrame);
+    }
   }
 
-  fitTextFrame = window.requestAnimationFrame(() => {
+  const scheduleFrame =
+    typeof window.requestAnimationFrame === "function"
+      ? window.requestAnimationFrame.bind(window)
+      : (callback) => window.setTimeout(callback, 0);
+
+  fitTextFrame = scheduleFrame(() => {
     fitTextFrame = null;
     document
       .querySelectorAll("[data-fit-text]")
@@ -399,6 +409,12 @@ function createPendingAssistantMessage(label) {
 }
 
 async function streamTextToParagraph(paragraph, text) {
+  if (typeof window.requestAnimationFrame !== "function") {
+    paragraph.textContent = text;
+    scheduleFitText();
+    return;
+  }
+
   paragraph.textContent = "";
 
   for (let index = 0; index < text.length; index += STREAM_CHUNK_SIZE) {
@@ -577,6 +593,7 @@ function buildAssistPayload(normalizedPayload) {
   return {
     classId: currentSession.classId,
     sessionId: currentSession.sessionId || undefined,
+    mode: currentSession.sessionMode || "study",
     actionType: normalizedPayload.actionType,
     selectedText: fallbackSelection,
     surroundingText: normalizedPayload.surroundingText,
@@ -650,14 +667,22 @@ function applySession(session) {
   if (!session) {
     sessionClassLabel.textContent = "No active class";
     sessionNameLabel.textContent = "No active session";
+    sessionModeLabel.textContent = "Study Mode";
+    sessionClassLabel.dataset.fitText = "true";
+    sessionNameLabel.dataset.fitText = "true";
+    sessionModeLabel.dataset.fitText = "true";
     scheduleFitText();
     return;
   }
 
   sessionClassLabel.textContent = session.className || "Class";
   sessionNameLabel.textContent = session.sessionName || "Session";
+  sessionModeLabel.textContent = `${
+    session.sessionMode === "review" ? "Review" : "Study"
+  } Mode`;
   sessionClassLabel.dataset.fitText = "true";
   sessionNameLabel.dataset.fitText = "true";
+  sessionModeLabel.dataset.fitText = "true";
   scheduleFitText();
 }
 

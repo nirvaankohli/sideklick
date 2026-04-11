@@ -146,6 +146,31 @@
                 <span>Session Name</span>
                 <input id="session-name-input" type="text" placeholder="Unit 3 Review" />
               </label>
+              <div class="modal-field">
+                <span>Mode</span>
+                <div class="choice-grid session-mode-grid">
+                  <button
+                    class="info-choice-button session-mode-button"
+                    data-session-mode="study"
+                    data-selected="true"
+                    type="button"
+                  >
+                    <span class="choice-kicker">Study</span>
+                    <span class="choice-title">Balanced help for normal classwork and explanations.</span>
+                    <span class="choice-copy">Best for walkthroughs, quick questions, and understanding new material.</span>
+                  </button>
+                  <button
+                    class="info-choice-button session-mode-button"
+                    data-session-mode="review"
+                    data-selected="false"
+                    type="button"
+                  >
+                    <span class="choice-kicker">Review</span>
+                    <span class="choice-title">Prioritize weak spots, likely gaps, and what to fix first.</span>
+                    <span class="choice-copy">Best for quizzes, test prep, and high-leverage recap right before deadlines.</span>
+                  </button>
+                </div>
+              </div>
               <label class="modal-field">
                 <span>Additional Notes</span>
                 <textarea id="session-notes-input" rows="3" placeholder="Short notes for this session"></textarea>

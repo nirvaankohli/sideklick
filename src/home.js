@@ -29,6 +29,9 @@ const classTeacherNotesInput = document.querySelector("#class-teacher-notes-inpu
 const classAdditionalNotesInput = document.querySelector("#class-additional-notes-input");
 const sessionNameInput = document.querySelector("#session-name-input");
 const sessionNotesInput = document.querySelector("#session-notes-input");
+const sessionModeButtons = Array.from(
+  document.querySelectorAll("[data-session-mode]"),
+);
 const resizeHandle = document.querySelector("#resize-handle");
 
 let currentTone = "light";
@@ -343,6 +346,22 @@ function openModal(mode) {
   }
 }
 
+function getSelectedSessionMode() {
+  const activeButton = sessionModeButtons.find(
+    (button) => button.dataset.selected === "true",
+  );
+
+  return activeButton?.dataset.sessionMode || "study";
+}
+
+function setSelectedSessionMode(mode) {
+  for (const button of sessionModeButtons) {
+    button.dataset.selected = button.dataset.sessionMode === mode
+      ? "true"
+      : "false";
+  }
+}
+
 function closeModal() {
   classModalBackdrop.hidden = true;
   classCourseInput.value = "";
@@ -352,6 +371,7 @@ function closeModal() {
   classAdditionalNotesInput.value = "";
   sessionNameInput.value = "";
   sessionNotesInput.value = "";
+  setSelectedSessionMode("study");
 }
 
 async function saveModal() {
@@ -412,6 +432,7 @@ async function saveModal() {
     additionalNotes: classFolder?.additionalNotes || "",
     sessionId: null,
     sessionName,
+    sessionMode: getSelectedSessionMode(),
     sessionNotes: sessionNotesInput.value.trim(),
   });
 }
@@ -510,6 +531,12 @@ classModalBackdrop.addEventListener("click", (event) => {
     closeModal();
   }
 });
+
+for (const button of sessionModeButtons) {
+  button.addEventListener("click", () => {
+    setSelectedSessionMode(button.dataset.sessionMode || "study");
+  });
+}
 
 window.overlayApi.onThemeChanged(applyThemeState);
 window.overlayApi.onWindowMode(({ mode }) => setMode(mode));

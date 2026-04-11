@@ -36,6 +36,17 @@ const INCOMING_HTTP_PORT = 4353;
 const INCOMING_HTTP_HOST = "localhost";
 let incomingMessageServer = null;
 
+function normalizeSession(session) {
+  if (!session || typeof session !== "object") {
+    return null;
+  }
+
+  return {
+    ...session,
+    sessionMode: session.sessionMode === "review" ? "review" : "study",
+  };
+}
+
 function getThemePreferencePath() {
   return path.join(app.getPath("userData"), "preferences.json");
 }
@@ -76,11 +87,7 @@ function getPreferenceSnapshot() {
     classFolders: Array.isArray(preferences.classFolders)
       ? preferences.classFolders
       : [],
-    currentSession:
-      preferences.currentSession &&
-      typeof preferences.currentSession === "object"
-        ? preferences.currentSession
-        : null,
+    currentSession: normalizeSession(preferences.currentSession),
   };
 }
 
@@ -765,14 +772,15 @@ ipcMain.handle("session:start", (_event, session) => {
     session.sessionName || "Study Session",
     session.sessionNotes || null,
   );
+  const normalizedSession = normalizeSession({
+    ...session,
+    classId: resolvedClassId,
+    sessionId: persistedSession.id,
+    sessionStartedAt: persistedSession.startedAt,
+  });
   const nextPreferences = {
     ...readPreferences(),
-    currentSession: {
-      ...session,
-      classId: resolvedClassId,
-      sessionId: persistedSession.id,
-      sessionStartedAt: persistedSession.startedAt,
-    },
+    currentSession: normalizedSession,
   };
   writePreferences(nextPreferences);
 
@@ -784,6 +792,10 @@ ipcMain.handle("session:start", (_event, session) => {
       existingChat.show();
       existingChat.focus();
       existingChat.webContents.send("session:changed", nextPreferences.currentSession);
+      existingChat.webContents.send(
+        "session:changed",
+        nextPreferences.currentSession,
+      );
     }
   }
 

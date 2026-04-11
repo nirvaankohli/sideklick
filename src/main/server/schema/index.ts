@@ -20,6 +20,8 @@ const timestampString = z.union([
   z.string().regex(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/),
 ]);
 
+export const sessionModeSchema = z.enum(["study", "review"]);
+
 export const classProfileSchema = z.object({
   id: z.number().int().positive().optional(),
   className: z.string().trim().min(1),
@@ -91,6 +93,7 @@ export const builtContextSchema = z.object({
     screenshotUsefulness: z.string().trim().min(1),
     backgroundUsefulness: z.string().trim().min(1),
   }),
+  sessionMode: sessionModeSchema,
   sessionGoal: nullableTrimmedString,
   summary: z.string().trim().min(1),
 });
@@ -98,6 +101,7 @@ export const builtContextSchema = z.object({
 export const assistRequestSchema = z.object({
   classId: z.number().int().positive(),
   sessionId: z.number().int().positive().optional(),
+  mode: sessionModeSchema.default("study"),
   actionType: z.string().trim().min(1),
   selectedText: z.string().trim().min(1),
   surroundingText: nullableTrimmedString,

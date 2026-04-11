@@ -128,6 +128,7 @@ function buildKeywordSet(requestInput: AssistRequest): Set<string> {
     requestInput.pageTitle,
     requestInput.userNote,
     requestInput.actionType,
+    requestInput.mode,
   ]
     .filter((value): value is string => Boolean(value))
     .join(" ");
@@ -245,6 +246,7 @@ function compareGaps(
 
 function rankGaps(gaps: Gap[], requestInput: AssistRequest): Gap[] {
   const requestKeywords = buildKeywordSet(requestInput);
+  const isReviewMode = requestInput.mode === "review";
 
   // Score gaps with a transparent heuristic:
   // recurring weak spots + recent evidence + overlap with the current ask.
@@ -252,8 +254,8 @@ function rankGaps(gaps: Gap[], requestInput: AssistRequest): Gap[] {
     .map((gap) => ({
       gap,
       score:
-        getWeightScore(gap) +
-        getRecencyScore(gap) +
+        getWeightScore(gap) * (isReviewMode ? 2 : 1) +
+        getRecencyScore(gap) * (isReviewMode ? 2 : 1) +
         getKeywordMatchScore(gap, requestKeywords),
     }))
     .sort(compareGaps)
@@ -565,6 +567,7 @@ export function buildContext(
     classProfile
       ? `${classProfile.className} (${classProfile.subject})`
       : null,
+    `Mode: ${requestInput.mode}`,
     `Action: ${requestInput.actionType}`,
     classProfile?.currentUnit
       ? `Unit: ${classProfile.currentUnit}`
@@ -594,6 +597,7 @@ export function buildContext(
     studentMemory,
     recentSessions: recentSessionContext,
     contextGuidance,
+    sessionMode: requestInput.mode,
     sessionGoal,
     summary,
   };

@@ -10,9 +10,12 @@ export type ClassProfile = {
   updatedAt?: string;
 };
 
+export type SessionMode = "study" | "review";
+
 export type AssistRequest = {
   classId: number;
   sessionId?: number;
+  mode: SessionMode;
   actionType: string;
   selectedText: string;
   surroundingText?: string | null;
@@ -77,6 +80,7 @@ export type BuiltContext = {
     screenshotUsefulness: string;
     backgroundUsefulness: string;
   };
+  sessionMode: SessionMode;
   sessionGoal?: string | null;
   summary: string;
 };

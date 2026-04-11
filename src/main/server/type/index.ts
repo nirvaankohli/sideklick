@@ -8,4 +8,5 @@ export type {
   Gap,
   ModelAssistOutput,
   ModelGapCandidate,
+  SessionMode,
 } from "./domain";
