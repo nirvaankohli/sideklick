@@ -66,9 +66,31 @@ export const builtContextSchema = z.object({
       id: z.number().int().positive(),
       question: z.string().trim().min(1),
       response: nullableTrimmedString,
+      interactionType: nullableTrimmedString,
       createdAt: timestampString,
     }),
   ),
+  studentMemory: z.object({
+    recurringTopics: z.array(z.string().trim().min(1)),
+    preferredHelpModes: z.array(z.string().trim().min(1)),
+    memorySummary: z.string().trim().min(1),
+  }),
+  recentSessions: z.array(
+    z.object({
+      title: nullableTrimmedString,
+      notes: nullableTrimmedString,
+      summary: nullableTrimmedString,
+      keyTopics: z.array(z.string().trim().min(1)),
+      carryForward: nullableTrimmedString,
+      startedAt: timestampString,
+      endedAt: timestampString.nullable(),
+    }),
+  ),
+  contextGuidance: z.object({
+    requestPriority: z.array(z.string().trim().min(1)),
+    screenshotUsefulness: z.string().trim().min(1),
+    backgroundUsefulness: z.string().trim().min(1),
+  }),
   sessionGoal: nullableTrimmedString,
   summary: z.string().trim().min(1),
 });

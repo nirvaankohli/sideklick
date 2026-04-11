@@ -55,8 +55,28 @@ export type BuiltContext = {
     id: number;
     question: string;
     response?: string | null;
+    interactionType?: string | null;
     createdAt: string;
   }>;
+  studentMemory: {
+    recurringTopics: string[];
+    preferredHelpModes: string[];
+    memorySummary: string;
+  };
+  recentSessions: Array<{
+    title: string | null;
+    notes: string | null;
+    summary: string | null;
+    keyTopics: string[];
+    carryForward: string | null;
+    startedAt: string;
+    endedAt: string | null;
+  }>;
+  contextGuidance: {
+    requestPriority: string[];
+    screenshotUsefulness: string;
+    backgroundUsefulness: string;
+  };
   sessionGoal?: string | null;
   summary: string;
 };

@@ -15,6 +15,14 @@ const {
   stopServer,
 } = require("./main/server/index.ts");
 const {
+  createSession,
+  endSession,
+} = require("./main/server/services/sessions.ts");
+const {
+  getClassProfileById,
+  saveClassProfile,
+} = require("./main/server/services/classes.ts");
+const {
   getFirstRunStartupWindowConfigs,
   getStartupWindowConfigs,
   resolveWindowTemplate,
@@ -374,6 +382,92 @@ function focusOrCreateChatWindow() {
   return chatWindow;
 }
 
+function notifyHomeWindowFoldersChanged(classFolders) {
+  const homeWindow = windowsByKey.get("home");
+  if (homeWindow && !homeWindow.isDestroyed()) {
+    homeWindow.webContents.send("class-folders:changed", classFolders);
+  }
+}
+
+function appendStoppedSessionToFolders(classFolders, session, persistedSession) {
+  if (!Array.isArray(classFolders)) {
+    return [];
+  }
+
+  return classFolders.map((folder) => {
+    if (
+      folder?.type !== "class" ||
+      (folder.dbClassId !== session.classId &&
+        String(folder.name || "").trim() !== String(session.className || "").trim())
+    ) {
+      return folder;
+    }
+
+    const existingChildren = Array.isArray(folder.children) ? folder.children : [];
+    const sessionEntry = {
+      id: `session-${persistedSession.id}`,
+      type: "session",
+      name: session.sessionName || persistedSession.title || "Session",
+      dbSessionId: persistedSession.id,
+      startedAt: persistedSession.startedAt,
+      endedAt: persistedSession.endedAt,
+      notes: persistedSession.notes,
+      summary: persistedSession.summary,
+      carryForward: persistedSession.carryForward,
+    };
+    const dedupedChildren = existingChildren.filter(
+      (child) => child?.type !== "session" || child.dbSessionId !== persistedSession.id,
+    );
+
+    return {
+      ...folder,
+      children: [sessionEntry, ...dedupedChildren],
+    };
+  });
+}
+
+function buildBackendClassPayloadFromSession(session) {
+  const noteParts = [
+    session?.description ? `Description: ${session.description}` : null,
+    session?.additionalNotes
+      ? `Additional notes: ${session.additionalNotes}`
+      : null,
+  ].filter(Boolean);
+  const teacherFocusParts = [
+    session?.teacherName ? `Teacher: ${session.teacherName}` : null,
+    session?.teacherNotes ? `Focus: ${session.teacherNotes}` : null,
+  ].filter(Boolean);
+
+  return {
+    className: typeof session?.className === "string" ? session.className : "",
+    subject: typeof session?.className === "string" ? session.className : "",
+    currentUnit: null,
+    teacherFocus:
+      teacherFocusParts.length > 0 ? teacherFocusParts.join(" | ") : null,
+    keyConcepts: [],
+    notes: noteParts.length > 0 ? noteParts.join("\n") : null,
+  };
+}
+
+function ensureSessionClassId(session) {
+  const existingClassId =
+    typeof session?.classId === "number" && session.classId > 0
+      ? session.classId
+      : null;
+
+  if (existingClassId && getClassProfileById(existingClassId)) {
+    return existingClassId;
+  }
+
+  const classPayload = buildBackendClassPayloadFromSession(session);
+  if (!classPayload.className.trim()) {
+    throw new Error("Cannot start a session without a valid class name.");
+  }
+
+  const savedClassProfile = saveClassProfile(classPayload);
+  return savedClassProfile.id;
+}
+
 function dispatchIncomingPayload(payload) {
   const chatWindow = focusOrCreateChatWindow();
   const deliverPayload = () => {
@@ -616,6 +710,7 @@ ipcMain.handle("class-folders:update", (_event, classFolders) => {
     classFolders: Array.isArray(classFolders) ? classFolders : [],
   };
   writePreferences(nextPreferences);
+  notifyHomeWindowFoldersChanged(nextPreferences.classFolders);
   return nextPreferences.classFolders;
 });
 
@@ -664,9 +759,20 @@ ipcMain.handle("session:getCurrent", () => {
 });
 
 ipcMain.handle("session:start", (_event, session) => {
+  const resolvedClassId = ensureSessionClassId(session);
+  const persistedSession = createSession(
+    resolvedClassId,
+    session.sessionName || "Study Session",
+    session.sessionNotes || null,
+  );
   const nextPreferences = {
     ...readPreferences(),
-    currentSession: session,
+    currentSession: {
+      ...session,
+      classId: resolvedClassId,
+      sessionId: persistedSession.id,
+      sessionStartedAt: persistedSession.startedAt,
+    },
   };
   writePreferences(nextPreferences);
 
@@ -677,19 +783,40 @@ ipcMain.handle("session:start", (_event, session) => {
     if (existingChat && !existingChat.isDestroyed()) {
       existingChat.show();
       existingChat.focus();
-      existingChat.webContents.send("session:changed", session);
+      existingChat.webContents.send("session:changed", nextPreferences.currentSession);
     }
   }
 
-  return { ok: true, currentSession: session };
+  return { ok: true, currentSession: nextPreferences.currentSession };
 });
 
 ipcMain.handle("session:stop", () => {
+  const currentSession = getPreferenceSnapshot().currentSession;
+  let persistedSession = null;
+  if (currentSession?.sessionId) {
+    persistedSession = endSession(currentSession.sessionId);
+  }
+
+  const currentPreferences = readPreferences();
+  const nextClassFolders =
+    currentSession && persistedSession
+      ? appendStoppedSessionToFolders(
+          Array.isArray(currentPreferences.classFolders)
+            ? currentPreferences.classFolders
+            : [],
+          currentSession,
+          persistedSession,
+        )
+      : Array.isArray(currentPreferences.classFolders)
+        ? currentPreferences.classFolders
+        : [];
   const nextPreferences = {
-    ...readPreferences(),
+    ...currentPreferences,
+    classFolders: nextClassFolders,
     currentSession: null,
   };
   writePreferences(nextPreferences);
+  notifyHomeWindowFoldersChanged(nextPreferences.classFolders);
 
   const chatWindow = windowsByKey.get("chat");
   if (chatWindow && !chatWindow.isDestroyed()) {
