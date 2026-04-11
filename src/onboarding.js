@@ -14,6 +14,7 @@ const sourceButtons = Array.from(document.querySelectorAll("[data-source]"));
 const profileButtons = Array.from(document.querySelectorAll("[data-profile]"));
 const stepButtons = Array.from(document.querySelectorAll("[data-step-target]"));
 const stepPanels = Array.from(document.querySelectorAll("[data-step-panel]"));
+const resizeHandle = document.querySelector("#resize-handle");
 let activeStep = 1;
 
 const sourceLabels = {
@@ -83,6 +84,35 @@ function setActiveStep(nextStep) {
   continueButton.textContent = activeStep === 3 ? "Open SideClick" : "Continue";
 }
 
+function attachResizeHandle(handle) {
+  let startPointer = null;
+  let startBounds = null;
+
+  handle.addEventListener("pointerdown", async (event) => {
+    event.preventDefault();
+    startPointer = { x: event.screenX, y: event.screenY };
+    startBounds = await window.overlayApi.getWindowBounds();
+    handle.setPointerCapture(event.pointerId);
+  });
+
+  handle.addEventListener("pointermove", async (event) => {
+    if (!startPointer || !startBounds) {
+      return;
+    }
+
+    await window.overlayApi.resizeWindow({
+      width: startBounds.width + (event.screenX - startPointer.x),
+      height: startBounds.height + (event.screenY - startPointer.y),
+    });
+  });
+
+  handle.addEventListener("pointerup", (event) => {
+    startPointer = null;
+    startBounds = null;
+    handle.releasePointerCapture(event.pointerId);
+  });
+}
+
 for (const [source, button] of Object.entries(choiceButtons)) {
   button.addEventListener("click", async () => {
     const result = await window.overlayApi.setThemeSource(source);
@@ -133,4 +163,5 @@ window.addEventListener("DOMContentLoaded", async () => {
   const preferences = await window.overlayApi.getPreferences();
   applyPreferenceSelections(preferences);
   setActiveStep(1);
+  attachResizeHandle(resizeHandle);
 });

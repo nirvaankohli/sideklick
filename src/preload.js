@@ -8,7 +8,15 @@ contextBridge.exposeInMainWorld("overlayApi", {
   setThemeSource: (source) => ipcRenderer.invoke("theme:setSource", source),
   getPreferences: () => ipcRenderer.invoke("preferences:get"),
   updatePreferences: (patch) => ipcRenderer.invoke("preferences:update", patch),
+  getClassFolders: () => ipcRenderer.invoke("class-folders:get"),
+  updateClassFolders: (folders) => ipcRenderer.invoke("class-folders:update", folders),
   completeOnboarding: () => ipcRenderer.invoke("onboarding:complete"),
+  getCurrentSession: () => ipcRenderer.invoke("session:getCurrent"),
+  startSession: (session) => ipcRenderer.invoke("session:start", session),
+  stopSession: () => ipcRenderer.invoke("session:stop"),
+  getWindowBounds: () => ipcRenderer.invoke("window:getBounds"),
+  resizeWindow: (bounds) => ipcRenderer.invoke("window:resize", bounds),
   onThemeChanged: (callback) => ipcRenderer.on("theme:changed", (_event, payload) => callback(payload)),
-  onWindowMode: (callback) => ipcRenderer.on("window:mode", (_event, payload) => callback(payload))
+  onWindowMode: (callback) => ipcRenderer.on("window:mode", (_event, payload) => callback(payload)),
+  onSessionChanged: (callback) => ipcRenderer.on("session:changed", (_event, payload) => callback(payload))
 });
