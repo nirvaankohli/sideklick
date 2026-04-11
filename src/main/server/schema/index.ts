@@ -73,6 +73,7 @@ export const builtContextSchema = z.object({
   studentMemory: z.object({
     recurringTopics: z.array(z.string().trim().min(1)),
     preferredHelpModes: z.array(z.string().trim().min(1)),
+    knownStrengths: z.array(z.string().trim().min(1)),
     memorySummary: z.string().trim().min(1),
   }),
   recentSessions: z.array(
@@ -82,6 +83,8 @@ export const builtContextSchema = z.object({
       summary: nullableTrimmedString,
       keyTopics: z.array(z.string().trim().min(1)),
       carryForward: nullableTrimmedString,
+      requestCount: z.number().int().min(0),
+      detailedContext: z.string().trim().min(1),
       startedAt: timestampString,
       endedAt: timestampString.nullable(),
     }),

@@ -61,6 +61,7 @@ export type BuiltContext = {
   studentMemory: {
     recurringTopics: string[];
     preferredHelpModes: string[];
+    knownStrengths: string[];
     memorySummary: string;
   };
   recentSessions: Array<{
@@ -69,6 +70,8 @@ export type BuiltContext = {
     summary: string | null;
     keyTopics: string[];
     carryForward: string | null;
+    requestCount: number;
+    detailedContext: string;
     startedAt: string;
     endedAt: string | null;
   }>;
