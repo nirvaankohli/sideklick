@@ -19,6 +19,7 @@ export type AssistRequest = {
   pageTitle?: string | null;
   pageUrl?: string | null;
   userNote?: string | null;
+  screenshotDataUrl?: string | null;
 };
 
 export type Gap = {

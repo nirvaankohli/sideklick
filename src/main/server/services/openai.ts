@@ -35,7 +35,7 @@ function getOpenAIModel(): string {
 function buildSystemPrompt(): string {
   return [
     "You are a study assistant inside a local Electron app.",
-    "Use the provided class context and browser selection metadata to help the student.",
+    "Use the provided class context, browser selection metadata, and optional screenshot to help the student.",
     "Return concise, actionable help.",
     "Possible gaps should only include likely recurring weak spots supported by the context or the current request.",
     "Keep possible_gaps empty when there is not enough evidence.",
@@ -43,7 +43,7 @@ function buildSystemPrompt(): string {
   ].join(" ");
 }
 
-function buildUserPayload(
+function buildUserTextPayload(
   builtContext: BuiltContext,
   requestInput: AssistRequest,
 ): string {
@@ -56,6 +56,7 @@ function buildUserPayload(
         page_title: requestInput.pageTitle ?? null,
         page_url: requestInput.pageUrl ?? null,
         user_note: requestInput.userNote ?? null,
+        has_screenshot: Boolean(requestInput.screenshotDataUrl),
         session_id: requestInput.sessionId ?? null,
         class_id: requestInput.classId ?? null,
       },
@@ -71,6 +72,19 @@ export async function requestAssistFromOpenAI(
   requestInput: AssistRequest,
 ): Promise<ModelAssistOutput> {
   const client = getOpenAIClient();
+  const userContent = [
+    {
+      type: "input_text" as const,
+      text: buildUserTextPayload(builtContext, requestInput),
+    },
+  ];
+
+  if (requestInput.screenshotDataUrl) {
+    userContent.push({
+      type: "input_image",
+      image_url: requestInput.screenshotDataUrl,
+    });
+  }
 
   // The SDK parses and validates the response against the Zod schema so the
   // rest of the app receives predictable JSON, not free-form text.
@@ -83,7 +97,7 @@ export async function requestAssistFromOpenAI(
       },
       {
         role: "user",
-        content: buildUserPayload(builtContext, requestInput),
+        content: userContent,
       },
     ],
     text: {

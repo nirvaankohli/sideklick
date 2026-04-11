@@ -8,6 +8,12 @@ const nullableTrimmedString = z
   .nullable()
   .optional();
 
+const nullableScreenshotDataUrl = z
+  .string()
+  .regex(/^data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/)
+  .nullable()
+  .optional();
+
 const timestampString = z.union([
   z.string().datetime({ offset: true }),
   z.string().datetime(),
@@ -76,6 +82,7 @@ export const assistRequestSchema = z.object({
   pageTitle: nullableTrimmedString,
   pageUrl: z.string().trim().url().nullable().optional(),
   userNote: nullableTrimmedString,
+  screenshotDataUrl: nullableScreenshotDataUrl,
 }).strict();
 
 export const assistResponseSchema = z.object({

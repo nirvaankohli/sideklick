@@ -8,6 +8,7 @@ type ClassRow = {
   current_unit: string | null;
   teacher_focus: string | null;
   key_concepts: string;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -20,6 +21,7 @@ function mapClassRow(row: ClassRow): ClassProfile {
     currentUnit: row.current_unit,
     teacherFocus: row.teacher_focus,
     keyConcepts: JSON.parse(row.key_concepts) as string[],
+    notes: row.notes,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -36,6 +38,7 @@ export function getClassProfileById(id: number): ClassProfile | null {
         current_unit,
         teacher_focus,
         key_concepts,
+        notes,
         created_at,
         updated_at
       FROM classes
@@ -65,6 +68,7 @@ export function saveClassProfile(input: ClassProfile): ClassProfile {
           current_unit = @currentUnit,
           teacher_focus = @teacherFocus,
           key_concepts = @keyConcepts,
+          notes = @notes,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = @id
       `,
@@ -75,6 +79,7 @@ export function saveClassProfile(input: ClassProfile): ClassProfile {
       currentUnit: input.currentUnit ?? null,
       teacherFocus: input.teacherFocus ?? null,
       keyConcepts: serializedKeyConcepts,
+      notes: input.notes ?? null,
     });
   } else {
     const result = db.prepare(
@@ -84,13 +89,15 @@ export function saveClassProfile(input: ClassProfile): ClassProfile {
           subject,
           current_unit,
           teacher_focus,
-          key_concepts
+          key_concepts,
+          notes
         ) VALUES (
           @className,
           @subject,
           @currentUnit,
           @teacherFocus,
-          @keyConcepts
+          @keyConcepts,
+          @notes
         )
       `,
     ).run({
@@ -99,6 +106,7 @@ export function saveClassProfile(input: ClassProfile): ClassProfile {
       currentUnit: input.currentUnit ?? null,
       teacherFocus: input.teacherFocus ?? null,
       keyConcepts: serializedKeyConcepts,
+      notes: input.notes ?? null,
     });
 
     input.id = Number(result.lastInsertRowid);
@@ -114,6 +122,7 @@ export function saveClassProfile(input: ClassProfile): ClassProfile {
         current_unit,
         teacher_focus,
         key_concepts,
+        notes,
         created_at,
         updated_at
       FROM classes

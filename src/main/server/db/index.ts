@@ -20,6 +20,7 @@ function createTables(db: Database.Database): void {
       current_unit TEXT,
       teacher_focus TEXT,
       key_concepts TEXT NOT NULL DEFAULT '[]',
+      notes TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
@@ -95,6 +96,12 @@ function ensureClassColumns(db: Database.Database): void {
   if (!columnNames.has("key_concepts")) {
     db.exec(
       "ALTER TABLE classes ADD COLUMN key_concepts TEXT NOT NULL DEFAULT '[]';",
+    );
+  }
+
+  if (!columnNames.has("notes")) {
+    db.exec(
+      "ALTER TABLE classes ADD COLUMN notes TEXT;",
     );
   }
 }

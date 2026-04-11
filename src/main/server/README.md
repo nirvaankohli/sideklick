@@ -31,7 +31,7 @@ This folder contains the lightweight local backend that runs inside the Electron
 
 ## Data flow so far
 
-1. Electron main process will eventually call `startServer()`.
+1. Electron main process calls `startServer()` during app startup.
 2. Server startup initializes SQLite.
 3. Client sends `POST /api/classes` to create or update a class profile.
 4. `POST /api/assist` validates the request, calls `buildContext(...)`, sends that context to the model, validates the model response, normalizes it into the app response shape, then stores the interaction and gap memory updates.
@@ -39,7 +39,6 @@ This folder contains the lightweight local backend that runs inside the Electron
 
 ## Main unfinished pieces
 
-- Wire `startServer()` into the Electron main process.
 - Save session records.
 - Add screenshot ingestion if the renderer eventually sends image-derived context.
 
@@ -57,3 +56,4 @@ This folder contains the lightweight local backend that runs inside the Electron
 - `/api/assist` expects: `classId`, optional `sessionId`, `actionType`, `selectedText`, optional `surroundingText`, optional `pageTitle`, optional `pageUrl`, and optional `userNote`.
 - `/api/assist` returns an `interactionId`, which the frontend should hold onto for later `/api/feedback` calls.
 - `/api/feedback` expects: `interactionId` and `helped`.
+- The Electron UI now reaches the backend through preload/main-process IPC helpers, which proxy requests to the local Express server.

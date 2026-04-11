@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+require("tsx/cjs");
 const {
   app,
   BrowserWindow,
@@ -7,6 +8,10 @@ const {
   nativeTheme,
   screen,
 } = require("electron");
+const {
+  startServer,
+  stopServer,
+} = require("./main/server/index.ts");
 const {
   getFirstRunStartupWindowConfigs,
   getStartupWindowConfigs,
@@ -16,6 +21,7 @@ const {
 const windowsByKey = new Map();
 const windowState = new Map();
 const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
+const LOCAL_API_BASE_URL = "http://127.0.0.1:3001";
 
 function getThemePreferencePath() {
   return path.join(app.getPath("userData"), "preferences.json");
@@ -270,7 +276,42 @@ function createStartupWindows(isFirstRun) {
   }
 }
 
-app.whenReady().then(() => {
+async function startLocalBackend() {
+  try {
+    await startServer({
+      host: "127.0.0.1",
+      port: 3001,
+    });
+  } catch (error) {
+    console.error("[local-backend] failed to start", error);
+  }
+}
+
+async function callLocalApi(endpoint, options = {}) {
+  const response = await fetch(`${LOCAL_API_BASE_URL}${endpoint}`, {
+    method: options.method || "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body:
+      options.body === undefined ? undefined : JSON.stringify(options.body),
+  });
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      payload && typeof payload.error === "string"
+        ? payload.error
+        : `Local API request failed for ${endpoint}`,
+    );
+  }
+
+  return payload;
+}
+
+app.whenReady().then(async () => {
+  await startLocalBackend();
   const isFirstRun = !hasLaunchedBefore();
   applyThemeSource(readStoredThemeSource());
   createStartupWindows(isFirstRun);
@@ -291,6 +332,12 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("before-quit", () => {
+  void stopServer().catch((error) => {
+    console.error("[local-backend] failed to stop", error);
+  });
 });
 
 ipcMain.handle("window:minimizeToDock", (event) => {
@@ -395,6 +442,27 @@ ipcMain.handle("class-folders:update", (_event, classFolders) => {
   };
   writePreferences(nextPreferences);
   return nextPreferences.classFolders;
+});
+
+ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {
+  return callLocalApi("/api/classes", {
+    method: "POST",
+    body: classProfile,
+  });
+});
+
+ipcMain.handle("backend:assist", async (_event, payload) => {
+  return callLocalApi("/api/assist", {
+    method: "POST",
+    body: payload,
+  });
+});
+
+ipcMain.handle("backend:feedback", async (_event, payload) => {
+  return callLocalApi("/api/feedback", {
+    method: "POST",
+    body: payload,
+  });
 });
 
 ipcMain.handle("onboarding:complete", (event) => {
