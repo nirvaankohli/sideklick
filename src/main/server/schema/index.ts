@@ -122,6 +122,30 @@ export const feedbackRequestSchema = z.object({
   helped: z.boolean(),
 }).strict();
 
+export const quizQuestionSchema = z.object({
+  prompt: z.string().trim().min(1),
+  options: z.array(z.string().trim().min(1)).length(4),
+  correctIndex: z.number().int().min(0).max(3),
+  explanation: z.string().trim().min(1),
+}).strict();
+
+export const quizRequestSchema = z.object({
+  classId: z.number().int().positive(),
+  sessionIds: z.array(z.number().int().positive()).default([]),
+  includeSessionSummary: z.boolean(),
+  includeSessionNotes: z.boolean(),
+  includeKeyTopics: z.boolean(),
+  includeUploadedMaterial: z.boolean(),
+  uploadedMaterial: nullableTrimmedString,
+  gapFocus: z.number().min(0).max(100),
+}).strict();
+
+export const quizResponseSchema = z.object({
+  title: z.string().trim().min(1),
+  subtitle: z.string().trim().min(1),
+  questions: z.array(quizQuestionSchema).min(3).max(8),
+}).strict();
+
 export type ClassProfileInput = z.infer<typeof classProfileSchema>;
 export type GapInput = z.infer<typeof gapSchema>;
 export type ModelAssistOutputInput = z.infer<typeof modelAssistOutputSchema>;
@@ -130,3 +154,6 @@ export type BuiltContextInput = z.infer<typeof builtContextSchema>;
 export type AssistRequestInput = z.infer<typeof assistRequestSchema>;
 export type AssistResponseInput = z.infer<typeof assistResponseSchema>;
 export type FeedbackRequestInput = z.infer<typeof feedbackRequestSchema>;
+export type QuizQuestionInput = z.infer<typeof quizQuestionSchema>;
+export type QuizRequestInput = z.infer<typeof quizRequestSchema>;
+export type QuizResponseInput = z.infer<typeof quizResponseSchema>;

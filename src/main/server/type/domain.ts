@@ -93,3 +93,27 @@ export type FeedbackRequest = {
   interactionId: number;
   helped: boolean;
 };
+
+export type QuizQuestion = {
+  prompt: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+};
+
+export type QuizRequest = {
+  classId: number;
+  sessionIds: number[];
+  includeSessionSummary: boolean;
+  includeSessionNotes: boolean;
+  includeKeyTopics: boolean;
+  includeUploadedMaterial: boolean;
+  uploadedMaterial?: string | null;
+  gapFocus: number;
+};
+
+export type QuizResponse = {
+  title: string;
+  subtitle: string;
+  questions: QuizQuestion[];
+};
