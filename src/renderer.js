@@ -11,18 +11,25 @@ const chatThread = document.querySelector("#chat-thread");
 const chatForm = document.querySelector("#chat-form");
 const chatInput = document.querySelector("#chat-input");
 const resizeHandle = document.querySelector("#resize-handle");
-const requestList = document.querySelector("#request-list");
-const requestSummary = document.querySelector("#request-summary");
-const clearResolvedRequestsButton = document.querySelector(
-  "#clear-resolved-requests",
-);
+
+const ACTION_LABELS = {
+  chat: "Ask SideClick",
+  explain: "Explain this",
+  connect: "Connect to what I know",
+  example: "Give me an example",
+  flag_confusing: "Flag as confusing",
+  already_know: "I already know this",
+  add_notes: "Add to my notes",
+  summarize_page: "Summarize this page",
+  focus_page: "What should I focus on?",
+};
+const STREAM_CHUNK_SIZE = 3;
+const STREAM_INTERVAL_MS = 22;
 
 let currentTone = "light";
 let currentSession = null;
 let screenshotDataUrl = null;
 let screenshotStatusRow = null;
-let incomingRequestCount = 0;
-const incomingRequests = [];
 
 function applyThemeState({ shouldUseDarkColors }) {
   currentTone = shouldUseDarkColors ? "dark" : "light";
@@ -33,22 +40,21 @@ function setMode(mode) {
   root.dataset.mode = mode;
 }
 
-function escapeHtml(value) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll("\"", "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
 function addMessage(role, copy, options = {}) {
   const article = document.createElement("article");
   article.className = `chat-message ${role}`;
+
   const paragraph = document.createElement("p");
   paragraph.className = "chat-message-copy";
   paragraph.textContent = copy;
   article.appendChild(paragraph);
+
+  if (options.meta) {
+    const meta = document.createElement("p");
+    meta.className = "chat-message-meta";
+    meta.textContent = options.meta;
+    article.appendChild(meta);
+  }
 
   if (role === "assistant" && options.interactionId) {
     const feedbackRow = document.createElement("div");
@@ -56,8 +62,9 @@ function addMessage(role, copy, options = {}) {
 
     const helpfulButton = document.createElement("button");
     helpfulButton.type = "button";
-    helpfulButton.className = "ghost-button";
-    helpfulButton.textContent = "Helped";
+    helpfulButton.className = "ghost-button feedback-icon-button";
+    helpfulButton.textContent = "👍";
+    helpfulButton.setAttribute("aria-label", "Helpful");
     helpfulButton.addEventListener("click", async () => {
       await window.overlayApi.submitFeedback({
         interactionId: options.interactionId,
@@ -68,8 +75,9 @@ function addMessage(role, copy, options = {}) {
 
     const notHelpfulButton = document.createElement("button");
     notHelpfulButton.type = "button";
-    notHelpfulButton.className = "ghost-button";
-    notHelpfulButton.textContent = "Not helpful";
+    notHelpfulButton.className = "ghost-button feedback-icon-button";
+    notHelpfulButton.textContent = "👎";
+    notHelpfulButton.setAttribute("aria-label", "Not helpful");
     notHelpfulButton.addEventListener("click", async () => {
       await window.overlayApi.submitFeedback({
         interactionId: options.interactionId,
@@ -84,6 +92,121 @@ function addMessage(role, copy, options = {}) {
 
   chatThread.appendChild(article);
   chatThread.scrollTop = chatThread.scrollHeight;
+  return article;
+}
+
+function addIncomingPayloadMessage(text) {
+  if (!text) {
+    return null;
+  }
+
+  const article = document.createElement("article");
+  article.className = "chat-message user incoming-payload";
+
+  const codeCopy = document.createElement("p");
+  codeCopy.className = "chat-message-copy incoming-payload-text";
+  codeCopy.textContent = text;
+  article.appendChild(codeCopy);
+
+  const pastedBadge = document.createElement("span");
+  pastedBadge.className = "incoming-pasted-badge";
+  pastedBadge.textContent = "PASTED";
+  article.appendChild(pastedBadge);
+
+  chatThread.appendChild(article);
+  chatThread.scrollTop = chatThread.scrollHeight;
+  return article;
+}
+
+function createPendingAssistantMessage(label) {
+  const article = document.createElement("article");
+  article.className = "chat-message assistant pending";
+
+  const meta = document.createElement("p");
+  meta.className = "chat-message-meta";
+  meta.textContent = label;
+
+  const paragraph = document.createElement("p");
+  paragraph.className = "chat-message-copy";
+
+  const thinking = document.createElement("span");
+  thinking.className = "thinking-indicator";
+  thinking.innerHTML = '<span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span>';
+  paragraph.appendChild(thinking);
+
+  article.append(meta, paragraph);
+  chatThread.appendChild(article);
+  chatThread.scrollTop = chatThread.scrollHeight;
+
+  return {
+    article,
+    paragraph,
+    meta,
+  };
+}
+
+async function streamTextToParagraph(paragraph, text) {
+  paragraph.textContent = "";
+
+  for (let index = 0; index < text.length; index += STREAM_CHUNK_SIZE) {
+    paragraph.textContent += text.slice(index, index + STREAM_CHUNK_SIZE);
+    chatThread.scrollTop = chatThread.scrollHeight;
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, STREAM_INTERVAL_MS);
+    });
+  }
+}
+
+async function resolvePendingAssistantMessage(pendingMessage, result) {
+  pendingMessage.article.classList.remove("pending");
+  await streamTextToParagraph(pendingMessage.paragraph, result.answer);
+
+  if (result.nextStep) {
+    pendingMessage.meta.textContent = `Next: ${result.nextStep}`;
+  } else {
+    pendingMessage.meta.remove();
+  }
+
+  if (result.interactionId) {
+    const feedbackRow = document.createElement("div");
+    feedbackRow.className = "chat-feedback-row";
+
+    const helpfulButton = document.createElement("button");
+    helpfulButton.type = "button";
+    helpfulButton.className = "ghost-button feedback-icon-button";
+    helpfulButton.textContent = "👍";
+    helpfulButton.setAttribute("aria-label", "Helpful");
+    helpfulButton.addEventListener("click", async () => {
+      await window.overlayApi.submitFeedback({
+        interactionId: result.interactionId,
+        helped: true,
+      });
+      feedbackRow.replaceChildren(document.createTextNode("Feedback saved."));
+    });
+
+    const notHelpfulButton = document.createElement("button");
+    notHelpfulButton.type = "button";
+    notHelpfulButton.className = "ghost-button feedback-icon-button";
+    notHelpfulButton.textContent = "👎";
+    notHelpfulButton.setAttribute("aria-label", "Not helpful");
+    notHelpfulButton.addEventListener("click", async () => {
+      await window.overlayApi.submitFeedback({
+        interactionId: result.interactionId,
+        helped: false,
+      });
+      feedbackRow.replaceChildren(document.createTextNode("Feedback saved."));
+    });
+
+    feedbackRow.append(helpfulButton, notHelpfulButton);
+    pendingMessage.article.appendChild(feedbackRow);
+  }
+}
+
+function failPendingAssistantMessage(pendingMessage, errorMessage) {
+  pendingMessage.article.classList.remove("pending");
+  pendingMessage.article.classList.add("error");
+  pendingMessage.paragraph.textContent = errorMessage;
+  pendingMessage.meta.textContent = "Request failed";
 }
 
 function ensureScreenshotStatusRow() {
@@ -133,174 +256,6 @@ function readFileAsDataUrl(file) {
   });
 }
 
-function addIncomingPayloadMessage(text, clickFunctionName) {
-  if (text) {
-    const article = document.createElement("article");
-    article.className = "chat-message user incoming-payload";
-
-    const codeCopy = document.createElement("p");
-    codeCopy.className = "chat-message-copy incoming-payload-text";
-    codeCopy.textContent = text;
-    article.appendChild(codeCopy);
-
-    const pastedBadge = document.createElement("span");
-    pastedBadge.className = "incoming-pasted-badge";
-    pastedBadge.textContent = "PASTED";
-    article.appendChild(pastedBadge);
-
-    chatThread.appendChild(article);
-  }
-
-  if (clickFunctionName) {
-    addMessage("user", clickFunctionName);
-  }
-
-  chatThread.scrollTop = chatThread.scrollHeight;
-}
-
-function formatRequestPreview(text) {
-  if (!text) {
-    return "No pasted text attached.";
-  }
-
-  return text.length > 120 ? `${text.slice(0, 117)}...` : text;
-}
-
-function getPendingRequestCount() {
-  return incomingRequests.filter((request) => request.status === "pending")
-    .length;
-}
-
-function updateRequestSummary() {
-  const pendingCount = getPendingRequestCount();
-  const resolvedCount = incomingRequests.length - pendingCount;
-
-  if (!incomingRequests.length) {
-    requestSummary.textContent = "No queued requests yet.";
-    return;
-  }
-
-  if (!pendingCount) {
-    requestSummary.textContent = `${resolvedCount} resolved request${
-      resolvedCount === 1 ? "" : "s"
-    }. Inbox is clear.`;
-    return;
-  }
-
-  requestSummary.textContent = `${pendingCount} pending request${
-    pendingCount === 1 ? "" : "s"
-  }${resolvedCount ? `, ${resolvedCount} resolved` : ""}.`;
-}
-
-function createRequestCard(request) {
-  const article = document.createElement("article");
-  article.className = "request-card";
-  article.dataset.status = request.status;
-
-  const metaRow = document.createElement("div");
-  metaRow.className = "request-card-meta";
-
-  const badge = document.createElement("span");
-  badge.className = "request-status-badge";
-  badge.textContent = request.status;
-  metaRow.appendChild(badge);
-
-  const requestId = document.createElement("span");
-  requestId.className = "request-id";
-  requestId.textContent = request.label;
-  metaRow.appendChild(requestId);
-
-  article.appendChild(metaRow);
-
-  if (request.text) {
-    const preview = document.createElement("p");
-    preview.className = "request-preview";
-    preview.textContent = formatRequestPreview(request.text);
-    article.appendChild(preview);
-  }
-
-  if (request.clickFunction) {
-    const actionLabel = document.createElement("p");
-    actionLabel.className = "request-action";
-    actionLabel.textContent = `Action: ${request.clickFunction}`;
-    article.appendChild(actionLabel);
-  }
-
-  const actionRow = document.createElement("div");
-  actionRow.className = "request-card-actions";
-
-  if (request.status === "pending") {
-    const applyButton = document.createElement("button");
-    applyButton.className = "panel-button request-action-button";
-    applyButton.type = "button";
-    applyButton.textContent = "Apply";
-    applyButton.addEventListener("click", () => {
-      if (request.text || request.clickFunction) {
-        addIncomingPayloadMessage(request.text, request.clickFunction);
-      }
-
-      runClickFunction(request.clickFunction);
-      request.status = "applied";
-      renderRequestList();
-    });
-    actionRow.appendChild(applyButton);
-
-    const dismissButton = document.createElement("button");
-    dismissButton.className = "ghost-button request-action-button";
-    dismissButton.type = "button";
-    dismissButton.textContent = "Dismiss";
-    dismissButton.addEventListener("click", () => {
-      request.status = "dismissed";
-      renderRequestList();
-    });
-    actionRow.appendChild(dismissButton);
-  } else {
-    const reopenButton = document.createElement("button");
-    reopenButton.className = "ghost-button request-action-button";
-    reopenButton.type = "button";
-    reopenButton.textContent = "Reopen";
-    reopenButton.addEventListener("click", () => {
-      request.status = "pending";
-      renderRequestList();
-    });
-    actionRow.appendChild(reopenButton);
-  }
-
-  article.appendChild(actionRow);
-
-  return article;
-}
-
-function renderRequestList() {
-  requestList.replaceChildren();
-
-  if (!incomingRequests.length) {
-    const emptyState = document.createElement("article");
-    emptyState.className = "request-empty-state";
-
-    const title = document.createElement("p");
-    title.className = "empty-title";
-    title.textContent = "Inbox is clear";
-    emptyState.appendChild(title);
-
-    const copy = document.createElement("p");
-    copy.className = "empty-copy";
-    copy.textContent =
-      "New requests sent to the local chat endpoint will appear here for review.";
-    emptyState.appendChild(copy);
-
-    requestList.appendChild(emptyState);
-    updateRequestSummary();
-    return;
-  }
-
-  incomingRequests.forEach((request) => {
-    requestList.appendChild(createRequestCard(request));
-  });
-
-  updateRequestSummary();
-}
-
 function runClickFunction(clickFunctionName) {
   if (typeof clickFunctionName !== "string" || !clickFunctionName.trim()) {
     return;
@@ -328,32 +283,135 @@ function runClickFunction(clickFunctionName) {
   }
 }
 
+function normalizeIncomingPayload(payload) {
+  const rawActionType =
+    typeof payload.actionType === "string"
+      ? payload.actionType
+      : typeof payload.action_type === "string"
+        ? payload.action_type
+        : "chat";
+  const actionType = rawActionType.trim() || "chat";
+  const selectedText =
+    typeof payload.selectedText === "string"
+      ? payload.selectedText.trim()
+      : typeof payload.selected_text === "string"
+        ? payload.selected_text.trim()
+        : typeof payload.text === "string"
+          ? payload.text.trim()
+          : "";
+
+  return {
+    actionType,
+    actionLabel: ACTION_LABELS[actionType] || actionType,
+    selectedText,
+    surroundingText:
+      typeof payload.surroundingText === "string"
+        ? payload.surroundingText.trim()
+        : typeof payload.surrounding_text === "string"
+          ? payload.surrounding_text.trim()
+          : null,
+    pageTitle:
+      typeof payload.pageTitle === "string"
+        ? payload.pageTitle.trim()
+        : typeof payload.page_title === "string"
+          ? payload.page_title.trim()
+          : null,
+    pageUrl:
+      typeof payload.pageUrl === "string"
+        ? payload.pageUrl.trim()
+        : typeof payload.page_url === "string"
+          ? payload.page_url.trim()
+          : null,
+    userNote:
+      typeof payload.userNote === "string"
+        ? payload.userNote.trim()
+        : typeof payload.user_note === "string"
+          ? payload.user_note.trim()
+          : null,
+    screenshotDataUrl:
+      typeof payload.screenshotDataUrl === "string"
+        ? payload.screenshotDataUrl
+        : typeof payload.screenshot_data_url === "string"
+          ? payload.screenshot_data_url
+          : null,
+    clickFunction:
+      typeof payload.click_function === "string"
+        ? payload.click_function.trim()
+        : typeof payload.clickFunction === "string"
+          ? payload.clickFunction.trim()
+          : "",
+  };
+}
+
+function buildAssistPayload(normalizedPayload) {
+  const fallbackSelection =
+    normalizedPayload.selectedText ||
+    normalizedPayload.pageTitle ||
+    normalizedPayload.actionLabel;
+
+  return {
+    classId: currentSession.classId,
+    sessionId: currentSession.sessionId || undefined,
+    actionType: normalizedPayload.actionType,
+    selectedText: fallbackSelection,
+    surroundingText: normalizedPayload.surroundingText,
+    pageTitle: normalizedPayload.pageTitle || currentSession.className || null,
+    pageUrl: normalizedPayload.pageUrl || null,
+    userNote:
+      normalizedPayload.userNote ||
+      currentSession.sessionNotes ||
+      null,
+    screenshotDataUrl:
+      normalizedPayload.screenshotDataUrl || screenshotDataUrl || null,
+  };
+}
+
+async function executeAssistRequest(normalizedPayload) {
+  if (!currentSession || !currentSession.classId) {
+    addMessage(
+      "assistant",
+      "Start a class session from Home before sending SideClick actions.",
+    );
+    return;
+  }
+
+  addMessage("user", normalizedPayload.actionLabel);
+  if (normalizedPayload.actionType !== "chat" && normalizedPayload.selectedText) {
+    addIncomingPayloadMessage(normalizedPayload.selectedText);
+  }
+  const pendingMessage = createPendingAssistantMessage(
+    `${normalizedPayload.actionLabel}...`,
+  );
+
+  try {
+    const result = await window.overlayApi.assist(
+      buildAssistPayload(normalizedPayload),
+    );
+
+    screenshotDataUrl = null;
+    renderScreenshotStatus();
+    await resolvePendingAssistantMessage(pendingMessage, result);
+  } catch (error) {
+    failPendingAssistantMessage(
+      pendingMessage,
+      error instanceof Error ? error.message : "The assistant request failed.",
+    );
+  }
+}
+
 function handleIncomingPayload(payload) {
   if (!payload || typeof payload !== "object") {
     return;
   }
 
-  const text = typeof payload.text === "string" ? payload.text.trim() : "";
-  const clickFunction =
-    typeof payload.click_function === "string"
-      ? payload.click_function.trim()
-      : "";
+  const normalizedPayload = normalizeIncomingPayload(payload);
+  runClickFunction(normalizedPayload.clickFunction);
 
-  if (text || clickFunction) {
-    incomingRequestCount += 1;
-    incomingRequests.unshift({
-      id: `${Date.now()}-${incomingRequestCount}`,
-      label: `Request ${incomingRequestCount}`,
-      text,
-      clickFunction,
-      status: "pending",
-    });
-    renderRequestList();
-    addMessage(
-      "assistant",
-      `Queued ${clickFunction || "chat"} request for review in the Request Inbox.`,
-    );
+  if (!normalizedPayload.selectedText) {
+    return;
   }
+
+  void executeAssistRequest(normalizedPayload);
 }
 
 function applySession(session) {
@@ -441,7 +499,10 @@ chatInput.addEventListener("paste", async (event) => {
   try {
     screenshotDataUrl = await readFileAsDataUrl(file);
     renderScreenshotStatus();
-    addMessage("assistant", "Screenshot attached. Send your message when you're ready.");
+    addMessage(
+      "assistant",
+      "Screenshot attached. Send your message when you're ready.",
+    );
   } catch (error) {
     addMessage(
       "assistant",
@@ -459,46 +520,18 @@ chatForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (!currentSession || !currentSession.classId) {
-    addMessage("assistant", "Start a class session from Home before sending a chat request.");
-    return;
-  }
-
-  addMessage("user", value);
   chatInput.value = "";
-
-  try {
-    const result = await window.overlayApi.assist({
-      classId: currentSession.classId,
-      actionType: "chat",
-      selectedText: value,
-      surroundingText: null,
-      pageTitle: currentSession.className || null,
-      pageUrl: null,
-      userNote: currentSession.sessionNotes || null,
-      screenshotDataUrl,
-    });
-
-    screenshotDataUrl = null;
-    renderScreenshotStatus();
-
-    addMessage("assistant", result.answer, {
-      interactionId: result.interactionId,
-    });
-  } catch (error) {
-    addMessage(
-      "assistant",
-      error instanceof Error ? error.message : "The assistant request failed.",
-    );
-  }
-});
-
-clearResolvedRequestsButton.addEventListener("click", () => {
-  const pendingRequests = incomingRequests.filter(
-    (request) => request.status === "pending",
-  );
-  incomingRequests.splice(0, incomingRequests.length, ...pendingRequests);
-  renderRequestList();
+  await executeAssistRequest({
+    actionType: "chat",
+    actionLabel: ACTION_LABELS.chat,
+    selectedText: value,
+    surroundingText: null,
+    pageTitle: currentSession?.className || null,
+    pageUrl: null,
+    userNote: currentSession?.sessionNotes || null,
+    screenshotDataUrl,
+    clickFunction: "",
+  });
 });
 
 window.overlayApi.onThemeChanged(applyThemeState);
@@ -511,5 +544,5 @@ window.addEventListener("DOMContentLoaded", async () => {
   applySession(session);
   attachResizeHandle(resizeHandle);
   renderScreenshotStatus();
-  renderRequestList();
 });
+

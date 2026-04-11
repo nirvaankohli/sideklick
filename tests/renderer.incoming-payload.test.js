@@ -19,9 +19,6 @@ function createDom() {
       <h1 id="session-name-label"></h1>
       <div id="chat-thread"></div>
       <form id="chat-form"><textarea id="chat-input"></textarea></form>
-      <button id="clear-resolved-requests"></button>
-      <p id="request-summary"></p>
-      <div id="request-list"></div>
       <button id="resize-handle"></button>
     </main>
   </body>
@@ -30,16 +27,19 @@ function createDom() {
   );
 }
 
-test("incoming payload is queued for review and only runs after apply", async () => {
+test("incoming payload shows action plus pasted text card and sends the assist request directly", async () => {
   const dom = createDom();
 
   global.window = dom.window;
   global.document = dom.window.document;
   global.HTMLElement = dom.window.HTMLElement;
   global.Event = dom.window.Event;
+  global.FileReader = class FakeFileReader {};
 
   let incomingPayloadHandler;
   let expandWindowCalls = 0;
+  let assistCalls = 0;
+  let submittedPayload = null;
 
   window.overlayApi = {
     getWindowBounds: async () => ({ width: 100, height: 100 }),
@@ -52,64 +52,76 @@ test("incoming payload is queued for review and only runs after apply", async ()
       expandWindowCalls += 1;
       return {};
     },
+    assist: async (payload) => {
+      assistCalls += 1;
+      submittedPayload = payload;
+      return {
+        interactionId: 42,
+        answer: "It means the variable references the root shell element.",
+        nextStep: "Compare it to the chat thread selector.",
+      };
+    },
+    submitFeedback: async () => ({}),
     onThemeChanged: () => {},
     onWindowMode: () => {},
     onSessionChanged: () => {},
     onIncomingPayload: (callback) => {
       incomingPayloadHandler = callback;
     },
-    getCurrentSession: async () => null,
+    getCurrentSession: async () => ({
+      classId: 7,
+      className: "AP Biology",
+      sessionName: "Meiosis Review",
+      sessionNotes: "Need help with vocab",
+    }),
   };
 
   const rendererPath = path.join(__dirname, "..", "src", "renderer.js");
   delete require.cache[require.resolve(rendererPath)];
   require(rendererPath);
 
-  assert.equal(typeof incomingPayloadHandler, "function");
+  await new Promise((resolve) => {
+    window.dispatchEvent(new dom.window.Event("DOMContentLoaded"));
+    setTimeout(resolve, 0);
+  });
 
   incomingPayloadHandler({
-    text: "const root = document.querySelector('.window-shell');",
+    action_type: "explain",
+    selected_text: "const root = document.querySelector('.window-shell');",
+    page_title: "Renderer notes",
     click_function: "restore-window",
   });
 
-  const requestCard = document.querySelector(".request-card");
-  assert.ok(requestCard, "Expected request inbox card to be added");
+  await new Promise((resolve) => setTimeout(resolve, 700));
 
-  const requestPreview = requestCard.querySelector(".request-preview")?.textContent;
+  assert.equal(expandWindowCalls, 1);
+  assert.equal(assistCalls, 1);
+  assert.equal(submittedPayload.actionType, "explain");
   assert.equal(
-    requestPreview,
+    submittedPayload.selectedText,
     "const root = document.querySelector('.window-shell');",
   );
 
-  const requestAction = requestCard.querySelector(".request-action")?.textContent;
-  assert.equal(requestAction, "Action: restore-window");
-
-  const summary = document.querySelector("#request-summary").textContent;
-  assert.equal(summary, "1 pending request.");
-
-  await Promise.resolve();
-  assert.equal(expandWindowCalls, 0);
-
-  const applyButton = requestCard.querySelector("button");
-  assert.ok(applyButton, "Expected apply button to exist");
-  applyButton.dispatchEvent(new dom.window.Event("click", { bubbles: true }));
-
-  const payloadMessage = document.querySelector(".chat-message.incoming-payload");
-  assert.ok(payloadMessage, "Expected incoming payload message to be added after apply");
-
   const userMessages = document.querySelectorAll(
-    ".chat-message.user .chat-message-copy",
+    ".chat-message.user:not(.incoming-payload) .chat-message-copy",
   );
-  const lastUserMessage = userMessages[userMessages.length - 1]?.textContent;
-  assert.equal(lastUserMessage, "restore-window");
+  assert.equal(
+    userMessages[userMessages.length - 1]?.textContent,
+    "Explain this",
+  );
 
-  // Wait one microtask so async click handlers complete.
-  await Promise.resolve();
-  assert.equal(expandWindowCalls, 1);
+  const pastedMessage = document.querySelector(".chat-message.incoming-payload .incoming-payload-text");
+  assert.equal(
+    pastedMessage?.textContent,
+    "const root = document.querySelector('.window-shell');",
+  );
 
-  const appliedBadge = document.querySelector(".request-card .request-status-badge")
-    ?.textContent;
-  assert.equal(appliedBadge, "applied");
+  const assistantMessages = document.querySelectorAll(".chat-message.assistant .chat-message-copy");
+  const finalAssistantMessage = assistantMessages[assistantMessages.length - 1]?.textContent;
+  assert.equal(
+    finalAssistantMessage,
+    "It means the variable references the root shell element.",
+  );
 
   dom.window.close();
 });
