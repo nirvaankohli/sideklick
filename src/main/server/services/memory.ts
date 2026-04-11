@@ -213,13 +213,15 @@ export function persistAssistMemory(
 ): number {
   const db = getDatabase();
 
+  // Keep interaction + gap updates in one transaction so review features never
+  // see a saved interaction without the matching gap memory writes.
   const persistTransaction = db.transaction(() => {
     const interactionId = saveInteraction(
       requestInput,
       assistResponse,
       builtContext,
     );
-    const classId = requestInput.classId ?? builtContext.classProfile?.id ?? null;
+    const classId = requestInput.classId;
 
     for (const gapCandidate of assistResponse.gapCandidates) {
       const gapId = upsertGap(classId, gapCandidate);
@@ -243,6 +245,8 @@ export function applyFeedbackToInteraction(
   const db = getDatabase();
   const weightDelta = feedbackInput.helped ? -1 : 1;
 
+  // Feedback adjusts only the gaps that were linked to this exact interaction
+  // via `gap_events`, which keeps the heuristic simple and explainable.
   const applyTransaction = db.transaction(() => {
     const relatedGaps = db.prepare(
       `

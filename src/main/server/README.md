@@ -55,4 +55,5 @@ This folder contains the lightweight local backend that runs inside the Electron
 - Successful assist calls now write request payload, response payload, and built context into `interactions`.
 - Gap memory is updated heuristically by topic match within a class, using `weight`, `evidence_count`, `last_seen_at`, and a new `gap_events` record for each returned model gap.
 - `/api/assist` expects: `classId`, optional `sessionId`, `actionType`, `selectedText`, optional `surroundingText`, optional `pageTitle`, optional `pageUrl`, and optional `userNote`.
+- `/api/assist` returns an `interactionId`, which the frontend should hold onto for later `/api/feedback` calls.
 - `/api/feedback` expects: `interactionId` and `helped`.
