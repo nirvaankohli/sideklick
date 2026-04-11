@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SideClick Onboarding</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="window-shell onboarding-shell" data-mode="expanded" data-tone="light">
+      <section class="overlay-card onboarding-card">
+        <div class="glow glow-one" aria-hidden="true"></div>
+        <div class="glow glow-two" aria-hidden="true"></div>
+        <div class="glow glow-three" aria-hidden="true"></div>
+
+        <header class="topbar">
+          <div class="title-group">
+            <p class="eyebrow">First Launch</p>
+            <h1>Set Up</h1>
+          </div>
+          <div class="window-actions no-drag onboarding-window-actions">
+            <button id="close-window" class="icon-button danger" type="button" aria-label="Close window">
+              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <nav class="setup-nav no-drag" aria-label="Setup steps">
+          <div class="stepper-line" aria-hidden="true"></div>
+          <button class="step-node" data-step-target="1" type="button">
+            <span class="step-index">1</span>
+            <span class="step-label">Appearance</span>
+          </button>
+          <button class="step-node" data-step-target="2" type="button">
+            <span class="step-index">2</span>
+            <span class="step-label">Discovery</span>
+          </button>
+          <button class="step-node" data-step-target="3" type="button">
+            <span class="step-index">3</span>
+            <span class="step-label">Profile</span>
+          </button>
+        </nav>
+
+        <section class="content">
+          <div class="scroll-area no-drag onboarding-flow">
+            <section class="onboarding-intro">
+              <div class="hero-chip">
+                <span class="chip-dot"></span>
+                Personalized start
+              </div>
+              <p class="lead onboarding-lead">
+                Make SideClick feel right from the first session. These preferences shape the overlay tone,
+                onboarding context, and the kind of student flow it should optimize for.
+              </p>
+            </section>
+
+            <section class="setup-section" data-step-panel="1">
+              <div class="setup-section-header">
+                <p class="panel-label">1. Light, Dark, or System</p>
+                <p id="theme-status" class="panel-help">Current preference: System</p>
+              </div>
+              <div class="theme-choice-grid">
+                <button id="choose-light" class="theme-choice-button" type="button">
+                  <span class="theme-choice-icon">Light</span>
+                  <span class="theme-choice-title">Light</span>
+                  <span class="theme-choice-copy">Bright glass for daylight study and low-contrast pages.</span>
+                </button>
+                <button id="choose-dark" class="theme-choice-button" type="button">
+                  <span class="theme-choice-icon">Dark</span>
+                  <span class="theme-choice-title">Dark</span>
+                  <span class="theme-choice-copy">Low-glare shell that stays calm over busy class tabs.</span>
+                </button>
+                <button id="choose-system" class="theme-choice-button" type="button">
+                  <span class="theme-choice-icon">System</span>
+                  <span class="theme-choice-title">System</span>
+                  <span class="theme-choice-copy">Follow your device automatically and keep every window in sync.</span>
+                </button>
+              </div>
+            </section>
+
+            <section class="setup-section" data-step-panel="2">
+              <div class="setup-section-header">
+                <p class="panel-label">2. Where Did You Hear About This?</p>
+                <p id="source-status" class="panel-help">No source selected yet.</p>
+              </div>
+              <div class="choice-grid source-grid">
+                <button data-source="teacher" class="info-choice-button" type="button">
+                  <span class="choice-kicker">Teacher</span>
+                  <span class="choice-title">A teacher or class recommended it</span>
+                </button>
+                <button data-source="friend" class="info-choice-button" type="button">
+                  <span class="choice-kicker">Friend</span>
+                  <span class="choice-title">A friend showed me SideClick</span>
+                </button>
+                <button data-source="hackathon" class="info-choice-button" type="button">
+                  <span class="choice-kicker">Hackathon</span>
+                  <span class="choice-title">I found it through Big Red Hacks or a demo</span>
+                </button>
+                <button data-source="search" class="info-choice-button" type="button">
+                  <span class="choice-kicker">Search</span>
+                  <span class="choice-title">I found it online while looking for study help</span>
+                </button>
+              </div>
+            </section>
+
+            <section class="setup-section" data-step-panel="3">
+              <div class="setup-section-header">
+                <p class="panel-label">3. Which Customer Profile Are You?</p>
+                <p id="profile-status" class="panel-help">Pick the closest fit.</p>
+              </div>
+              <div class="choice-grid profile-grid">
+                <button data-profile="advanced" class="info-choice-button profile-choice" type="button">
+                  <span class="choice-kicker">AP / Honors</span>
+                  <span class="choice-title">I juggle advanced classes and want fast, in-context support.</span>
+                  <span class="choice-copy">Best for high workload, concept linking, and tight study sessions.</span>
+                </button>
+                <button data-profile="catch-up" class="info-choice-button profile-choice" type="button">
+                  <span class="choice-kicker">Catch-Up</span>
+                  <span class="choice-title">I am rebuilding foundations and need help spotting recurring gaps.</span>
+                  <span class="choice-copy">Best for confidence, reinforcement, and repeated confusion tracking.</span>
+                </button>
+                <button data-profile="exam" class="info-choice-button profile-choice" type="button">
+                  <span class="choice-kicker">Exam Focused</span>
+                  <span class="choice-title">I need to prioritize what matters most before quizzes and tests.</span>
+                  <span class="choice-copy">Best for focus guidance, recap, and last-mile review decisions.</span>
+                </button>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <footer class="onboarding-footer no-drag">
+          <p id="step-caption" class="panel-help onboarding-caption">Step 1 of 3</p>
+          <button id="continue-button" class="continue-button" type="button">Continue</button>
+        </footer>
+        <button id="resize-handle" class="resize-handle no-drag" type="button" aria-label="Resize window"></button>
+      </section>
+    </main>
+
+    <script src="./onboarding.js"></script>
+  </body>
+</html>
