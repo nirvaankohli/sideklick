@@ -1,4 +1,5 @@
 import { getDatabase } from "../db";
+import { saveSessionScreenshotPreview } from "./sessions";
 import type {
   AssistRequest,
   AssistResponse,
@@ -17,16 +18,57 @@ type RelatedGapRow = {
 
 type PersistedAssistPayload = Omit<AssistResponse, "interactionId">;
 
+const MAX_PERSISTED_TEXT_LENGTH = 8000;
+
+function truncateText(value: string, maxLength = MAX_PERSISTED_TEXT_LENGTH): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength)}…`;
+}
+
+function sanitizeValueForStorage(value: unknown): unknown {
+  if (typeof value === "string") {
+    if (value.startsWith("data:image/")) {
+      return "[omitted image payload]";
+    }
+
+    return truncateText(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => sanitizeValueForStorage(entry));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        sanitizeValueForStorage(entry),
+      ]),
+    );
+  }
+
+  return value;
+}
+
 function buildInteractionPrompt(requestInput: AssistRequest): string {
   return [
     `Action: ${requestInput.actionType}`,
-    `Selected text: ${requestInput.selectedText}`,
+    `Selected text: ${truncateText(requestInput.selectedText, 2000)}`,
     requestInput.surroundingText
-      ? `Surrounding text: ${requestInput.surroundingText}`
+      ? `Surrounding text: ${truncateText(requestInput.surroundingText, 2000)}`
       : null,
-    requestInput.pageTitle ? `Page title: ${requestInput.pageTitle}` : null,
-    requestInput.pageUrl ? `Page URL: ${requestInput.pageUrl}` : null,
-    requestInput.userNote ? `User note: ${requestInput.userNote}` : null,
+    requestInput.pageTitle
+      ? `Page title: ${truncateText(requestInput.pageTitle, 300)}`
+      : null,
+    requestInput.pageUrl
+      ? `Page URL: ${truncateText(requestInput.pageUrl, 500)}`
+      : null,
+    requestInput.userNote
+      ? `User note: ${truncateText(requestInput.userNote, 2000)}`
+      : null,
   ]
     .filter((part): part is string => Boolean(part))
     .join("\n");
@@ -76,11 +118,11 @@ function saveInteraction(
     sessionId: requestInput.sessionId ?? null,
     classId: requestInput.classId ?? null,
     prompt: buildInteractionPrompt(requestInput),
-    response: assistResponse.answer,
+    response: truncateText(assistResponse.answer),
     interactionType: requestInput.actionType,
-    requestPayload: JSON.stringify(requestInput),
-    responsePayload: JSON.stringify(assistResponse),
-    builtContext: JSON.stringify(builtContext),
+    requestPayload: JSON.stringify(sanitizeValueForStorage(requestInput)),
+    responsePayload: JSON.stringify(sanitizeValueForStorage(assistResponse)),
+    builtContext: JSON.stringify(sanitizeValueForStorage(builtContext)),
   });
 
   return Number(result.lastInsertRowid);
@@ -216,6 +258,13 @@ export function persistAssistMemory(
   // Keep interaction + gap updates in one transaction so review features never
   // see a saved interaction without the matching gap memory writes.
   const persistTransaction = db.transaction(() => {
+    if (requestInput.sessionId && requestInput.screenshotDataUrl) {
+      saveSessionScreenshotPreview(
+        requestInput.sessionId,
+        requestInput.screenshotDataUrl,
+      );
+    }
+
     const interactionId = saveInteraction(
       requestInput,
       assistResponse,

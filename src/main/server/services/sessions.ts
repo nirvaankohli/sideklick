@@ -10,6 +10,8 @@ type SessionRow = {
   summary: string | null;
   key_topics: string;
   carry_forward: string | null;
+  request_count: number;
+  screenshot_preview: string | null;
 };
 
 type SessionInteractionRow = {
@@ -29,6 +31,8 @@ export type SessionRecord = {
   summary: string | null;
   keyTopics: string[];
   carryForward: string | null;
+  requestCount: number;
+  screenshotPreview: string | null;
 };
 
 const STOP_WORDS = new Set([
@@ -69,6 +73,8 @@ function mapSessionRow(row: SessionRow): SessionRecord {
     summary: row.summary,
     keyTopics: JSON.parse(row.key_topics) as string[],
     carryForward: row.carry_forward,
+    requestCount: row.request_count,
+    screenshotPreview: row.screenshot_preview,
   };
 }
 
@@ -229,7 +235,9 @@ export function createSession(
         notes,
         summary,
         key_topics,
-        carry_forward
+        carry_forward,
+        request_count,
+        screenshot_preview
       FROM sessions
       WHERE id = ?
     `,
@@ -255,7 +263,9 @@ export function endSession(sessionId: number): SessionRecord | null {
         notes,
         summary,
         key_topics,
-        carry_forward
+        carry_forward,
+        request_count,
+        screenshot_preview
       FROM sessions
       WHERE id = ?
     `,
@@ -279,13 +289,15 @@ export function endSession(sessionId: number): SessionRecord | null {
         ended_at = CURRENT_TIMESTAMP,
         summary = @summary,
         key_topics = @keyTopics,
-        carry_forward = @carryForward
+        carry_forward = @carryForward,
+        request_count = @requestCount
       WHERE id = @sessionId AND ended_at IS NULL
     `,
   ).run({
     summary: generatedSummary.summary,
     keyTopics: JSON.stringify(generatedSummary.keyTopics),
     carryForward: generatedSummary.carryForward,
+    requestCount: interactions.length,
     sessionId,
   });
 
@@ -300,11 +312,33 @@ export function endSession(sessionId: number): SessionRecord | null {
         notes,
         summary,
         key_topics,
-        carry_forward
+        carry_forward,
+        request_count,
+        screenshot_preview
       FROM sessions
       WHERE id = ?
     `,
   ).get(sessionId) as SessionRow | undefined;
 
   return sessionRow ? mapSessionRow(sessionRow) : null;
+}
+
+export function saveSessionScreenshotPreview(
+  sessionId: number,
+  screenshotDataUrl: string,
+): void {
+  const db = getDatabase();
+
+  db.prepare(
+    `
+      UPDATE sessions
+      SET screenshot_preview = @screenshotPreview
+      WHERE id = @sessionId
+        AND screenshot_preview IS NULL
+        AND ended_at IS NULL
+    `,
+  ).run({
+    sessionId,
+    screenshotPreview: screenshotDataUrl,
+  });
 }

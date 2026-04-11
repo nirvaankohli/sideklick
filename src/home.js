@@ -29,6 +29,13 @@ const classTeacherNotesInput = document.querySelector("#class-teacher-notes-inpu
 const classAdditionalNotesInput = document.querySelector("#class-additional-notes-input");
 const sessionNameInput = document.querySelector("#session-name-input");
 const sessionNotesInput = document.querySelector("#session-notes-input");
+const sessionSummaryBackdrop = document.querySelector("#session-summary-backdrop");
+const closeSessionSummaryButton = document.querySelector("#close-session-summary");
+const sessionSummaryTitle = document.querySelector("#session-summary-title");
+const sessionSummaryMeta = document.querySelector("#session-summary-meta");
+const sessionSummaryText = document.querySelector("#session-summary-text");
+const sessionSummaryPreviewImage = document.querySelector("#session-summary-preview-image");
+const sessionSummaryPlaceholderIcon = document.querySelector("#session-summary-placeholder-icon");
 const resizeHandle = document.querySelector("#resize-handle");
 
 let currentTone = "light";
@@ -205,6 +212,66 @@ function getSearchQuery() {
   return folderNameInput.value.trim().toLowerCase();
 }
 
+function formatSessionDate(value) {
+  if (!value) {
+    return "Unknown time";
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return parsed.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function buildSessionCardSentence(session) {
+  const summarySentence =
+    typeof session.summary === "string" && session.summary.trim()
+      ? session.summary.trim()
+      : "Saved study session";
+  const requestCount = Number.isFinite(session.requestCount)
+    ? session.requestCount
+    : 0;
+  const requestLabel = `${requestCount} request${requestCount === 1 ? "" : "s"}`;
+  const endedAtLabel = formatSessionDate(session.endedAt);
+
+  return `${summarySentence}. ${requestLabel}. Ended ${endedAtLabel}.`;
+}
+
+function openSessionSummary(session) {
+  sessionSummaryTitle.textContent = session.name || "Session Summary";
+  sessionSummaryMeta.textContent = `${Number.isFinite(session.requestCount) ? session.requestCount : 0} request${session.requestCount === 1 ? "" : "s"} • Ended ${formatSessionDate(session.endedAt)}`;
+  sessionSummaryText.textContent =
+    typeof session.summary === "string" && session.summary.trim()
+      ? session.summary.trim()
+      : "No summary was saved for this session.";
+
+  if (typeof session.screenshotPreview === "string" && session.screenshotPreview.startsWith("data:image/")) {
+    sessionSummaryPreviewImage.src = session.screenshotPreview;
+    sessionSummaryPreviewImage.hidden = false;
+    sessionSummaryPlaceholderIcon.hidden = true;
+  } else {
+    sessionSummaryPreviewImage.removeAttribute("src");
+    sessionSummaryPreviewImage.hidden = true;
+    sessionSummaryPlaceholderIcon.hidden = false;
+  }
+
+  sessionSummaryBackdrop.hidden = false;
+}
+
+function closeSessionSummary() {
+  sessionSummaryBackdrop.hidden = true;
+  sessionSummaryPreviewImage.removeAttribute("src");
+  sessionSummaryPreviewImage.hidden = true;
+  sessionSummaryPlaceholderIcon.hidden = false;
+}
+
 function renderBreadcrumbs() {
   const trail = [{ label: "Home", path: [] }];
   let currentChildren = folders;
@@ -274,7 +341,7 @@ function renderFolders() {
     openButton.className = "folder-open-button";
     const isSessionItem = folder.type === "session";
     const metaText = isSessionItem
-      ? folder.summary || folder.endedAt || "Saved session"
+      ? buildSessionCardSentence(folder)
       : `${(folder.children || []).length} item${(folder.children || []).length === 1 ? "" : "s"}`;
 
     openButton.innerHTML = `
@@ -297,7 +364,9 @@ function renderFolders() {
       metaNode.dataset.fitText = "true";
     }
     if (isSessionItem) {
-      openButton.disabled = true;
+      openButton.addEventListener("click", () => {
+        openSessionSummary(folder);
+      });
     } else {
       openButton.addEventListener("click", () => {
         currentPath = [...currentPath, folder.id];
@@ -508,6 +577,12 @@ saveClassModal.addEventListener("click", saveModal);
 classModalBackdrop.addEventListener("click", (event) => {
   if (event.target === classModalBackdrop) {
     closeModal();
+  }
+});
+closeSessionSummaryButton.addEventListener("click", closeSessionSummary);
+sessionSummaryBackdrop.addEventListener("click", (event) => {
+  if (event.target === sessionSummaryBackdrop) {
+    closeSessionSummary();
   }
 });
 
