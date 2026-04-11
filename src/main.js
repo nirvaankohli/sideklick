@@ -1,6 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 require("tsx/cjs");
+const http = require("http");
 const {
   app,
   BrowserWindow,
@@ -22,6 +23,9 @@ const windowsByKey = new Map();
 const windowState = new Map();
 const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
 const LOCAL_API_BASE_URL = "http://127.0.0.1:3001";
+const INCOMING_HTTP_PORT = 4353;
+const INCOMING_HTTP_HOST = "localhost";
+let incomingMessageServer = null;
 
 function getThemePreferencePath() {
   return path.join(app.getPath("userData"), "preferences.json");
@@ -64,7 +68,8 @@ function getPreferenceSnapshot() {
       ? preferences.classFolders
       : [],
     currentSession:
-      preferences.currentSession && typeof preferences.currentSession === "object"
+      preferences.currentSession &&
+      typeof preferences.currentSession === "object"
         ? preferences.currentSession
         : null,
   };
@@ -310,11 +315,77 @@ async function callLocalApi(endpoint, options = {}) {
   return payload;
 }
 
+function readRequestBody(req) {
+  return new Promise((resolve, reject) => {
+    let raw = "";
+    req.setEncoding("utf8");
+    req.on("data", (chunk) => {
+      raw += chunk;
+    });
+    req.on("end", () => resolve(raw));
+    req.on("error", reject);
+  });
+}
+
+function notifyChatWindowIncomingPayload(payload) {
+  const chatWindow = windowsByKey.get("chat");
+  if (chatWindow && !chatWindow.isDestroyed()) {
+    chatWindow.webContents.send("incoming:payload", payload);
+  }
+}
+
+function startIncomingMessageServer() {
+  if (incomingMessageServer) {
+    return;
+  }
+
+  incomingMessageServer = http.createServer(async (req, res) => {
+    if (req.method !== "POST") {
+      res.statusCode = 405;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ ok: false, error: "Method not allowed" }));
+      return;
+    }
+
+    try {
+      const rawBody = await readRequestBody(req);
+      const parsed = rawBody ? JSON.parse(rawBody) : {};
+      const payload = {
+        text: typeof parsed.text === "string" ? parsed.text : "",
+        click_function:
+          typeof parsed.click_function === "string"
+            ? parsed.click_function
+            : "",
+      };
+
+      notifyChatWindowIncomingPayload(payload);
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ ok: true }));
+    } catch {
+      res.statusCode = 400;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ ok: false, error: "Invalid JSON payload" }));
+    }
+  });
+
+  incomingMessageServer.on("error", (error) => {
+    console.error("Incoming message server error:", error);
+  });
+
+  incomingMessageServer.listen(INCOMING_HTTP_PORT, INCOMING_HTTP_HOST, () => {
+    console.log(
+      `Incoming message server listening on http://${INCOMING_HTTP_HOST}:${INCOMING_HTTP_PORT}`,
+    );
+  });
+}
+
 app.whenReady().then(async () => {
   await startLocalBackend();
   const isFirstRun = !hasLaunchedBefore();
   applyThemeSource(readStoredThemeSource());
   createStartupWindows(isFirstRun);
+  startIncomingMessageServer();
   if (isFirstRun) {
     markAppLaunched();
   }
@@ -329,6 +400,11 @@ app.whenReady().then(async () => {
 });
 
 app.on("window-all-closed", () => {
+  if (incomingMessageServer) {
+    incomingMessageServer.close();
+    incomingMessageServer = null;
+  }
+
   if (process.platform !== "darwin") {
     app.quit();
   }

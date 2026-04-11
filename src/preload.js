@@ -9,7 +9,8 @@ contextBridge.exposeInMainWorld("overlayApi", {
   getPreferences: () => ipcRenderer.invoke("preferences:get"),
   updatePreferences: (patch) => ipcRenderer.invoke("preferences:update", patch),
   getClassFolders: () => ipcRenderer.invoke("class-folders:get"),
-  updateClassFolders: (folders) => ipcRenderer.invoke("class-folders:update", folders),
+  updateClassFolders: (folders) =>
+    ipcRenderer.invoke("class-folders:update", folders),
   saveClassProfile: (classProfile) => ipcRenderer.invoke("backend:saveClassProfile", classProfile),
   assist: (payload) => ipcRenderer.invoke("backend:assist", payload),
   submitFeedback: (payload) => ipcRenderer.invoke("backend:feedback", payload),
@@ -19,7 +20,12 @@ contextBridge.exposeInMainWorld("overlayApi", {
   stopSession: () => ipcRenderer.invoke("session:stop"),
   getWindowBounds: () => ipcRenderer.invoke("window:getBounds"),
   resizeWindow: (bounds) => ipcRenderer.invoke("window:resize", bounds),
-  onThemeChanged: (callback) => ipcRenderer.on("theme:changed", (_event, payload) => callback(payload)),
-  onWindowMode: (callback) => ipcRenderer.on("window:mode", (_event, payload) => callback(payload)),
-  onSessionChanged: (callback) => ipcRenderer.on("session:changed", (_event, payload) => callback(payload))
+  onThemeChanged: (callback) =>
+    ipcRenderer.on("theme:changed", (_event, payload) => callback(payload)),
+  onWindowMode: (callback) =>
+    ipcRenderer.on("window:mode", (_event, payload) => callback(payload)),
+  onSessionChanged: (callback) =>
+    ipcRenderer.on("session:changed", (_event, payload) => callback(payload)),
+  onIncomingPayload: (callback) =>
+    ipcRenderer.on("incoming:payload", (_event, payload) => callback(payload)),
 });
