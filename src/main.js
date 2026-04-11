@@ -437,6 +437,7 @@ function appendStoppedSessionToFolders(classFolders, session, persistedSession) 
       id: `session-${persistedSession.id}`,
       type: "session",
       name: session.sessionName || persistedSession.title || "Session",
+      classId: session.classId,
       dbSessionId: persistedSession.id,
       startedAt: persistedSession.startedAt,
       endedAt: persistedSession.endedAt,
@@ -445,6 +446,7 @@ function appendStoppedSessionToFolders(classFolders, session, persistedSession) 
       carryForward: persistedSession.carryForward,
       requestCount: persistedSession.requestCount,
       screenshotPreview: persistedSession.screenshotPreview,
+      keyTopics: persistedSession.keyTopics,
     };
     const dedupedChildren = existingChildren.filter(
       (child) => child?.type !== "session" || child.dbSessionId !== persistedSession.id,
@@ -774,6 +776,13 @@ ipcMain.handle("backend:assist", async (_event, payload) => {
 
 ipcMain.handle("backend:feedback", async (_event, payload) => {
   return callLocalApi("/api/feedback", {
+    method: "POST",
+    body: payload,
+  });
+});
+
+ipcMain.handle("backend:quiz", async (_event, payload) => {
+  return callLocalApi("/api/quiz", {
     method: "POST",
     body: payload,
   });

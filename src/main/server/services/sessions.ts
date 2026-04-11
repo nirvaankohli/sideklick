@@ -164,21 +164,29 @@ function buildSessionSummary(
     ),
   ];
 
-  const summaryParts = [
-    title ? `Session title: ${title}` : null,
-    notes ? `Goal: ${notes}` : null,
-    interactions.length > 0
-      ? `Worked through ${interactions.length} help request${interactions.length === 1 ? "" : "s"}`
-      : "No chat interactions were saved for this session",
+  const topicText =
+    keyTopics.length > 0 ? keyTopics.slice(0, 3).join(", ") : "the class material";
+  const requestCount = interactions.length;
+  const requestLabel = `${requestCount} help request${requestCount === 1 ? "" : "s"}`;
+  const modeText =
     interactionTypes.length > 0
-      ? `Main help modes: ${interactionTypes.join(", ")}`
-      : null,
-    keyTopics.length > 0 ? `Main topics: ${keyTopics.join(", ")}` : null,
-    carryForward ? `Carry forward: ${carryForward}` : null,
-  ].filter(Boolean);
+      ? interactionTypes.join(", ")
+      : "general question support";
+
+  const sentenceOne = title
+    ? `${title} focused on ${topicText}.`
+    : `This session focused on ${topicText}.`;
+  const sentenceTwo = notes
+    ? `The student worked through ${requestLabel} around ${modeText} with the goal of ${notes}.`
+    : `The student worked through ${requestLabel} around ${modeText}.`;
+  const sentenceThree = carryForward
+    ? `The main next step is ${carryForward}.`
+    : keyTopics.length > 0
+      ? `The clearest follow-up is to keep reviewing ${keyTopics[0]}.`
+      : "The clearest follow-up is to continue the next review session from the same point.";
 
   return {
-    summary: summaryParts.join(" | "),
+    summary: [sentenceOne, sentenceTwo, sentenceThree].join(" "),
     keyTopics,
     carryForward,
   };

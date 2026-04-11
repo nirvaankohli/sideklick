@@ -5,6 +5,7 @@ import { getDatabaseCounts, initializeDatabase } from "./db";
 import { assistRouter } from "./routes/assist";
 import { classesRouter } from "./routes/classes";
 import { feedbackRouter } from "./routes/feedback";
+import { quizRouter } from "./routes/quiz";
 
 const DEFAULT_PORT = 3001;
 const DEFAULT_HOST = "127.0.0.1";
@@ -34,6 +35,7 @@ export function createServer(): Express {
   app.use("/api/assist", assistRouter);
   app.use("/api/classes", classesRouter);
   app.use("/api/feedback", feedbackRouter);
+  app.use("/api/quiz", quizRouter);
 
   app.get("/health", (_request, response) => {
     const status: LocalServerStatus = {
