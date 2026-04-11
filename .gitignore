@@ -76,6 +76,15 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+*.db-wal
+big-red-hacks.sqlite
+big-red-hacks.sqlite-shm
+big-red-hacks.sqlite-wal
 
 # Flask stuff:
 instance/
