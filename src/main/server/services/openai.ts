@@ -1,4 +1,7 @@
-import "dotenv/config";
+import fs from "node:fs";
+import path from "node:path";
+
+import dotenv from "dotenv";
 
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
@@ -13,6 +16,24 @@ import type {
 const DEFAULT_OPENAI_MODEL = "gpt-5-mini";
 
 let openAIClient: OpenAI | null = null;
+
+function loadEnvironment(): void {
+  const candidatePaths = [
+    path.resolve(process.cwd(), ".env"),
+    path.resolve(__dirname, "../../../../.env"),
+  ];
+
+  for (const envPath of candidatePaths) {
+    if (!fs.existsSync(envPath)) {
+      continue;
+    }
+
+    dotenv.config({ path: envPath });
+    return;
+  }
+}
+
+loadEnvironment();
 
 function getOpenAIClient(): OpenAI {
   if (openAIClient) {

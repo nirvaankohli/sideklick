@@ -5,6 +5,7 @@ const http = require("http");
 const {
   app,
   BrowserWindow,
+  desktopCapturer,
   ipcMain,
   nativeTheme,
   screen,
@@ -302,17 +303,44 @@ async function callLocalApi(endpoint, options = {}) {
       options.body === undefined ? undefined : JSON.stringify(options.body),
   });
 
-  const payload = await response.json().catch(() => null);
+  const rawText = await response.text();
+  let payload = null;
+  try {
+    payload = rawText ? JSON.parse(rawText) : null;
+  } catch {
+    payload = null;
+  }
 
   if (!response.ok) {
     throw new Error(
       payload && typeof payload.error === "string"
         ? payload.error
-        : `Local API request failed for ${endpoint}`,
+        : rawText || `Local API request failed for ${endpoint}`,
     );
   }
 
   return payload;
+}
+
+async function capturePrimaryDisplayScreenshot() {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.size;
+  const sources = await desktopCapturer.getSources({
+    types: ["screen"],
+    thumbnailSize: {
+      width: Math.max(width, 1),
+      height: Math.max(height, 1),
+    },
+  });
+
+  const matchingSource =
+    sources.find((source) => source.display_id === String(primaryDisplay.id)) ||
+    sources[0];
+  if (!matchingSource || matchingSource.thumbnail.isEmpty()) {
+    throw new Error("Could not capture a screen screenshot.");
+  }
+
+  return matchingSource.thumbnail.toDataURL();
 }
 
 function readRequestBody(req) {
@@ -334,6 +362,34 @@ function notifyChatWindowIncomingPayload(payload) {
   }
 }
 
+function focusOrCreateChatWindow() {
+  let chatWindow = windowsByKey.get("chat");
+  if (chatWindow && !chatWindow.isDestroyed()) {
+    chatWindow.show();
+    chatWindow.focus();
+    return chatWindow;
+  }
+
+  chatWindow = createManagedWindow("chat", "chat");
+  return chatWindow;
+}
+
+function dispatchIncomingPayload(payload) {
+  const chatWindow = focusOrCreateChatWindow();
+  const deliverPayload = () => {
+    if (!chatWindow.isDestroyed()) {
+      chatWindow.webContents.send("incoming:payload", payload);
+    }
+  };
+
+  if (chatWindow.webContents.isLoading()) {
+    chatWindow.webContents.once("did-finish-load", deliverPayload);
+    return;
+  }
+
+  deliverPayload();
+}
+
 function startIncomingMessageServer() {
   if (incomingMessageServer) {
     return;
@@ -351,14 +407,57 @@ function startIncomingMessageServer() {
       const rawBody = await readRequestBody(req);
       const parsed = rawBody ? JSON.parse(rawBody) : {};
       const payload = {
-        text: typeof parsed.text === "string" ? parsed.text : "",
+        action_type:
+          typeof parsed.action_type === "string"
+            ? parsed.action_type
+            : typeof parsed.actionType === "string"
+              ? parsed.actionType
+              : "chat",
+        selected_text:
+          typeof parsed.selected_text === "string"
+            ? parsed.selected_text
+            : typeof parsed.selectedText === "string"
+              ? parsed.selectedText
+              : typeof parsed.text === "string"
+                ? parsed.text
+                : "",
+        surrounding_text:
+          typeof parsed.surrounding_text === "string"
+            ? parsed.surrounding_text
+            : typeof parsed.surroundingText === "string"
+              ? parsed.surroundingText
+              : null,
+        page_title:
+          typeof parsed.page_title === "string"
+            ? parsed.page_title
+            : typeof parsed.pageTitle === "string"
+              ? parsed.pageTitle
+              : "",
+        page_url:
+          typeof parsed.page_url === "string"
+            ? parsed.page_url
+            : typeof parsed.pageUrl === "string"
+              ? parsed.pageUrl
+              : "",
+        user_note:
+          typeof parsed.user_note === "string"
+            ? parsed.user_note
+            : typeof parsed.userNote === "string"
+              ? parsed.userNote
+              : "",
+        screenshot_data_url:
+          typeof parsed.screenshot_data_url === "string"
+            ? parsed.screenshot_data_url
+            : typeof parsed.screenshotDataUrl === "string"
+              ? parsed.screenshotDataUrl
+              : null,
         click_function:
           typeof parsed.click_function === "string"
             ? parsed.click_function
             : "",
       };
 
-      notifyChatWindowIncomingPayload(payload);
+      dispatchIncomingPayload(payload);
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify({ ok: true }));
@@ -528,9 +627,19 @@ ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {
 });
 
 ipcMain.handle("backend:assist", async (_event, payload) => {
+  const screenshotDataUrl = await capturePrimaryDisplayScreenshot().catch(
+    (error) => {
+      console.error("[screen-capture] failed to capture screenshot", error);
+      return payload?.screenshotDataUrl ?? null;
+    },
+  );
+
   return callLocalApi("/api/assist", {
     method: "POST",
-    body: payload,
+    body: {
+      ...payload,
+      screenshotDataUrl,
+    },
   });
 });
 

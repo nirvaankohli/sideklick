@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "SideClick Local Sender",
+  "version": "0.1.0",
+  "description": "Sends SideClick context-menu requests to the local Electron overlay.",
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:4353/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Open SideClick"
+  }
+}
