@@ -1,0 +1,14 @@
+Local backend dependencies for the Electron app
+
+Runtime packages
+- express
+
+Development packages
+- typescript
+- tsx
+- @types/express
+- @types/node
+
+Notes
+- This project installs dependencies with npm, not pip.
+- The actual source of truth is package.json and package-lock.json.

@@ -9,6 +9,18 @@
     "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js"
   },
   "devDependencies": {
-    "electron": "^37.2.0"
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.6.0",
+    "electron": "^37.2.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1",
+    "openai": "^6.34.0",
+    "zod": "^4.3.6"
   }
 }
