@@ -11,6 +11,9 @@ contextBridge.exposeInMainWorld("overlayApi", {
   getClassFolders: () => ipcRenderer.invoke("class-folders:get"),
   updateClassFolders: (folders) =>
     ipcRenderer.invoke("class-folders:update", folders),
+  saveClassProfile: (classProfile) => ipcRenderer.invoke("backend:saveClassProfile", classProfile),
+  assist: (payload) => ipcRenderer.invoke("backend:assist", payload),
+  submitFeedback: (payload) => ipcRenderer.invoke("backend:feedback", payload),
   completeOnboarding: () => ipcRenderer.invoke("onboarding:complete"),
   getCurrentSession: () => ipcRenderer.invoke("session:getCurrent"),
   startSession: (session) => ipcRenderer.invoke("session:start", session),

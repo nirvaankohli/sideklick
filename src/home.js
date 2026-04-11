@@ -102,6 +102,62 @@ async function persistFolders(nextFolders) {
   renderFolders();
 }
 
+function buildBackendClassPayload(values) {
+  const noteParts = [
+    values.description ? `Description: ${values.description}` : null,
+    values.additionalNotes ? `Additional notes: ${values.additionalNotes}` : null,
+  ].filter(Boolean);
+  const teacherFocusParts = [
+    values.teacherName ? `Teacher: ${values.teacherName}` : null,
+    values.teacherNotes ? `Focus: ${values.teacherNotes}` : null,
+  ].filter(Boolean);
+
+  return {
+    className: values.course,
+    subject: values.course,
+    currentUnit: null,
+    teacherFocus: teacherFocusParts.length > 0 ? teacherFocusParts.join(" | ") : null,
+    keyConcepts: [],
+    notes: noteParts.length > 0 ? noteParts.join("\n") : null
+  };
+}
+
+async function ensureBackendClassId(classFolder) {
+  if (!classFolder) {
+    throw new Error("No class folder selected.");
+  }
+
+  if (classFolder.dbClassId) {
+    return classFolder.dbClassId;
+  }
+
+  const result = await window.overlayApi.saveClassProfile(
+    buildBackendClassPayload({
+      course: classFolder.name,
+      teacherName: classFolder.teacherName || "",
+      description: classFolder.description || "",
+      teacherNotes: classFolder.teacherNotes || "",
+      additionalNotes: classFolder.additionalNotes || ""
+    })
+  );
+
+  const parentPath = currentPath.slice(0, -1);
+  const parentNode = getFolderAtPath(parentPath);
+  const siblingFolders = parentNode ? parentNode.children || [] : folders;
+  const nextChildren = siblingFolders.map((item) =>
+    item.id === classFolder.id
+      ? {
+        ...item,
+        dbClassId: result.classProfile.id
+      }
+      : item
+  );
+  const nextFolders = replaceChildrenAtPath(parentPath, nextChildren);
+  await persistFolders(nextFolders);
+
+  return result.classProfile.id;
+}
+
 function getSearchQuery() {
   return folderNameInput.value.trim().toLowerCase();
 }
@@ -244,14 +300,29 @@ async function saveModal() {
       return;
     }
 
+    const teacherName = classTeacherInput.value.trim();
+    const description = classDescriptionInput.value.trim();
+    const teacherNotes = classTeacherNotesInput.value.trim();
+    const additionalNotes = classAdditionalNotesInput.value.trim();
+    const backendResult = await window.overlayApi.saveClassProfile(
+      buildBackendClassPayload({
+        course,
+        teacherName,
+        description,
+        teacherNotes,
+        additionalNotes
+      })
+    );
+
     const nextFolder = {
       id: makeId(),
       type: "class",
       name: course,
-      teacherName: classTeacherInput.value.trim(),
-      description: classDescriptionInput.value.trim(),
-      teacherNotes: classTeacherNotesInput.value.trim(),
-      additionalNotes: classAdditionalNotesInput.value.trim(),
+      dbClassId: backendResult.classProfile.id,
+      teacherName,
+      description,
+      teacherNotes,
+      additionalNotes,
       children: []
     };
     const nextChildren = [...getCurrentChildren(), nextFolder];
@@ -268,15 +339,16 @@ async function saveModal() {
   }
 
   const classFolder = getFolderAtPath(currentPath);
+  const dbClassId = await ensureBackendClassId(classFolder);
   closeModal();
   await window.overlayApi.startSession({
-    classId: classFolder?.id || "",
+    classId: dbClassId,
     className: classFolder?.name || "",
     teacherName: classFolder?.teacherName || "",
     description: classFolder?.description || "",
     teacherNotes: classFolder?.teacherNotes || "",
     additionalNotes: classFolder?.additionalNotes || "",
-    sessionId: makeId(),
+    sessionId: null,
     sessionName,
     sessionNotes: sessionNotesInput.value.trim(),
   });
