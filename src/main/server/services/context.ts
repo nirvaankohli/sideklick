@@ -50,12 +50,23 @@ type InteractionRow = {
   id: number;
   prompt: string;
   response: string | null;
+  interaction_type: string | null;
   created_at: string;
 };
 
 type SessionRow = {
   title: string | null;
   notes: string | null;
+};
+
+type RecentSessionRow = {
+  title: string | null;
+  notes: string | null;
+  summary: string | null;
+  key_topics: string;
+  carry_forward: string | null;
+  ended_at: string | null;
+  started_at: string;
 };
 
 function mapGapRow(row: GapRow): Gap {
@@ -83,6 +94,31 @@ function tokenizeText(text: string): string[] {
     .split(/[^a-z0-9]+/i)
     .map(normalizeToken)
     .filter((token) => token.length >= 3 && !STOP_WORDS.has(token));
+}
+
+function extractTopTokens(textBlocks: Array<string | null | undefined>, limit = 6): string[] {
+  const counts = new Map();
+
+  for (const textBlock of textBlocks) {
+    if (!textBlock) {
+      continue;
+    }
+
+    for (const token of tokenizeText(textBlock)) {
+      counts.set(token, (counts.get(token) || 0) + 1);
+    }
+  }
+
+  return [...counts.entries()]
+    .sort((left, right) => {
+      if (right[1] !== left[1]) {
+        return right[1] - left[1];
+      }
+
+      return left[0].localeCompare(right[0]);
+    })
+    .slice(0, limit)
+    .map(([token]) => token);
 }
 
 function buildKeywordSet(requestInput: AssistRequest): Set<string> {
@@ -268,6 +304,7 @@ function getRecentInteractions(
     const rows = db.prepare(
       `
         SELECT id, prompt, response, created_at
+        , interaction_type
         FROM interactions
         WHERE session_id = ?
         ORDER BY created_at DESC
@@ -279,6 +316,7 @@ function getRecentInteractions(
       id: row.id,
       question: row.prompt,
       response: row.response,
+      interactionType: row.interaction_type,
       createdAt: row.created_at,
     }));
   }
@@ -291,6 +329,7 @@ function getRecentInteractions(
   const rows = db.prepare(
     `
       SELECT id, prompt, response, created_at
+      , interaction_type
       FROM interactions
       WHERE class_id = ?
       ORDER BY created_at DESC
@@ -299,11 +338,62 @@ function getRecentInteractions(
   ).all(classId) as InteractionRow[];
 
   return rows.map((row) => ({
-    id: row.id,
-    question: row.prompt,
-    response: row.response,
-    createdAt: row.created_at,
-  }));
+      id: row.id,
+      question: row.prompt,
+      response: row.response,
+      interactionType: row.interaction_type,
+      createdAt: row.created_at,
+    }));
+}
+
+function buildStudentMemory(
+  recentInteractions: BuiltContext["recentInteractions"],
+  activeGaps: Gap[],
+): BuiltContext["studentMemory"] {
+  const recurringTopics = extractTopTokens([
+    ...recentInteractions.map((interaction) => interaction.question),
+    ...recentInteractions.map((interaction) => interaction.response ?? null),
+    ...activeGaps.map((gap) => gap.topic),
+    ...activeGaps.map((gap) => gap.description ?? null),
+  ]);
+
+  const preferredModeCounts = new Map();
+  for (const interaction of recentInteractions) {
+    if (!interaction.interactionType) {
+      continue;
+    }
+
+    preferredModeCounts.set(
+      interaction.interactionType,
+      (preferredModeCounts.get(interaction.interactionType) || 0) + 1,
+    );
+  }
+
+  const preferredHelpModes = [...preferredModeCounts.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 4)
+    .map(([interactionType]) => interactionType);
+
+  const summaryParts = [
+    recurringTopics.length > 0
+      ? `Recurring topics: ${recurringTopics.join(", ")}`
+      : null,
+    preferredHelpModes.length > 0
+      ? `Usually asks for: ${preferredHelpModes.join(", ")}`
+      : null,
+    activeGaps.length > 0
+      ? `Most active gaps: ${activeGaps.slice(0, 3).map((gap) => gap.topic).join(", ")}`
+      : null,
+  ].filter(Boolean);
+
+  return {
+    recurringTopics,
+    preferredHelpModes,
+    memorySummary:
+      summaryParts.length > 0
+        ? summaryParts.join(" | ")
+        : "Very little prior memory yet.",
+  };
 }
 
 function getSessionGoal(sessionId?: number): string | null {
@@ -325,6 +415,108 @@ function getSessionGoal(sessionId?: number): string | null {
   }
 
   return row.title ?? row.notes ?? null;
+}
+
+function getRecentSessionContext(
+  classId?: number,
+): BuiltContext["recentSessions"] {
+  if (!classId) {
+    return [];
+  }
+
+  const db = getDatabase();
+  const rows = db.prepare(
+    `
+      SELECT title, notes, summary, key_topics, carry_forward, ended_at, started_at
+      FROM sessions
+      WHERE class_id = ?
+      ORDER BY COALESCE(ended_at, started_at) DESC
+      LIMIT 3
+    `,
+  ).all(classId) as RecentSessionRow[];
+
+  return rows.map((row) => ({
+    title: row.title,
+    notes: row.notes,
+    summary: row.summary,
+    keyTopics: JSON.parse(row.key_topics) as string[],
+    carryForward: row.carry_forward,
+    startedAt: row.started_at,
+    endedAt: row.ended_at,
+  }));
+}
+
+function buildContextGuidance(
+  requestInput: AssistRequest,
+): BuiltContext["contextGuidance"] {
+  const combinedRequestText = [
+    requestInput.selectedText,
+    requestInput.surroundingText,
+    requestInput.userNote,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(" ")
+    .toLowerCase();
+  const selfDoubtPatterns = [
+    "i don't know",
+    "i dont know",
+    "not sure",
+    "unsure",
+    "confused",
+    "don't remember",
+    "dont remember",
+    "forget",
+    "might not know",
+    "do i know",
+  ];
+  const reviewPatterns = [
+    "review",
+    "revise",
+    "study",
+    "focus on",
+    "what should i focus on",
+    "what should i review",
+  ];
+  const hasSelfDoubtSignal = selfDoubtPatterns.some((pattern) =>
+    combinedRequestText.includes(pattern),
+  );
+  const isReviewRequest =
+    requestInput.actionType === "focus_page" ||
+    reviewPatterns.some((pattern) => combinedRequestText.includes(pattern));
+
+  const requestPriority = [
+    "Answer the selected text and explicit action first.",
+    requestInput.surroundingText
+      ? "Use surrounding page text to disambiguate the question."
+      : "There is little surrounding text, so avoid over-assuming page context.",
+    requestInput.pageTitle
+      ? `Use page title as lightweight background: ${requestInput.pageTitle}`
+      : "There is no strong page-title context.",
+    requestInput.userNote
+      ? "User note may carry the student's goal or extra constraints."
+      : "There is no extra user note.",
+    hasSelfDoubtSignal
+      ? "The student sounds unsure, so treat that uncertainty as likely evidence of a real gap."
+      : "Do not infer a gap unless the request or memory supports it.",
+    isReviewRequest
+      ? "This is a review-oriented request, so use the most relevant past gaps and unresolved topics."
+      : "Past gaps are supporting context, not the main answer unless they clearly apply.",
+  ];
+
+  const screenshotUsefulness = requestInput.screenshotDataUrl
+    ? requestInput.selectedText.length >= 180 || Boolean(requestInput.surroundingText)
+      ? "A screenshot is available, but it may only be secondary evidence if the text already gives enough detail."
+      : "A screenshot is available and may be important if the ask depends on layout, diagrams, or non-textual cues."
+    : "No screenshot is available.";
+
+  const backgroundUsefulness =
+    "Use class profile, prior sessions, and active gaps when they sharpen the answer. Do not let old memory override the current request.";
+
+  return {
+    requestPriority,
+    screenshotUsefulness,
+    backgroundUsefulness,
+  };
 }
 
 function buildSummary(parts: Array<string | null | undefined>): string {
@@ -352,7 +544,21 @@ export function buildContext(
     resolvedClassId,
     requestInput.sessionId,
   );
+  const recentSessionContext = getRecentSessionContext(resolvedClassId);
+  const studentMemory = buildStudentMemory(recentInteractions, activeGaps);
+  if (recentSessionContext.length > 0) {
+    const sessionSummaries = recentSessionContext
+      .map((session) => session.summary ?? session.carryForward ?? null)
+      .filter((summary): summary is string => Boolean(summary));
+    studentMemory.memorySummary = [
+      studentMemory.memorySummary,
+      sessionSummaries.length > 0
+        ? `Recent sessions: ${sessionSummaries.join(" || ")}`
+        : null,
+    ].join(" | ");
+  }
   const sessionGoal = getSessionGoal(requestInput.sessionId);
+  const contextGuidance = buildContextGuidance(requestInput);
 
   // Keep the summary compact so it can be dropped straight into a model prompt.
   const summary = buildSummary([
@@ -372,14 +578,22 @@ export function buildContext(
     activeGaps.length > 0
       ? `Top gaps: ${activeGaps.map((gap) => gap.topic).join(", ")}`
       : null,
+    studentMemory.memorySummary,
+    recentSessionContext.length > 0
+      ? `Recent session topics: ${recentSessionContext.flatMap((session) => session.keyTopics).slice(0, 6).join(", ")}`
+      : null,
     requestInput.pageTitle ? `Page: ${requestInput.pageTitle}` : null,
     sessionGoal ? `Session goal: ${sessionGoal}` : null,
+    contextGuidance.screenshotUsefulness,
   ]);
 
   return {
     classProfile,
     activeGaps,
     recentInteractions,
+    studentMemory,
+    recentSessions: recentSessionContext,
+    contextGuidance,
     sessionGoal,
     summary,
   };

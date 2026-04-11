@@ -32,6 +32,9 @@ function createTables(db: Database.Database): void {
       ended_at TEXT,
       title TEXT,
       notes TEXT,
+      summary TEXT,
+      key_topics TEXT NOT NULL DEFAULT '[]',
+      carry_forward TEXT,
       FOREIGN KEY (class_id) REFERENCES classes (id)
     );
 
@@ -162,6 +165,27 @@ function ensureGapColumns(db: Database.Database): void {
   }
 }
 
+function ensureSessionColumns(db: Database.Database): void {
+  const columns = db
+    .prepare("PRAGMA table_info(sessions)")
+    .all() as Array<{ name: string }>;
+  const columnNames = new Set(columns.map((column) => column.name));
+
+  if (!columnNames.has("summary")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN summary TEXT;");
+  }
+
+  if (!columnNames.has("key_topics")) {
+    db.exec(
+      "ALTER TABLE sessions ADD COLUMN key_topics TEXT NOT NULL DEFAULT '[]';",
+    );
+  }
+
+  if (!columnNames.has("carry_forward")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN carry_forward TEXT;");
+  }
+}
+
 export function getDatabase(): Database.Database {
   if (database) {
     return database;
@@ -174,6 +198,7 @@ export function getDatabase(): Database.Database {
   ensureClassColumns(database);
   ensureInteractionColumns(database);
   ensureGapColumns(database);
+  ensureSessionColumns(database);
 
   return database;
 }

@@ -35,9 +35,50 @@ let currentTone = "light";
 let folders = [];
 let currentPath = [];
 let currentModalMode = "class";
+let fitTextFrame = null;
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function fitTextToBox(element, minimumFontSize = 11) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  const computedStyle = window.getComputedStyle(element);
+  const baseFontSize =
+    Number.parseFloat(element.dataset.baseFontSize || "") ||
+    Number.parseFloat(computedStyle.fontSize);
+  if (!Number.isFinite(baseFontSize)) {
+    return;
+  }
+
+  element.dataset.baseFontSize = String(baseFontSize);
+  element.style.fontSize = `${baseFontSize}px`;
+
+  let nextFontSize = baseFontSize;
+  while (
+    nextFontSize > minimumFontSize &&
+    (element.scrollWidth > element.clientWidth ||
+      element.scrollHeight > element.clientHeight)
+  ) {
+    nextFontSize -= 0.5;
+    element.style.fontSize = `${nextFontSize}px`;
+  }
+}
+
+function scheduleFitText() {
+  if (fitTextFrame !== null) {
+    window.cancelAnimationFrame(fitTextFrame);
+  }
+
+  fitTextFrame = window.requestAnimationFrame(() => {
+    fitTextFrame = null;
+    document
+      .querySelectorAll("[data-fit-text]")
+      .forEach((element) => fitTextToBox(element));
+  });
 }
 
 function normalizeFolders(source) {
@@ -45,7 +86,9 @@ function normalizeFolders(source) {
     .filter((item) => item.type === "class")
     .map((item) => ({
       ...item,
-      children: [],
+      children: Array.isArray(item.children)
+        ? item.children.filter((child) => child && child.type === "session")
+        : [],
     }));
 }
 
@@ -206,9 +249,7 @@ function renderBreadcrumbs() {
 function renderFolders() {
   const searchQuery = getSearchQuery();
   const currentChildren = getCurrentChildren();
-  const filteredChildren = isInsideClass()
-    ? []
-    : currentChildren;
+  const filteredChildren = currentChildren;
   const visibleChildren = searchQuery
     ? filteredChildren.filter((item) => item.name.toLowerCase().includes(searchQuery))
     : filteredChildren;
@@ -221,7 +262,7 @@ function renderFolders() {
   newFolderButton.textContent = isInsideClass() ? "Start Session" : "Create Class";
   emptyTitle.textContent = isInsideClass() ? "No saved sessions here." : "No classes here yet.";
   emptyCopy.textContent = isInsideClass()
-    ? "Sessions are one-time only. Start a session when you want to jump into chat for this class."
+    ? "Stopped sessions stay here so you can see what you named them and keep track of your study history."
     : "Create a class folder to start organizing courses, notes, and study context.";
 
   for (const folder of visibleChildren) {
@@ -231,19 +272,38 @@ function renderFolders() {
     const openButton = document.createElement("button");
     openButton.type = "button";
     openButton.className = "folder-open-button";
+    const isSessionItem = folder.type === "session";
+    const metaText = isSessionItem
+      ? folder.summary || folder.endedAt || "Saved session"
+      : `${(folder.children || []).length} item${(folder.children || []).length === 1 ? "" : "s"}`;
+
     openButton.innerHTML = `
       <span class="folder-card-icon" aria-hidden="true">
         <svg class="icon-svg" viewBox="0 0 24 24">
-          <path d="M10 4 12 6h8c1.1 0 2 .9 2 2v8.5c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h6z"></path>
+          ${isSessionItem
+            ? '<path d="M7 2h8l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1.5V8h4.5"></path>'
+            : '<path d="M10 4 12 6h8c1.1 0 2 .9 2 2v8.5c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h6z"></path>'}
         </svg>
       </span>
       <span class="folder-card-title">${folder.name}</span>
-      <span class="folder-card-meta">${`${(folder.children || []).length} item${(folder.children || []).length === 1 ? "" : "s"}`}</span>
+      <span class="folder-card-meta">${metaText}</span>
     `;
-    openButton.addEventListener("click", () => {
-      currentPath = [...currentPath, folder.id];
-      renderFolders();
-    });
+    const titleNode = openButton.querySelector(".folder-card-title");
+    const metaNode = openButton.querySelector(".folder-card-meta");
+    if (titleNode instanceof HTMLElement) {
+      titleNode.dataset.fitText = "true";
+    }
+    if (metaNode instanceof HTMLElement) {
+      metaNode.dataset.fitText = "true";
+    }
+    if (isSessionItem) {
+      openButton.disabled = true;
+    } else {
+      openButton.addEventListener("click", () => {
+        currentPath = [...currentPath, folder.id];
+        renderFolders();
+      });
+    }
 
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
@@ -262,8 +322,10 @@ function renderFolders() {
 
     article.append(openButton, deleteButton);
 
-    folderGrid.appendChild(article);
-  }
+      folderGrid.appendChild(article);
+    }
+
+  scheduleFitText();
 }
 
 function openModal(mode) {
@@ -451,6 +513,10 @@ classModalBackdrop.addEventListener("click", (event) => {
 
 window.overlayApi.onThemeChanged(applyThemeState);
 window.overlayApi.onWindowMode(({ mode }) => setMode(mode));
+window.overlayApi.onClassFoldersChanged((nextFolders) => {
+  folders = normalizeFolders(Array.isArray(nextFolders) ? nextFolders : []);
+  renderFolders();
+});
 
 window.addEventListener("DOMContentLoaded", async () => {
   const storedFolders = await window.overlayApi.getClassFolders();
@@ -467,3 +533,5 @@ window.addEventListener("DOMContentLoaded", async () => {
   renderFolders();
   attachResizeHandle(resizeHandle);
 });
+
+window.addEventListener("resize", scheduleFitText);

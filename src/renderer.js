@@ -25,11 +25,248 @@ const ACTION_LABELS = {
 };
 const STREAM_CHUNK_SIZE = 3;
 const STREAM_INTERVAL_MS = 22;
+const THUMBS_UP = "\uD83D\uDC4D";
+const THUMBS_DOWN = "\uD83D\uDC4E";
 
 let currentTone = "light";
 let currentSession = null;
 let screenshotDataUrl = null;
 let screenshotStatusRow = null;
+let fitTextFrame = null;
+
+function fitTextToBox(element, minimumFontSize = 11) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  const computedStyle = window.getComputedStyle(element);
+  const baseFontSize =
+    Number.parseFloat(element.dataset.baseFontSize || "") ||
+    Number.parseFloat(computedStyle.fontSize);
+  if (!Number.isFinite(baseFontSize)) {
+    return;
+  }
+
+  element.dataset.baseFontSize = String(baseFontSize);
+  element.style.fontSize = `${baseFontSize}px`;
+
+  let nextFontSize = baseFontSize;
+  while (
+    nextFontSize > minimumFontSize &&
+    (element.scrollWidth > element.clientWidth ||
+      element.scrollHeight > element.clientHeight)
+  ) {
+    nextFontSize -= 0.5;
+    element.style.fontSize = `${nextFontSize}px`;
+  }
+}
+
+function scheduleFitText() {
+  if (fitTextFrame !== null) {
+    window.cancelAnimationFrame(fitTextFrame);
+  }
+
+  fitTextFrame = window.requestAnimationFrame(() => {
+    fitTextFrame = null;
+    document
+      .querySelectorAll("[data-fit-text]")
+      .forEach((element) => fitTextToBox(element));
+  });
+}
+
+function escapeHtml(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function renderInlineMarkdown(source) {
+  const codeSpans = [];
+  const withCodePlaceholders = source.replace(/`([^`]+)`/g, (_match, code) => {
+    const placeholder = `@@CODE${codeSpans.length}@@`;
+    codeSpans.push(`<code>${escapeHtml(code)}</code>`);
+    return placeholder;
+  });
+
+  const rendered = escapeHtml(withCodePlaceholders)
+    .replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noreferrer">$1</a>',
+    )
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+    .replace(/~~([^~]+)~~/g, "<del>$1</del>");
+
+  return rendered.replace(/@@CODE(\d+)@@/g, (_match, indexText) => {
+    return codeSpans[Number(indexText)] || "";
+  });
+}
+
+function renderMarkdown(source) {
+  const normalized = source.replace(/\r\n/g, "\n").trim();
+  if (!normalized) {
+    return "";
+  }
+
+  const lines = normalized.split("\n");
+  const blocks = [];
+  let paragraphLines = [];
+  let listType = null;
+  let listItems = [];
+  let blockquoteLines = [];
+  let inCodeFence = false;
+  let codeFenceLanguage = "";
+  let codeFenceLines = [];
+
+  const flushParagraph = () => {
+    if (paragraphLines.length === 0) {
+      return;
+    }
+
+    blocks.push(
+      `<p>${renderInlineMarkdown(paragraphLines.join(" ")).replace(/\n/g, "<br>")}</p>`,
+    );
+    paragraphLines = [];
+  };
+
+  const flushList = () => {
+    if (!listType || listItems.length === 0) {
+      listType = null;
+      listItems = [];
+      return;
+    }
+
+    blocks.push(
+      `<${listType}>${listItems
+        .map((item) => `<li>${renderInlineMarkdown(item)}</li>`)
+        .join("")}</${listType}>`,
+    );
+    listType = null;
+    listItems = [];
+  };
+
+  const flushBlockquote = () => {
+    if (blockquoteLines.length === 0) {
+      return;
+    }
+
+    blocks.push(
+      `<blockquote>${blockquoteLines
+        .map((line) => `<p>${renderInlineMarkdown(line)}</p>`)
+        .join("")}</blockquote>`,
+    );
+    blockquoteLines = [];
+  };
+
+  const flushCodeFence = () => {
+    blocks.push(
+      `<pre><code${codeFenceLanguage ? ` data-language="${escapeHtml(codeFenceLanguage)}"` : ""}>${escapeHtml(codeFenceLines.join("\n"))}</code></pre>`,
+    );
+    inCodeFence = false;
+    codeFenceLanguage = "";
+    codeFenceLines = [];
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (inCodeFence) {
+      if (trimmed.startsWith("```")) {
+        flushCodeFence();
+      } else {
+        codeFenceLines.push(line);
+      }
+      continue;
+    }
+
+    if (trimmed.startsWith("```")) {
+      flushParagraph();
+      flushList();
+      flushBlockquote();
+      inCodeFence = true;
+      codeFenceLanguage = trimmed.slice(3).trim();
+      codeFenceLines = [];
+      continue;
+    }
+
+    if (!trimmed) {
+      flushParagraph();
+      flushList();
+      flushBlockquote();
+      continue;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,3})\s+(.*)$/);
+    if (headingMatch) {
+      flushParagraph();
+      flushList();
+      flushBlockquote();
+      const level = headingMatch[1].length;
+      blocks.push(
+        `<h${level}>${renderInlineMarkdown(headingMatch[2])}</h${level}>`,
+      );
+      continue;
+    }
+
+    if (/^---+$/.test(trimmed)) {
+      flushParagraph();
+      flushList();
+      flushBlockquote();
+      blocks.push("<hr>");
+      continue;
+    }
+
+    const unorderedMatch = trimmed.match(/^[-*]\s+(.*)$/);
+    if (unorderedMatch) {
+      flushParagraph();
+      flushBlockquote();
+      if (listType && listType !== "ul") {
+        flushList();
+      }
+      listType = "ul";
+      listItems.push(unorderedMatch[1]);
+      continue;
+    }
+
+    const orderedMatch = trimmed.match(/^\d+\.\s+(.*)$/);
+    if (orderedMatch) {
+      flushParagraph();
+      flushBlockquote();
+      if (listType && listType !== "ol") {
+        flushList();
+      }
+      listType = "ol";
+      listItems.push(orderedMatch[1]);
+      continue;
+    }
+
+    const blockquoteMatch = trimmed.match(/^>\s?(.*)$/);
+    if (blockquoteMatch) {
+      flushParagraph();
+      flushList();
+      blockquoteLines.push(blockquoteMatch[1]);
+      continue;
+    }
+
+    paragraphLines.push(trimmed);
+  }
+
+  flushParagraph();
+  flushList();
+  flushBlockquote();
+  if (inCodeFence) {
+    flushCodeFence();
+  }
+
+  return blocks.join("");
+}
+
+function setAssistantMessageContent(container, copy) {
+  container.innerHTML = renderMarkdown(copy);
+}
 
 function applyThemeState({ shouldUseDarkColors }) {
   currentTone = shouldUseDarkColors ? "dark" : "light";
@@ -40,58 +277,69 @@ function setMode(mode) {
   root.dataset.mode = mode;
 }
 
+function createFeedbackRow(interactionId) {
+  const feedbackRow = document.createElement("div");
+  feedbackRow.className = "chat-feedback-row";
+
+  const helpfulButton = document.createElement("button");
+  helpfulButton.type = "button";
+  helpfulButton.className = "ghost-button feedback-icon-button";
+  helpfulButton.textContent = THUMBS_UP;
+  helpfulButton.setAttribute("aria-label", "Helpful");
+  helpfulButton.addEventListener("click", async () => {
+    await window.overlayApi.submitFeedback({
+      interactionId,
+      helped: true,
+    });
+    feedbackRow.replaceChildren(document.createTextNode("Feedback saved."));
+  });
+
+  const notHelpfulButton = document.createElement("button");
+  notHelpfulButton.type = "button";
+  notHelpfulButton.className = "ghost-button feedback-icon-button";
+  notHelpfulButton.textContent = THUMBS_DOWN;
+  notHelpfulButton.setAttribute("aria-label", "Not helpful");
+  notHelpfulButton.addEventListener("click", async () => {
+    await window.overlayApi.submitFeedback({
+      interactionId,
+      helped: false,
+    });
+    feedbackRow.replaceChildren(document.createTextNode("Feedback saved."));
+  });
+
+  feedbackRow.append(helpfulButton, notHelpfulButton);
+  return feedbackRow;
+}
+
 function addMessage(role, copy, options = {}) {
   const article = document.createElement("article");
   article.className = `chat-message ${role}`;
 
-  const paragraph = document.createElement("p");
-  paragraph.className = "chat-message-copy";
-  paragraph.textContent = copy;
-  article.appendChild(paragraph);
+  const content = document.createElement("div");
+  content.className = "chat-message-copy";
+  if (role === "assistant") {
+    setAssistantMessageContent(content, copy);
+  } else {
+    content.textContent = copy;
+  }
+  content.dataset.fitText = "true";
+  article.appendChild(content);
 
   if (options.meta) {
     const meta = document.createElement("p");
     meta.className = "chat-message-meta";
     meta.textContent = options.meta;
+    meta.dataset.fitText = "true";
     article.appendChild(meta);
   }
 
   if (role === "assistant" && options.interactionId) {
-    const feedbackRow = document.createElement("div");
-    feedbackRow.className = "chat-feedback-row";
-
-    const helpfulButton = document.createElement("button");
-    helpfulButton.type = "button";
-    helpfulButton.className = "ghost-button feedback-icon-button";
-    helpfulButton.textContent = "👍";
-    helpfulButton.setAttribute("aria-label", "Helpful");
-    helpfulButton.addEventListener("click", async () => {
-      await window.overlayApi.submitFeedback({
-        interactionId: options.interactionId,
-        helped: true,
-      });
-      feedbackRow.replaceChildren(document.createTextNode("Feedback saved."));
-    });
-
-    const notHelpfulButton = document.createElement("button");
-    notHelpfulButton.type = "button";
-    notHelpfulButton.className = "ghost-button feedback-icon-button";
-    notHelpfulButton.textContent = "👎";
-    notHelpfulButton.setAttribute("aria-label", "Not helpful");
-    notHelpfulButton.addEventListener("click", async () => {
-      await window.overlayApi.submitFeedback({
-        interactionId: options.interactionId,
-        helped: false,
-      });
-      feedbackRow.replaceChildren(document.createTextNode("Feedback saved."));
-    });
-
-    feedbackRow.append(helpfulButton, notHelpfulButton);
-    article.appendChild(feedbackRow);
+    article.appendChild(createFeedbackRow(options.interactionId));
   }
 
   chatThread.appendChild(article);
   chatThread.scrollTop = chatThread.scrollHeight;
+  scheduleFitText();
   return article;
 }
 
@@ -103,9 +351,10 @@ function addIncomingPayloadMessage(text) {
   const article = document.createElement("article");
   article.className = "chat-message user incoming-payload";
 
-  const codeCopy = document.createElement("p");
+  const codeCopy = document.createElement("div");
   codeCopy.className = "chat-message-copy incoming-payload-text";
-  codeCopy.textContent = text;
+  codeCopy.textContent = text.trim();
+  codeCopy.dataset.fitText = "true";
   article.appendChild(codeCopy);
 
   const pastedBadge = document.createElement("span");
@@ -115,6 +364,7 @@ function addIncomingPayloadMessage(text) {
 
   chatThread.appendChild(article);
   chatThread.scrollTop = chatThread.scrollHeight;
+  scheduleFitText();
   return article;
 }
 
@@ -125,9 +375,11 @@ function createPendingAssistantMessage(label) {
   const meta = document.createElement("p");
   meta.className = "chat-message-meta";
   meta.textContent = label;
+  meta.dataset.fitText = "true";
 
-  const paragraph = document.createElement("p");
+  const paragraph = document.createElement("div");
   paragraph.className = "chat-message-copy";
+  paragraph.dataset.fitText = "true";
 
   const thinking = document.createElement("span");
   thinking.className = "thinking-indicator";
@@ -137,6 +389,7 @@ function createPendingAssistantMessage(label) {
   article.append(meta, paragraph);
   chatThread.appendChild(article);
   chatThread.scrollTop = chatThread.scrollHeight;
+  scheduleFitText();
 
   return {
     article,
@@ -151,6 +404,7 @@ async function streamTextToParagraph(paragraph, text) {
   for (let index = 0; index < text.length; index += STREAM_CHUNK_SIZE) {
     paragraph.textContent += text.slice(index, index + STREAM_CHUNK_SIZE);
     chatThread.scrollTop = chatThread.scrollHeight;
+    scheduleFitText();
     await new Promise((resolve) => {
       window.setTimeout(resolve, STREAM_INTERVAL_MS);
     });
@@ -160,6 +414,7 @@ async function streamTextToParagraph(paragraph, text) {
 async function resolvePendingAssistantMessage(pendingMessage, result) {
   pendingMessage.article.classList.remove("pending");
   await streamTextToParagraph(pendingMessage.paragraph, result.answer);
+  setAssistantMessageContent(pendingMessage.paragraph, result.answer);
 
   if (result.nextStep) {
     pendingMessage.meta.textContent = `Next: ${result.nextStep}`;
@@ -168,37 +423,7 @@ async function resolvePendingAssistantMessage(pendingMessage, result) {
   }
 
   if (result.interactionId) {
-    const feedbackRow = document.createElement("div");
-    feedbackRow.className = "chat-feedback-row";
-
-    const helpfulButton = document.createElement("button");
-    helpfulButton.type = "button";
-    helpfulButton.className = "ghost-button feedback-icon-button";
-    helpfulButton.textContent = "👍";
-    helpfulButton.setAttribute("aria-label", "Helpful");
-    helpfulButton.addEventListener("click", async () => {
-      await window.overlayApi.submitFeedback({
-        interactionId: result.interactionId,
-        helped: true,
-      });
-      feedbackRow.replaceChildren(document.createTextNode("Feedback saved."));
-    });
-
-    const notHelpfulButton = document.createElement("button");
-    notHelpfulButton.type = "button";
-    notHelpfulButton.className = "ghost-button feedback-icon-button";
-    notHelpfulButton.textContent = "👎";
-    notHelpfulButton.setAttribute("aria-label", "Not helpful");
-    notHelpfulButton.addEventListener("click", async () => {
-      await window.overlayApi.submitFeedback({
-        interactionId: result.interactionId,
-        helped: false,
-      });
-      feedbackRow.replaceChildren(document.createTextNode("Feedback saved."));
-    });
-
-    feedbackRow.append(helpfulButton, notHelpfulButton);
-    pendingMessage.article.appendChild(feedbackRow);
+    pendingMessage.article.appendChild(createFeedbackRow(result.interactionId));
   }
 }
 
@@ -375,10 +600,16 @@ async function executeAssistRequest(normalizedPayload) {
     return;
   }
 
-  addMessage("user", normalizedPayload.actionLabel);
+  if (normalizedPayload.actionType === "chat") {
+    addMessage("user", normalizedPayload.selectedText.trim());
+  } else {
+    addMessage("user", normalizedPayload.actionLabel);
+  }
+
   if (normalizedPayload.actionType !== "chat" && normalizedPayload.selectedText) {
     addIncomingPayloadMessage(normalizedPayload.selectedText);
   }
+
   const pendingMessage = createPendingAssistantMessage(
     `${normalizedPayload.actionLabel}...`,
   );
@@ -419,11 +650,15 @@ function applySession(session) {
   if (!session) {
     sessionClassLabel.textContent = "No active class";
     sessionNameLabel.textContent = "No active session";
+    scheduleFitText();
     return;
   }
 
   sessionClassLabel.textContent = session.className || "Class";
   sessionNameLabel.textContent = session.sessionName || "Session";
+  sessionClassLabel.dataset.fitText = "true";
+  sessionNameLabel.dataset.fitText = "true";
+  scheduleFitText();
 }
 
 function attachResizeHandle(handle) {
@@ -546,3 +781,4 @@ window.addEventListener("DOMContentLoaded", async () => {
   renderScreenshotStatus();
 });
 
+window.addEventListener("resize", scheduleFitText);

@@ -56,11 +56,28 @@ function getOpenAIModel(): string {
 function buildSystemPrompt(): string {
   return [
     "You are a study assistant inside a local Electron app.",
-    "Use the provided class context, browser selection metadata, and optional screenshot to help the student.",
-    "Return concise, actionable help.",
+    "Use the provided class context, browser selection metadata, optional screenshot, recent session summaries, and saved student memory to help the student.",
+    "Answer the student's exact prompt directly and as briefly as possible while still being useful.",
+    "Lead with the answer, not a preamble.",
+    "Write the response in clean Markdown.",
+    "Use Markdown like a real markdown answer: short headings only when needed, tight bullets, blockquotes only when quoting, and fenced code blocks only for code.",
+    "Make the response as clear as possible.",
+    "Prefer 2 to 5 short sentences unless the request clearly needs more.",
+    "Treat context sources differently: the current selected text and action are highest priority, surrounding text and page metadata come next, older memory is supporting context.",
+    "Decide whether the screenshot actually matters. Use it when visual layout, diagrams, equations, tables, or non-text clues matter. Ignore it when the text alone is enough.",
+    "Use background information only when it improves the answer or avoids repeating past confusion.",
+    "If the action asks for an example, give an example quickly instead of explaining at length first.",
+    "If the action asks to connect to prior knowledge, explicitly connect to the closest known concept from memory.",
+    "If the action is flag_confusing, already_know, or add_notes, respond briefly and directly to that action.",
+    "When the student sounds unsure, doubtful, or says they might not know something, treat that as meaningful evidence of a likely gap.",
+    "If the student asks to review, revise, or focus on what to study, surface the most relevant past gaps first.",
+    "Use the saved student memory to stay consistent with what the student has struggled with before.",
+    "Use recent session summaries and carry-forward items to remember what happened before this session.",
     "Possible gaps should only include likely recurring weak spots supported by the context or the current request.",
     "Keep possible_gaps empty when there is not enough evidence.",
     "next_step should be one concrete thing the student should do immediately.",
+    "Do not give filler, throat-clearing, or generic encouragement.",
+    "Do not solve graded work outright if the request appears to ask for a final answer; explain the idea instead.",
   ].join(" ");
 }
 
@@ -81,6 +98,16 @@ function buildUserTextPayload(
         session_id: requestInput.sessionId ?? null,
         class_id: requestInput.classId ?? null,
       },
+      response_style: {
+        desired_tone: "direct, concise, specific",
+        answer_first: true,
+        avoid_filler: true,
+        markdown: true,
+        maximize_clarity: true,
+        render_like_real_markdown: true,
+        treat_self_doubt_as_gap_signal: true,
+        prioritize_past_gaps_for_review_requests: true,
+      },
       built_context: builtContext,
     },
     null,
@@ -93,7 +120,17 @@ export async function requestAssistFromOpenAI(
   requestInput: AssistRequest,
 ): Promise<ModelAssistOutput> {
   const client = getOpenAIClient();
-  const userContent = [
+  const userContent: Array<
+    | {
+        type: "input_text";
+        text: string;
+      }
+    | {
+        type: "input_image";
+        image_url: string;
+        detail: "auto";
+      }
+  > = [
     {
       type: "input_text" as const,
       text: buildUserTextPayload(builtContext, requestInput),
@@ -104,6 +141,7 @@ export async function requestAssistFromOpenAI(
     userContent.push({
       type: "input_image",
       image_url: requestInput.screenshotDataUrl,
+      detail: "auto",
     });
   }
 
