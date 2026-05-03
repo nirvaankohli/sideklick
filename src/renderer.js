@@ -321,15 +321,17 @@ function addMessage(role, copy, options = {}) {
     setAssistantMessageContent(content, copy);
   } else {
     content.textContent = copy;
+    content.dataset.fitText = "true";
   }
-  content.dataset.fitText = "true";
   article.appendChild(content);
 
   if (options.meta) {
     const meta = document.createElement("p");
     meta.className = "chat-message-meta";
     meta.textContent = options.meta;
-    meta.dataset.fitText = "true";
+    if (role !== "assistant") {
+      meta.dataset.fitText = "true";
+    }
     article.appendChild(meta);
   }
 
@@ -375,11 +377,9 @@ function createPendingAssistantMessage(label) {
   const meta = document.createElement("p");
   meta.className = "chat-message-meta";
   meta.textContent = label;
-  meta.dataset.fitText = "true";
 
   const paragraph = document.createElement("div");
   paragraph.className = "chat-message-copy";
-  paragraph.dataset.fitText = "true";
 
   const thinking = document.createElement("span");
   thinking.className = "thinking-indicator";

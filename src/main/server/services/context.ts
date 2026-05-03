@@ -65,9 +65,36 @@ type RecentSessionRow = {
   summary: string | null;
   key_topics: string;
   carry_forward: string | null;
+  request_count: number;
   ended_at: string | null;
   started_at: string;
 };
+
+function uniqueOrdered(items: string[], limit?: number): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const item of items) {
+    const normalized = item.trim();
+    if (!normalized) {
+      continue;
+    }
+
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    result.push(normalized);
+
+    if (limit && result.length >= limit) {
+      break;
+    }
+  }
+
+  return result;
+}
 
 function mapGapRow(row: GapRow): Gap {
   return {
@@ -348,6 +375,7 @@ function getRecentInteractions(
 
 function buildStudentMemory(
   recentInteractions: BuiltContext["recentInteractions"],
+  recentSessions: BuiltContext["recentSessions"],
   activeGaps: Gap[],
 ): BuiltContext["studentMemory"] {
   const recurringTopics = extractTopTokens([
@@ -374,6 +402,20 @@ function buildStudentMemory(
     .slice(0, 4)
     .map(([interactionType]) => interactionType);
 
+  const gapKeywords = new Set(
+    activeGaps.flatMap((gap) => tokenizeText([gap.topic, gap.description].filter(Boolean).join(" "))),
+  );
+  const knownStrengths = uniqueOrdered(
+    recentSessions
+      .flatMap((session) => session.keyTopics)
+      .filter((topic) => !gapKeywords.has(topic.toLowerCase())),
+    6,
+  );
+  const recentCoverage = uniqueOrdered(
+    recentSessions.flatMap((session) => session.keyTopics),
+    8,
+  );
+
   const summaryParts = [
     recurringTopics.length > 0
       ? `Recurring topics: ${recurringTopics.join(", ")}`
@@ -381,14 +423,21 @@ function buildStudentMemory(
     preferredHelpModes.length > 0
       ? `Usually asks for: ${preferredHelpModes.join(", ")}`
       : null,
+    knownStrengths.length > 0
+      ? `Known strengths or covered ideas: ${knownStrengths.join(", ")}`
+      : null,
     activeGaps.length > 0
       ? `Most active gaps: ${activeGaps.slice(0, 3).map((gap) => gap.topic).join(", ")}`
+      : null,
+    recentCoverage.length > 0
+      ? `Recently covered: ${recentCoverage.join(", ")}`
       : null,
   ].filter(Boolean);
 
   return {
     recurringTopics,
     preferredHelpModes,
+    knownStrengths,
     memorySummary:
       summaryParts.length > 0
         ? summaryParts.join(" | ")
@@ -428,6 +477,7 @@ function getRecentSessionContext(
   const rows = db.prepare(
     `
       SELECT title, notes, summary, key_topics, carry_forward, ended_at, started_at
+      , request_count
       FROM sessions
       WHERE class_id = ?
       ORDER BY COALESCE(ended_at, started_at) DESC
@@ -435,15 +485,32 @@ function getRecentSessionContext(
     `,
   ).all(classId) as RecentSessionRow[];
 
-  return rows.map((row) => ({
-    title: row.title,
-    notes: row.notes,
-    summary: row.summary,
-    keyTopics: JSON.parse(row.key_topics) as string[],
-    carryForward: row.carry_forward,
-    startedAt: row.started_at,
-    endedAt: row.ended_at,
-  }));
+  return rows.map((row) => {
+    const keyTopics = JSON.parse(row.key_topics) as string[];
+    const requestLabel = `${row.request_count} request${row.request_count === 1 ? "" : "s"}`;
+    const detailedParts = [
+      row.title ? `Session: ${row.title}` : "Session available",
+      row.summary ? `Summary: ${row.summary}` : null,
+      keyTopics.length > 0 ? `Covered topics: ${keyTopics.join(", ")}` : null,
+      row.carry_forward ? `Carry forward: ${row.carry_forward}` : null,
+      `Workload: ${requestLabel}`,
+      row.ended_at
+        ? `Ended: ${row.ended_at}`
+        : `Started: ${row.started_at}`,
+    ].filter((part): part is string => Boolean(part));
+
+    return {
+      title: row.title,
+      notes: row.notes,
+      summary: row.summary,
+      keyTopics,
+      carryForward: row.carry_forward,
+      requestCount: row.request_count,
+      detailedContext: detailedParts.join(" | "),
+      startedAt: row.started_at,
+      endedAt: row.ended_at,
+    };
+  });
 }
 
 function buildContextGuidance(
@@ -545,11 +612,13 @@ export function buildContext(
     requestInput.sessionId,
   );
   const recentSessionContext = getRecentSessionContext(resolvedClassId);
-  const studentMemory = buildStudentMemory(recentInteractions, activeGaps);
+  const studentMemory = buildStudentMemory(
+    recentInteractions,
+    recentSessionContext,
+    activeGaps,
+  );
   if (recentSessionContext.length > 0) {
-    const sessionSummaries = recentSessionContext
-      .map((session) => session.summary ?? session.carryForward ?? null)
-      .filter((summary): summary is string => Boolean(summary));
+    const sessionSummaries = recentSessionContext.map((session) => session.detailedContext);
     studentMemory.memorySummary = [
       studentMemory.memorySummary,
       sessionSummaries.length > 0
@@ -577,6 +646,9 @@ export function buildContext(
       : null,
     activeGaps.length > 0
       ? `Top gaps: ${activeGaps.map((gap) => gap.topic).join(", ")}`
+      : null,
+    studentMemory.knownStrengths.length > 0
+      ? `Known strengths: ${studentMemory.knownStrengths.join(", ")}`
       : null,
     studentMemory.memorySummary,
     recentSessionContext.length > 0

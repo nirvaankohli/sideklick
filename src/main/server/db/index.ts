@@ -35,6 +35,8 @@ function createTables(db: Database.Database): void {
       summary TEXT,
       key_topics TEXT NOT NULL DEFAULT '[]',
       carry_forward TEXT,
+      request_count INTEGER NOT NULL DEFAULT 0,
+      screenshot_preview TEXT,
       FOREIGN KEY (class_id) REFERENCES classes (id)
     );
 
@@ -183,6 +185,16 @@ function ensureSessionColumns(db: Database.Database): void {
 
   if (!columnNames.has("carry_forward")) {
     db.exec("ALTER TABLE sessions ADD COLUMN carry_forward TEXT;");
+  }
+
+  if (!columnNames.has("request_count")) {
+    db.exec(
+      "ALTER TABLE sessions ADD COLUMN request_count INTEGER NOT NULL DEFAULT 0;",
+    );
+  }
+
+  if (!columnNames.has("screenshot_preview")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN screenshot_preview TEXT;");
   }
 }
 

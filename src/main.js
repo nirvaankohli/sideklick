@@ -34,7 +34,13 @@ const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
 const LOCAL_API_BASE_URL = "http://127.0.0.1:3001";
 const INCOMING_HTTP_PORT = 4353;
 const INCOMING_HTTP_HOST = "localhost";
+const MAX_SCREENSHOT_EDGE = 1280;
+const SCREENSHOT_JPEG_QUALITY = 72;
 let incomingMessageServer = null;
+
+function getAppLogoPath() {
+  return path.join(process.cwd(), "assets", "images", "logo", "logo.png");
+}
 
 function getThemePreferencePath() {
   return path.join(app.getPath("userData"), "preferences.json");
@@ -242,6 +248,7 @@ function createManagedWindow(
     ...bounds,
     minWidth,
     minHeight,
+    icon: getAppLogoPath(),
     frame: browserWindow.frame,
     transparent: browserWindow.transparent,
     backgroundColor: "#00000000",
@@ -333,11 +340,15 @@ async function callLocalApi(endpoint, options = {}) {
 async function capturePrimaryDisplayScreenshot() {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.size;
+  const maxDimension = Math.max(width, height, 1);
+  const scale = Math.min(1, MAX_SCREENSHOT_EDGE / maxDimension);
+  const captureWidth = Math.max(Math.round(width * scale), 1);
+  const captureHeight = Math.max(Math.round(height * scale), 1);
   const sources = await desktopCapturer.getSources({
     types: ["screen"],
     thumbnailSize: {
-      width: Math.max(width, 1),
-      height: Math.max(height, 1),
+      width: captureWidth,
+      height: captureHeight,
     },
   });
 
@@ -348,7 +359,30 @@ async function capturePrimaryDisplayScreenshot() {
     throw new Error("Could not capture a screen screenshot.");
   }
 
-  return matchingSource.thumbnail.toDataURL();
+  const resizedThumbnail =
+    matchingSource.thumbnail.getSize().width > captureWidth ||
+    matchingSource.thumbnail.getSize().height > captureHeight
+      ? matchingSource.thumbnail.resize({
+          width: captureWidth,
+          height: captureHeight,
+          quality: "good",
+        })
+      : matchingSource.thumbnail;
+
+  return `data:image/jpeg;base64,${resizedThumbnail
+    .toJPEG(SCREENSHOT_JPEG_QUALITY)
+    .toString("base64")}`;
+}
+
+function shouldCaptureAutomaticScreenshot(payload) {
+  if (payload?.screenshotDataUrl) {
+    return false;
+  }
+
+  const actionType =
+    typeof payload?.actionType === "string" ? payload.actionType.trim() : "";
+
+  return actionType && actionType !== "chat";
 }
 
 function readRequestBody(req) {
@@ -408,12 +442,16 @@ function appendStoppedSessionToFolders(classFolders, session, persistedSession) 
       id: `session-${persistedSession.id}`,
       type: "session",
       name: session.sessionName || persistedSession.title || "Session",
+      classId: session.classId,
       dbSessionId: persistedSession.id,
       startedAt: persistedSession.startedAt,
       endedAt: persistedSession.endedAt,
       notes: persistedSession.notes,
       summary: persistedSession.summary,
       carryForward: persistedSession.carryForward,
+      requestCount: persistedSession.requestCount,
+      screenshotPreview: persistedSession.screenshotPreview,
+      keyTopics: persistedSession.keyTopics,
     };
     const dedupedChildren = existingChildren.filter(
       (child) => child?.type !== "session" || child.dbSessionId !== persistedSession.id,
@@ -722,12 +760,15 @@ ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {
 });
 
 ipcMain.handle("backend:assist", async (_event, payload) => {
-  const screenshotDataUrl = await capturePrimaryDisplayScreenshot().catch(
-    (error) => {
-      console.error("[screen-capture] failed to capture screenshot", error);
-      return payload?.screenshotDataUrl ?? null;
-    },
-  );
+  let screenshotDataUrl = payload?.screenshotDataUrl ?? null;
+  if (shouldCaptureAutomaticScreenshot(payload)) {
+    screenshotDataUrl = await capturePrimaryDisplayScreenshot().catch(
+      (error) => {
+        console.error("[screen-capture] failed to capture screenshot", error);
+        return screenshotDataUrl;
+      },
+    );
+  }
 
   return callLocalApi("/api/assist", {
     method: "POST",
@@ -740,6 +781,13 @@ ipcMain.handle("backend:assist", async (_event, payload) => {
 
 ipcMain.handle("backend:feedback", async (_event, payload) => {
   return callLocalApi("/api/feedback", {
+    method: "POST",
+    body: payload,
+  });
+});
+
+ipcMain.handle("backend:quiz", async (_event, payload) => {
+  return callLocalApi("/api/quiz", {
     method: "POST",
     body: payload,
   });

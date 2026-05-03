@@ -10,6 +10,8 @@ type SessionRow = {
   summary: string | null;
   key_topics: string;
   carry_forward: string | null;
+  request_count: number;
+  screenshot_preview: string | null;
 };
 
 type SessionInteractionRow = {
@@ -29,6 +31,8 @@ export type SessionRecord = {
   summary: string | null;
   keyTopics: string[];
   carryForward: string | null;
+  requestCount: number;
+  screenshotPreview: string | null;
 };
 
 const STOP_WORDS = new Set([
@@ -69,6 +73,8 @@ function mapSessionRow(row: SessionRow): SessionRecord {
     summary: row.summary,
     keyTopics: JSON.parse(row.key_topics) as string[],
     carryForward: row.carry_forward,
+    requestCount: row.request_count,
+    screenshotPreview: row.screenshot_preview,
   };
 }
 
@@ -158,21 +164,29 @@ function buildSessionSummary(
     ),
   ];
 
-  const summaryParts = [
-    title ? `Session title: ${title}` : null,
-    notes ? `Goal: ${notes}` : null,
-    interactions.length > 0
-      ? `Worked through ${interactions.length} help request${interactions.length === 1 ? "" : "s"}`
-      : "No chat interactions were saved for this session",
+  const topicText =
+    keyTopics.length > 0 ? keyTopics.slice(0, 3).join(", ") : "the class material";
+  const requestCount = interactions.length;
+  const requestLabel = `${requestCount} help request${requestCount === 1 ? "" : "s"}`;
+  const modeText =
     interactionTypes.length > 0
-      ? `Main help modes: ${interactionTypes.join(", ")}`
-      : null,
-    keyTopics.length > 0 ? `Main topics: ${keyTopics.join(", ")}` : null,
-    carryForward ? `Carry forward: ${carryForward}` : null,
-  ].filter(Boolean);
+      ? interactionTypes.join(", ")
+      : "general question support";
+
+  const sentenceOne = title
+    ? `${title} focused on ${topicText}.`
+    : `This session focused on ${topicText}.`;
+  const sentenceTwo = notes
+    ? `The student worked through ${requestLabel} around ${modeText} with the goal of ${notes}.`
+    : `The student worked through ${requestLabel} around ${modeText}.`;
+  const sentenceThree = carryForward
+    ? `The main next step is ${carryForward}.`
+    : keyTopics.length > 0
+      ? `The clearest follow-up is to keep reviewing ${keyTopics[0]}.`
+      : "The clearest follow-up is to continue the next review session from the same point.";
 
   return {
-    summary: summaryParts.join(" | "),
+    summary: [sentenceOne, sentenceTwo, sentenceThree].join(" "),
     keyTopics,
     carryForward,
   };
@@ -229,7 +243,9 @@ export function createSession(
         notes,
         summary,
         key_topics,
-        carry_forward
+        carry_forward,
+        request_count,
+        screenshot_preview
       FROM sessions
       WHERE id = ?
     `,
@@ -255,7 +271,9 @@ export function endSession(sessionId: number): SessionRecord | null {
         notes,
         summary,
         key_topics,
-        carry_forward
+        carry_forward,
+        request_count,
+        screenshot_preview
       FROM sessions
       WHERE id = ?
     `,
@@ -279,13 +297,15 @@ export function endSession(sessionId: number): SessionRecord | null {
         ended_at = CURRENT_TIMESTAMP,
         summary = @summary,
         key_topics = @keyTopics,
-        carry_forward = @carryForward
+        carry_forward = @carryForward,
+        request_count = @requestCount
       WHERE id = @sessionId AND ended_at IS NULL
     `,
   ).run({
     summary: generatedSummary.summary,
     keyTopics: JSON.stringify(generatedSummary.keyTopics),
     carryForward: generatedSummary.carryForward,
+    requestCount: interactions.length,
     sessionId,
   });
 
@@ -300,11 +320,33 @@ export function endSession(sessionId: number): SessionRecord | null {
         notes,
         summary,
         key_topics,
-        carry_forward
+        carry_forward,
+        request_count,
+        screenshot_preview
       FROM sessions
       WHERE id = ?
     `,
   ).get(sessionId) as SessionRow | undefined;
 
   return sessionRow ? mapSessionRow(sessionRow) : null;
+}
+
+export function saveSessionScreenshotPreview(
+  sessionId: number,
+  screenshotDataUrl: string,
+): void {
+  const db = getDatabase();
+
+  db.prepare(
+    `
+      UPDATE sessions
+      SET screenshot_preview = @screenshotPreview
+      WHERE id = @sessionId
+        AND screenshot_preview IS NULL
+        AND ended_at IS NULL
+    `,
+  ).run({
+    sessionId,
+    screenshotPreview: screenshotDataUrl,
+  });
 }

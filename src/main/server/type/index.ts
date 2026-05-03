@@ -8,4 +8,7 @@ export type {
   Gap,
   ModelAssistOutput,
   ModelGapCandidate,
+  QuizQuestion,
+  QuizRequest,
+  QuizResponse,
 } from "./domain";

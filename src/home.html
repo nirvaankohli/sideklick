@@ -16,9 +16,7 @@
           <div class="title-group home-title-group">
             <div class="home-title-row">
               <span class="home-title-icon" aria-hidden="true">
-                <svg class="icon-svg" viewBox="0 0 24 24">
-                  <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path>
-                </svg>
+                <img class="app-logo-image" src="../assets/images/logo/logo.png" alt="" />
               </span>
               <div>
                 <p class="eyebrow">Dashboard</p>
@@ -59,6 +57,7 @@
                   <div id="breadcrumbs" class="breadcrumbs"></div>
                 </div>
                 <div class="home-browser-actions">
+                  <button id="create-quiz" class="continue-button explorer-quiz-button" type="button" hidden>Create Quiz</button>
                   <button id="back-folder" class="ghost-button" type="button">Back</button>
                   <button id="new-folder" class="ghost-button" type="button">Create Class</button>
                 </div>
@@ -158,6 +157,182 @@
             </div>
           </section>
         </div>
+
+        <div id="session-summary-backdrop" class="modal-backdrop no-drag" hidden>
+          <section class="modal-card session-summary-modal" role="dialog" aria-modal="true" aria-labelledby="session-summary-title">
+            <div class="modal-header">
+              <div>
+                <p class="panel-label">Saved session</p>
+                <h2 id="session-summary-title" class="modal-title">Session Summary</h2>
+              </div>
+              <button id="close-session-summary" class="icon-button" type="button" aria-label="Close session summary">
+                <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="session-summary-preview">
+              <p id="session-summary-meta" class="panel-help"></p>
+              <div class="session-summary-content">
+                <p id="session-summary-text" class="session-summary-placeholder"></p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div id="quiz-backdrop" class="modal-backdrop no-drag" hidden>
+          <section class="modal-card quiz-modal" role="dialog" aria-modal="true" aria-labelledby="quiz-modal-title">
+            <div class="modal-header quiz-modal-header">
+              <div>
+                <p class="panel-label">Session quiz</p>
+                <h2 id="quiz-modal-title" class="modal-title">Generate Quiz</h2>
+              </div>
+              <div class="window-actions no-drag quiz-window-actions">
+                <button id="quiz-theme-toggle" class="icon-button" type="button" aria-label="Toggle light or dark theme">
+                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12.2 3.2c.5 0 .8.4.8.8 0 .2 0 .4-.1.5-1 1.8-1.3 4-.7 6.1 1 3.2 4 5.4 7.4 5.4.4 0 .8.3.8.8 0 .2-.1.4-.2.5-1.7 2.3-4.4 3.7-7.3 3.7-5 0-9-4-9-9 0-4 2.7-7.4 6.5-8.6.1-.1.3-.2.5-.2Z"></path>
+                  </svg>
+                </button>
+                <button id="quiz-minimize-native" class="icon-button" type="button" aria-label="Minimize window">
+                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 19h12v-2H6z"></path>
+                  </svg>
+                </button>
+                <button id="close-quiz-modal" class="icon-button danger" type="button" aria-label="Close quiz modal">
+                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div id="quiz-setup-view" class="quiz-stack">
+              <section class="quiz-hero">
+                <div class="quiz-hero-copy">
+                  <p class="panel-label">Build a study quiz</p>
+                  <p id="quiz-session-meta" class="panel-help"></p>
+                </div>
+                <div class="quiz-hero-badge">One class, any mix of sessions</div>
+              </section>
+
+              <section class="quiz-panel">
+                <div class="quiz-panel-header">
+                  <div>
+                    <h3 class="quiz-panel-title">Choose session material</h3>
+                    <p class="quiz-panel-copy">Pick none, one, or several saved sessions.</p>
+                  </div>
+                </div>
+                <div id="quiz-session-picker" class="quiz-session-picker"></div>
+              </section>
+
+              <section class="quiz-panel">
+                <div class="quiz-panel-header">
+                  <div>
+                    <h3 class="quiz-panel-title">Sources to use</h3>
+                    <p class="quiz-panel-copy">Control what the quiz should draw from.</p>
+                  </div>
+                </div>
+                <div class="quiz-source-grid">
+                  <label class="quiz-source-option">
+                    <input id="quiz-source-summary" class="quiz-source-input" type="checkbox" checked />
+                    <span class="quiz-source-check" aria-hidden="true"></span>
+                    <span class="quiz-source-label-copy">Session summary</span>
+                  </label>
+                  <label class="quiz-source-option">
+                    <input id="quiz-source-notes" class="quiz-source-input" type="checkbox" />
+                    <span class="quiz-source-check" aria-hidden="true"></span>
+                    <span class="quiz-source-label-copy">Session notes</span>
+                  </label>
+                  <label class="quiz-source-option">
+                    <input id="quiz-source-topics" class="quiz-source-input" type="checkbox" checked />
+                    <span class="quiz-source-check" aria-hidden="true"></span>
+                    <span class="quiz-source-label-copy">Key topics</span>
+                  </label>
+                  <label class="quiz-source-option">
+                    <input id="quiz-source-uploaded" class="quiz-source-input" type="checkbox" />
+                    <span class="quiz-source-check" aria-hidden="true"></span>
+                    <span class="quiz-source-label-copy">Uploaded material</span>
+                  </label>
+                </div>
+              </section>
+
+              <section class="quiz-panel">
+                <div class="quiz-panel-header">
+                  <div>
+                    <h3 class="quiz-panel-title">Extra material</h3>
+                    <p class="quiz-panel-copy">Upload notes or paste study material to fill in gaps.</p>
+                  </div>
+                </div>
+                <div class="quiz-upload-panel">
+                  <label class="modal-field">
+                    <span>Upload material</span>
+                    <div class="quiz-file-shell">
+                      <input id="quiz-material-file" class="quiz-file-input" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown" />
+                      <label for="quiz-material-file" class="quiz-file-button">Choose file</label>
+                      <span id="quiz-file-name" class="quiz-file-name">No file selected</span>
+                    </div>
+                  </label>
+                  <label class="modal-field">
+                    <span>Or paste material</span>
+                    <textarea id="quiz-material-text" rows="5" placeholder="Paste study material here"></textarea>
+                  </label>
+                </div>
+              </section>
+
+              <section class="quiz-panel">
+                <div class="quiz-panel-header">
+                  <div>
+                    <h3 class="quiz-panel-title">Gap focus</h3>
+                    <p class="quiz-panel-copy">Higher values push the quiz harder toward weak spots.</p>
+                  </div>
+                  <p class="quiz-gap-value">Focus on gaps: <strong id="quiz-gap-focus-value">50%</strong></p>
+                </div>
+                <label class="modal-field quiz-slider-field">
+                  <input id="quiz-gap-focus" type="range" min="0" max="100" value="50" />
+                </label>
+              </section>
+
+              <div class="modal-actions">
+                <button id="generate-quiz-button" class="continue-button" type="button">Generate Quiz</button>
+              </div>
+            </div>
+
+            <div id="quiz-view" class="quiz-stack" hidden>
+              <div class="quiz-results-bar">
+                <div class="quiz-results-copy">
+                  <p class="panel-label">Quiz</p>
+                  <p id="quiz-subtitle" class="panel-help"></p>
+                </div>
+                <p id="quiz-explain-hint" class="quiz-results-hint">Answer explanations unlock after you check answers.</p>
+              </div>
+              <div id="quiz-insights" class="quiz-insights" hidden>
+                <section class="quiz-insight-card quiz-insight-strengths">
+                  <p class="panel-label">Strengths</p>
+                  <p id="quiz-strengths" class="quiz-insight-text"></p>
+                </section>
+                <section class="quiz-insight-card quiz-insight-gaps">
+                  <p class="panel-label">Gaps</p>
+                  <p id="quiz-gaps" class="quiz-insight-text"></p>
+                </section>
+              </div>
+              <div class="quiz-layout">
+                <div id="quiz-questions" class="quiz-question-list"></div>
+                <aside id="quiz-explanation-panel" class="quiz-explanation-panel" hidden>
+                  <p id="quiz-explanation-kicker" class="panel-label">Answer explanation</p>
+                  <h3 id="quiz-explanation-title" class="quiz-explanation-title">Pick a question</h3>
+                  <p id="quiz-explanation-answer" class="quiz-explanation-answer"></p>
+                  <p id="quiz-explanation-text" class="quiz-explanation-text"></p>
+                </aside>
+              </div>
+              <div class="modal-actions">
+                <button id="save-quiz-button" class="ghost-button" type="button">Save Quiz</button>
+                <button id="quiz-submit-button" class="continue-button" type="button">Check Answers</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
       </section>
     </main>
 
