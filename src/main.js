@@ -1,11 +1,9 @@
 const path = require("path");
 const fs = require("fs");
 require("tsx/cjs");
-const http = require("http");
 const {
   app,
   BrowserWindow,
-  desktopCapturer,
   ipcMain,
   nativeTheme,
   screen,
@@ -27,16 +25,21 @@ const {
   getStartupWindowConfigs,
   resolveWindowTemplate,
 } = require("./config/windows");
+const {
+  capturePrimaryDisplayScreenshot,
+  shouldCaptureAutomaticScreenshot,
+} = require("./main/screenshot");
+const {
+  createIncomingMessageServer,
+} = require("./main/incoming-message-server");
+const {
+  createSessionManager,
+} = require("./main/session-management");
 
 const windowsByKey = new Map();
 const windowState = new Map();
 const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
 const LOCAL_API_BASE_URL = "http://127.0.0.1:3001";
-const INCOMING_HTTP_PORT = 4353;
-const INCOMING_HTTP_HOST = "localhost";
-const MAX_SCREENSHOT_EDGE = 1280;
-const SCREENSHOT_JPEG_QUALITY = 72;
-let incomingMessageServer = null;
 
 function getAppLogoPath() {
   return path.join(process.cwd(), "assets", "images", "logo", "logo.png");
@@ -337,73 +340,6 @@ async function callLocalApi(endpoint, options = {}) {
   return payload;
 }
 
-async function capturePrimaryDisplayScreenshot() {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.size;
-  const maxDimension = Math.max(width, height, 1);
-  const scale = Math.min(1, MAX_SCREENSHOT_EDGE / maxDimension);
-  const captureWidth = Math.max(Math.round(width * scale), 1);
-  const captureHeight = Math.max(Math.round(height * scale), 1);
-  const sources = await desktopCapturer.getSources({
-    types: ["screen"],
-    thumbnailSize: {
-      width: captureWidth,
-      height: captureHeight,
-    },
-  });
-
-  const matchingSource =
-    sources.find((source) => source.display_id === String(primaryDisplay.id)) ||
-    sources[0];
-  if (!matchingSource || matchingSource.thumbnail.isEmpty()) {
-    throw new Error("Could not capture a screen screenshot.");
-  }
-
-  const resizedThumbnail =
-    matchingSource.thumbnail.getSize().width > captureWidth ||
-    matchingSource.thumbnail.getSize().height > captureHeight
-      ? matchingSource.thumbnail.resize({
-          width: captureWidth,
-          height: captureHeight,
-          quality: "good",
-        })
-      : matchingSource.thumbnail;
-
-  return `data:image/jpeg;base64,${resizedThumbnail
-    .toJPEG(SCREENSHOT_JPEG_QUALITY)
-    .toString("base64")}`;
-}
-
-function shouldCaptureAutomaticScreenshot(payload) {
-  if (payload?.screenshotDataUrl) {
-    return false;
-  }
-
-  const actionType =
-    typeof payload?.actionType === "string" ? payload.actionType.trim() : "";
-
-  return actionType && actionType !== "chat";
-}
-
-function readRequestBody(req) {
-  return new Promise((resolve, reject) => {
-    let raw = "";
-    req.setEncoding("utf8");
-    req.on("data", (chunk) => {
-      raw += chunk;
-    });
-    req.on("end", () => resolve(raw));
-    req.on("error", reject);
-  });
-}
-
-function notifyChatWindowIncomingPayload(payload) {
-  const chatWindow = windowsByKey.get("chat");
-  if (chatWindow && !chatWindow.isDestroyed()) {
-    chatWindow.webContents.send("incoming:payload", payload);
-  }
-}
-
 function focusOrCreateChatWindow() {
   let chatWindow = windowsByKey.get("chat");
   if (chatWindow && !chatWindow.isDestroyed()) {
@@ -423,89 +359,6 @@ function notifyHomeWindowFoldersChanged(classFolders) {
   }
 }
 
-function appendStoppedSessionToFolders(classFolders, session, persistedSession) {
-  if (!Array.isArray(classFolders)) {
-    return [];
-  }
-
-  return classFolders.map((folder) => {
-    if (
-      folder?.type !== "class" ||
-      (folder.dbClassId !== session.classId &&
-        String(folder.name || "").trim() !== String(session.className || "").trim())
-    ) {
-      return folder;
-    }
-
-    const existingChildren = Array.isArray(folder.children) ? folder.children : [];
-    const sessionEntry = {
-      id: `session-${persistedSession.id}`,
-      type: "session",
-      name: session.sessionName || persistedSession.title || "Session",
-      classId: session.classId,
-      dbSessionId: persistedSession.id,
-      startedAt: persistedSession.startedAt,
-      endedAt: persistedSession.endedAt,
-      notes: persistedSession.notes,
-      summary: persistedSession.summary,
-      carryForward: persistedSession.carryForward,
-      requestCount: persistedSession.requestCount,
-      screenshotPreview: persistedSession.screenshotPreview,
-      keyTopics: persistedSession.keyTopics,
-    };
-    const dedupedChildren = existingChildren.filter(
-      (child) => child?.type !== "session" || child.dbSessionId !== persistedSession.id,
-    );
-
-    return {
-      ...folder,
-      children: [sessionEntry, ...dedupedChildren],
-    };
-  });
-}
-
-function buildBackendClassPayloadFromSession(session) {
-  const noteParts = [
-    session?.description ? `Description: ${session.description}` : null,
-    session?.additionalNotes
-      ? `Additional notes: ${session.additionalNotes}`
-      : null,
-  ].filter(Boolean);
-  const teacherFocusParts = [
-    session?.teacherName ? `Teacher: ${session.teacherName}` : null,
-    session?.teacherNotes ? `Focus: ${session.teacherNotes}` : null,
-  ].filter(Boolean);
-
-  return {
-    className: typeof session?.className === "string" ? session.className : "",
-    subject: typeof session?.className === "string" ? session.className : "",
-    currentUnit: null,
-    teacherFocus:
-      teacherFocusParts.length > 0 ? teacherFocusParts.join(" | ") : null,
-    keyConcepts: [],
-    notes: noteParts.length > 0 ? noteParts.join("\n") : null,
-  };
-}
-
-function ensureSessionClassId(session) {
-  const existingClassId =
-    typeof session?.classId === "number" && session.classId > 0
-      ? session.classId
-      : null;
-
-  if (existingClassId && getClassProfileById(existingClassId)) {
-    return existingClassId;
-  }
-
-  const classPayload = buildBackendClassPayloadFromSession(session);
-  if (!classPayload.className.trim()) {
-    throw new Error("Cannot start a session without a valid class name.");
-  }
-
-  const savedClassProfile = saveClassProfile(classPayload);
-  return savedClassProfile.id;
-}
-
 function dispatchIncomingPayload(payload) {
   const chatWindow = focusOrCreateChatWindow();
   const deliverPayload = () => {
@@ -522,101 +375,28 @@ function dispatchIncomingPayload(payload) {
   deliverPayload();
 }
 
-function startIncomingMessageServer() {
-  if (incomingMessageServer) {
-    return;
-  }
-
-  incomingMessageServer = http.createServer(async (req, res) => {
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ ok: false, error: "Method not allowed" }));
-      return;
-    }
-
-    try {
-      const rawBody = await readRequestBody(req);
-      const parsed = rawBody ? JSON.parse(rawBody) : {};
-      const payload = {
-        action_type:
-          typeof parsed.action_type === "string"
-            ? parsed.action_type
-            : typeof parsed.actionType === "string"
-              ? parsed.actionType
-              : "chat",
-        selected_text:
-          typeof parsed.selected_text === "string"
-            ? parsed.selected_text
-            : typeof parsed.selectedText === "string"
-              ? parsed.selectedText
-              : typeof parsed.text === "string"
-                ? parsed.text
-                : "",
-        surrounding_text:
-          typeof parsed.surrounding_text === "string"
-            ? parsed.surrounding_text
-            : typeof parsed.surroundingText === "string"
-              ? parsed.surroundingText
-              : null,
-        page_title:
-          typeof parsed.page_title === "string"
-            ? parsed.page_title
-            : typeof parsed.pageTitle === "string"
-              ? parsed.pageTitle
-              : "",
-        page_url:
-          typeof parsed.page_url === "string"
-            ? parsed.page_url
-            : typeof parsed.pageUrl === "string"
-              ? parsed.pageUrl
-              : "",
-        user_note:
-          typeof parsed.user_note === "string"
-            ? parsed.user_note
-            : typeof parsed.userNote === "string"
-              ? parsed.userNote
-              : "",
-        screenshot_data_url:
-          typeof parsed.screenshot_data_url === "string"
-            ? parsed.screenshot_data_url
-            : typeof parsed.screenshotDataUrl === "string"
-              ? parsed.screenshotDataUrl
-              : null,
-        click_function:
-          typeof parsed.click_function === "string"
-            ? parsed.click_function
-            : "",
-      };
-
-      dispatchIncomingPayload(payload);
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ ok: true }));
-    } catch {
-      res.statusCode = 400;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ ok: false, error: "Invalid JSON payload" }));
-    }
-  });
-
-  incomingMessageServer.on("error", (error) => {
-    console.error("Incoming message server error:", error);
-  });
-
-  incomingMessageServer.listen(INCOMING_HTTP_PORT, INCOMING_HTTP_HOST, () => {
-    console.log(
-      `Incoming message server listening on http://${INCOMING_HTTP_HOST}:${INCOMING_HTTP_PORT}`,
-    );
-  });
-}
+const incomingMessageServer = createIncomingMessageServer({
+  dispatchIncomingPayload,
+});
+const sessionManager = createSessionManager({
+  createSession,
+  endSession,
+  getClassProfileById,
+  saveClassProfile,
+  readPreferences,
+  writePreferences,
+  getPreferenceSnapshot,
+  windowsByKey,
+  createManagedWindow,
+  notifyHomeWindowFoldersChanged,
+});
 
 app.whenReady().then(async () => {
   await startLocalBackend();
   const isFirstRun = !hasLaunchedBefore();
   applyThemeSource(readStoredThemeSource());
   createStartupWindows(isFirstRun);
-  startIncomingMessageServer();
+  incomingMessageServer.start();
   if (isFirstRun) {
     markAppLaunched();
   }
@@ -631,10 +411,7 @@ app.whenReady().then(async () => {
 });
 
 app.on("window-all-closed", () => {
-  if (incomingMessageServer) {
-    incomingMessageServer.close();
-    incomingMessageServer = null;
-  }
+  incomingMessageServer.stop();
 
   if (process.platform !== "darwin") {
     app.quit();
@@ -762,12 +539,13 @@ ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {
 ipcMain.handle("backend:assist", async (_event, payload) => {
   let screenshotDataUrl = payload?.screenshotDataUrl ?? null;
   if (shouldCaptureAutomaticScreenshot(payload)) {
-    screenshotDataUrl = await capturePrimaryDisplayScreenshot().catch(
-      (error) => {
-        console.error("[screen-capture] failed to capture screenshot", error);
-        return screenshotDataUrl;
-      },
-    );
+    screenshotDataUrl = await capturePrimaryDisplayScreenshot({
+      desktopCapturer,
+      screen,
+    }).catch((error) => {
+      console.error("[screen-capture] failed to capture screenshot", error);
+      return screenshotDataUrl;
+    });
   }
 
   return callLocalApi("/api/assist", {
@@ -807,75 +585,9 @@ ipcMain.handle("session:getCurrent", () => {
 });
 
 ipcMain.handle("session:start", (_event, session) => {
-  const resolvedClassId = ensureSessionClassId(session);
-  const persistedSession = createSession(
-    resolvedClassId,
-    session.sessionName || "Study Session",
-    session.sessionNotes || null,
-  );
-  const nextPreferences = {
-    ...readPreferences(),
-    currentSession: {
-      ...session,
-      classId: resolvedClassId,
-      sessionId: persistedSession.id,
-      sessionStartedAt: persistedSession.startedAt,
-    },
-  };
-  writePreferences(nextPreferences);
-
-  if (!windowsByKey.has("chat")) {
-    createManagedWindow("chat", "chat");
-  } else {
-    const existingChat = windowsByKey.get("chat");
-    if (existingChat && !existingChat.isDestroyed()) {
-      existingChat.show();
-      existingChat.focus();
-      existingChat.webContents.send("session:changed", nextPreferences.currentSession);
-    }
-  }
-
-  return { ok: true, currentSession: nextPreferences.currentSession };
+  return sessionManager.startSession(session);
 });
 
 ipcMain.handle("session:stop", () => {
-  const currentSession = getPreferenceSnapshot().currentSession;
-  let persistedSession = null;
-  if (currentSession?.sessionId) {
-    persistedSession = endSession(currentSession.sessionId);
-  }
-
-  const currentPreferences = readPreferences();
-  const nextClassFolders =
-    currentSession && persistedSession
-      ? appendStoppedSessionToFolders(
-          Array.isArray(currentPreferences.classFolders)
-            ? currentPreferences.classFolders
-            : [],
-          currentSession,
-          persistedSession,
-        )
-      : Array.isArray(currentPreferences.classFolders)
-        ? currentPreferences.classFolders
-        : [];
-  const nextPreferences = {
-    ...currentPreferences,
-    classFolders: nextClassFolders,
-    currentSession: null,
-  };
-  writePreferences(nextPreferences);
-  notifyHomeWindowFoldersChanged(nextPreferences.classFolders);
-
-  const chatWindow = windowsByKey.get("chat");
-  if (chatWindow && !chatWindow.isDestroyed()) {
-    chatWindow.close();
-  }
-
-  const homeWindow = windowsByKey.get("home");
-  if (homeWindow && !homeWindow.isDestroyed()) {
-    homeWindow.show();
-    homeWindow.focus();
-  }
-
-  return { ok: true };
+  return sessionManager.stopSession();
 });
