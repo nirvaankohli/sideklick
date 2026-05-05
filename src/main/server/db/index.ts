@@ -13,6 +13,12 @@ function getDatabaseFilePath(): string {
 
 function createTables(db: Database.Database): void {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS app_state (
+      state_key TEXT PRIMARY KEY,
+      state_value TEXT NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS classes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       class_name TEXT NOT NULL DEFAULT '',
@@ -232,6 +238,7 @@ export function getDatabaseCounts(): DatabaseCounts {
   };
 
   return {
+    appState: countRows("app_state"),
     classes: countRows("classes"),
     sessions: countRows("sessions"),
     interactions: countRows("interactions"),

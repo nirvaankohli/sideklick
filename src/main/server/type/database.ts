@@ -1,4 +1,5 @@
 export type DatabaseCounts = {
+  appState: number;
   classes: number;
   sessions: number;
   interactions: number;

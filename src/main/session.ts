@@ -1,4 +1,8 @@
-function appendStoppedSessionToFolders(classFolders, session, persistedSession) {
+function appendStoppedSessionToFolders(
+  classFolders: unknown[],
+  session: Record<string, any>,
+  persistedSession: Record<string, any>,
+) {
   if (!Array.isArray(classFolders)) {
     return [];
   }
@@ -7,12 +11,15 @@ function appendStoppedSessionToFolders(classFolders, session, persistedSession) 
     if (
       folder?.type !== "class" ||
       (folder.dbClassId !== session.classId &&
-        String(folder.name || "").trim() !== String(session.className || "").trim())
+        String(folder.name || "").trim() !==
+          String(session.className || "").trim())
     ) {
       return folder;
     }
 
-    const existingChildren = Array.isArray(folder.children) ? folder.children : [];
+    const existingChildren = Array.isArray(folder.children)
+      ? folder.children
+      : [];
     const sessionEntry = {
       id: `session-${persistedSession.id}`,
       type: "session",
@@ -29,7 +36,8 @@ function appendStoppedSessionToFolders(classFolders, session, persistedSession) 
       keyTopics: persistedSession.keyTopics,
     };
     const dedupedChildren = existingChildren.filter(
-      (child) => child?.type !== "session" || child.dbSessionId !== persistedSession.id,
+      (child) =>
+        child?.type !== "session" || child.dbSessionId !== persistedSession.id,
     );
 
     return {
@@ -39,7 +47,7 @@ function appendStoppedSessionToFolders(classFolders, session, persistedSession) 
   });
 }
 
-function buildBackendClassPayloadFromSession(session) {
+function buildBackendClassPayloadFromSession(session: Record<string, any>) {
   const noteParts = [
     session?.description ? `Description: ${session.description}` : null,
     session?.additionalNotes
@@ -62,19 +70,44 @@ function buildBackendClassPayloadFromSession(session) {
   };
 }
 
-function createSessionManager({
+export function createSessionLifecycle({
   createSession,
   endSession,
   getClassProfileById,
   saveClassProfile,
-  readPreferences,
-  writePreferences,
-  getPreferenceSnapshot,
+  getCurrentSessionState,
+  setCurrentSessionState,
+  clearCurrentSessionState,
+  getStoredClassFolders,
+  setStoredClassFolders,
   windowsByKey,
   createManagedWindow,
   notifyHomeWindowFoldersChanged,
+}: {
+  createSession: (
+    classId: number,
+    title: string,
+    notes?: string | null,
+  ) => Record<string, any>;
+  endSession: (sessionId: number) => Record<string, any> | null;
+  getClassProfileById: (id: number) => Record<string, any> | null;
+  saveClassProfile: (input: Record<string, any>) => Record<string, any>;
+  getCurrentSessionState: () => Record<string, any> | null;
+  setCurrentSessionState: (
+    currentSession: Record<string, any> | null,
+  ) => Record<string, any> | null;
+  clearCurrentSessionState: () => void;
+  getStoredClassFolders: () => unknown[];
+  setStoredClassFolders: (classFolders: unknown) => unknown[];
+  windowsByKey: Map<string, Electron.BrowserWindow>;
+  createManagedWindow: (
+    windowKey: string,
+    templateKey: string,
+    config?: unknown,
+  ) => Electron.BrowserWindow;
+  notifyHomeWindowFoldersChanged: (classFolders: unknown[]) => void;
 }) {
-  function ensureSessionClassId(session) {
+  function ensureSessionClassId(session: Record<string, any>) {
     const existingClassId =
       typeof session?.classId === "number" && session.classId > 0
         ? session.classId
@@ -93,23 +126,19 @@ function createSessionManager({
     return savedClassProfile.id;
   }
 
-  function startSession(session) {
+  function startSession(session: Record<string, any>) {
     const resolvedClassId = ensureSessionClassId(session);
     const persistedSession = createSession(
       resolvedClassId,
       session.sessionName || "Study Session",
       session.sessionNotes || null,
     );
-    const nextPreferences = {
-      ...readPreferences(),
-      currentSession: {
-        ...session,
-        classId: resolvedClassId,
-        sessionId: persistedSession.id,
-        sessionStartedAt: persistedSession.startedAt,
-      },
-    };
-    writePreferences(nextPreferences);
+    const nextCurrentSession = setCurrentSessionState({
+      ...session,
+      classId: resolvedClassId,
+      sessionId: persistedSession.id,
+      sessionStartedAt: persistedSession.startedAt,
+    });
 
     if (!windowsByKey.has("chat")) {
       createManagedWindow("chat", "chat");
@@ -118,43 +147,32 @@ function createSessionManager({
       if (existingChat && !existingChat.isDestroyed()) {
         existingChat.show();
         existingChat.focus();
-        existingChat.webContents.send(
-          "session:changed",
-          nextPreferences.currentSession,
-        );
+        existingChat.webContents.send("session:changed", nextCurrentSession);
       }
     }
 
-    return { ok: true, currentSession: nextPreferences.currentSession };
+    return { ok: true, currentSession: nextCurrentSession };
   }
 
   function stopSession() {
-    const currentSession = getPreferenceSnapshot().currentSession;
+    const currentSession = getCurrentSessionState();
     let persistedSession = null;
     if (currentSession?.sessionId) {
-      persistedSession = endSession(currentSession.sessionId);
+      persistedSession = endSession(Number(currentSession.sessionId));
     }
 
-    const currentPreferences = readPreferences();
     const nextClassFolders =
       currentSession && persistedSession
         ? appendStoppedSessionToFolders(
-            Array.isArray(currentPreferences.classFolders)
-              ? currentPreferences.classFolders
-              : [],
+            getStoredClassFolders(),
             currentSession,
             persistedSession,
           )
-        : Array.isArray(currentPreferences.classFolders)
-          ? currentPreferences.classFolders
-          : [];
-    const nextPreferences = {
-      ...currentPreferences,
-      classFolders: nextClassFolders,
-      currentSession: null,
-    };
-    writePreferences(nextPreferences);
-    notifyHomeWindowFoldersChanged(nextPreferences.classFolders);
+        : getStoredClassFolders();
+
+    setStoredClassFolders(nextClassFolders);
+    clearCurrentSessionState();
+    notifyHomeWindowFoldersChanged(nextClassFolders);
 
     const chatWindow = windowsByKey.get("chat");
     if (chatWindow && !chatWindow.isDestroyed()) {
@@ -171,11 +189,10 @@ function createSessionManager({
   }
 
   return {
+    getCurrentSession() {
+      return getCurrentSessionState();
+    },
     startSession,
     stopSession,
   };
 }
-
-module.exports = {
-  createSessionManager,
-};

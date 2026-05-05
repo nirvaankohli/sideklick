@@ -1,12 +1,18 @@
 const MAX_SCREENSHOT_EDGE = 1280;
 const SCREENSHOT_JPEG_QUALITY = 72;
+const REDACTED_IMAGE_PLACEHOLDER = "[redacted image payload]";
 
-async function capturePrimaryDisplayScreenshot({
+export async function capturePrimaryDisplayScreenshot({
   desktopCapturer,
   screen,
   maxScreenshotEdge = MAX_SCREENSHOT_EDGE,
   jpegQuality = SCREENSHOT_JPEG_QUALITY,
-}) {
+}: {
+  desktopCapturer: Electron.DesktopCapturer;
+  screen: Electron.Screen;
+  maxScreenshotEdge?: number;
+  jpegQuality?: number;
+}): Promise<string> {
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width, height } = primaryDisplay.size;
   const maxDimension = Math.max(width, height, 1);
@@ -43,7 +49,10 @@ async function capturePrimaryDisplayScreenshot({
     .toString("base64")}`;
 }
 
-function shouldCaptureAutomaticScreenshot(payload) {
+export function shouldCaptureAutomaticScreenshot(payload: {
+  screenshotDataUrl?: string | null;
+  actionType?: string | null;
+}): boolean {
   if (payload?.screenshotDataUrl) {
     return false;
   }
@@ -51,10 +60,32 @@ function shouldCaptureAutomaticScreenshot(payload) {
   const actionType =
     typeof payload?.actionType === "string" ? payload.actionType.trim() : "";
 
-  return actionType && actionType !== "chat";
+  return Boolean(actionType && actionType !== "chat");
 }
 
-module.exports = {
-  capturePrimaryDisplayScreenshot,
-  shouldCaptureAutomaticScreenshot,
-};
+export function redactImageDataUrl(value: string): string {
+  return value.startsWith("data:image/")
+    ? REDACTED_IMAGE_PLACEHOLDER
+    : value;
+}
+
+export function redactCapturePayload(value: unknown): unknown {
+  if (typeof value === "string") {
+    return redactImageDataUrl(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((entry) => redactCapturePayload(entry));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        redactCapturePayload(entry),
+      ]),
+    );
+  }
+
+  return value;
+}

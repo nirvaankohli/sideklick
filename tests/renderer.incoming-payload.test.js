@@ -27,8 +27,18 @@ function createDom() {
   );
 }
 
+function installAnimationFrameStub(dom) {
+  dom.window.requestAnimationFrame = (callback) => {
+    return dom.window.setTimeout(() => callback(Date.now()), 0);
+  };
+  dom.window.cancelAnimationFrame = (handle) => {
+    dom.window.clearTimeout(handle);
+  };
+}
+
 test("incoming payload shows action plus pasted text card and sends the assist request directly", async () => {
   const dom = createDom();
+  installAnimationFrameStub(dom);
 
   global.window = dom.window;
   global.document = dom.window.document;
@@ -128,6 +138,7 @@ test("incoming payload shows action plus pasted text card and sends the assist r
 
 test("manual chat submit shows the typed message instead of the action label", async () => {
   const dom = createDom();
+  installAnimationFrameStub(dom);
 
   global.window = dom.window;
   global.document = dom.window.document;

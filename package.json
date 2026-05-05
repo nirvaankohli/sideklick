@@ -8,7 +8,7 @@
     "dev": "electron .",
     "rebuild:native": "npm rebuild better-sqlite3 --runtime=electron --target=37.2.0 --dist-url=https://electronjs.org/headers --build-from-source",
     "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js",
-    "test": "node --test"
+    "test": "node --experimental-strip-types --test --test-isolation=none"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

@@ -1,4 +1,5 @@
 import { getDatabase } from "../db";
+import { redactCapturePayload } from "../../capture";
 import { saveSessionScreenshotPreview } from "./sessions";
 import type {
   AssistRequest,
@@ -29,28 +30,26 @@ function truncateText(value: string, maxLength = MAX_PERSISTED_TEXT_LENGTH): str
 }
 
 function sanitizeValueForStorage(value: unknown): unknown {
-  if (typeof value === "string") {
-    if (value.startsWith("data:image/")) {
-      return "[omitted image payload]";
-    }
+  const redactedValue = redactCapturePayload(value);
 
-    return truncateText(value);
+  if (typeof redactedValue === "string") {
+    return truncateText(redactedValue);
   }
 
-  if (Array.isArray(value)) {
-    return value.map((entry) => sanitizeValueForStorage(entry));
+  if (Array.isArray(redactedValue)) {
+    return redactedValue.map((entry) => sanitizeValueForStorage(entry));
   }
 
-  if (value && typeof value === "object") {
+  if (redactedValue && typeof redactedValue === "object") {
     return Object.fromEntries(
-      Object.entries(value).map(([key, entry]) => [
+      Object.entries(redactedValue).map(([key, entry]) => [
         key,
         sanitizeValueForStorage(entry),
       ]),
     );
   }
 
-  return value;
+  return redactedValue;
 }
 
 function buildInteractionPrompt(requestInput: AssistRequest): string {

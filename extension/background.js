@@ -1,5 +1,9 @@
 const INBOX_URL = "http://localhost:4353";
 const RESTORE_CLICK_FUNCTION = "restore-window";
+const BRIDGE_AUTH_TOKEN = "sideclick-local-dev-token";
+const BRIDGE_TOKEN_HEADER = "x-sideclick-token";
+const BRIDGE_NONCE_HEADER = "x-sideclick-nonce";
+const BRIDGE_TIMESTAMP_HEADER = "x-sideclick-timestamp";
 
 const MENU_ITEMS = [
   {
@@ -80,10 +84,17 @@ function createContextMenus() {
 }
 
 async function sendIncomingPayload(payload) {
+  const nonce =
+    typeof crypto?.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const response = await fetch(INBOX_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      [BRIDGE_TOKEN_HEADER]: BRIDGE_AUTH_TOKEN,
+      [BRIDGE_NONCE_HEADER]: nonce,
+      [BRIDGE_TIMESTAMP_HEADER]: String(Date.now()),
     },
     body: JSON.stringify(payload),
   });

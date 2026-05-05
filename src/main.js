@@ -4,6 +4,7 @@ require("tsx/cjs");
 const {
   app,
   BrowserWindow,
+  desktopCapturer,
   ipcMain,
   nativeTheme,
   screen,
@@ -17,6 +18,15 @@ const {
   endSession,
 } = require("./main/server/services/sessions.ts");
 const {
+  clearCurrentSessionState,
+  getCurrentSessionState,
+  getStoredClassFolders,
+  hasStoredClassFolders,
+  hasStoredCurrentSession,
+  setCurrentSessionState,
+  setStoredClassFolders,
+} = require("./main/server/services/app-state.ts");
+const {
   getClassProfileById,
   saveClassProfile,
 } = require("./main/server/services/classes.ts");
@@ -28,18 +38,19 @@ const {
 const {
   capturePrimaryDisplayScreenshot,
   shouldCaptureAutomaticScreenshot,
-} = require("./main/screenshot");
+} = require("./main/capture.ts");
 const {
-  createIncomingMessageServer,
-} = require("./main/incoming-message-server");
+  createIncomingMessageBridge,
+} = require("./main/bridge.ts");
 const {
-  createSessionManager,
-} = require("./main/session-management");
+  createSessionLifecycle,
+} = require("./main/session.ts");
 
 const windowsByKey = new Map();
 const windowState = new Map();
 const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
 const LOCAL_API_BASE_URL = "http://127.0.0.1:3001";
+const DEFAULT_BRIDGE_AUTH_TOKEN = "sideclick-local-dev-token";
 
 function getAppLogoPath() {
   return path.join(process.cwd(), "assets", "images", "logo", "logo.png");
@@ -82,14 +93,8 @@ function getPreferenceSnapshot() {
     hasLaunchedBefore: Boolean(preferences.hasLaunchedBefore),
     discoverySource: preferences.discoverySource || "",
     customerProfile: preferences.customerProfile || "",
-    classFolders: Array.isArray(preferences.classFolders)
-      ? preferences.classFolders
-      : [],
-    currentSession:
-      preferences.currentSession &&
-      typeof preferences.currentSession === "object"
-        ? preferences.currentSession
-        : null,
+    classFolders: getStoredClassFolders(),
+    currentSession: getCurrentSessionState(),
   };
 }
 
@@ -359,6 +364,36 @@ function notifyHomeWindowFoldersChanged(classFolders) {
   }
 }
 
+function migrateLegacyStoredState() {
+  const preferences = readPreferences();
+  let shouldRewritePreferences = false;
+
+  if (!hasStoredClassFolders() && Array.isArray(preferences.classFolders)) {
+    setStoredClassFolders(preferences.classFolders);
+    shouldRewritePreferences = true;
+  }
+
+  if (
+    !hasStoredCurrentSession() &&
+    preferences.currentSession &&
+    typeof preferences.currentSession === "object"
+  ) {
+    setCurrentSessionState(preferences.currentSession);
+    shouldRewritePreferences = true;
+  }
+
+  if (!shouldRewritePreferences) {
+    return;
+  }
+
+  const {
+    classFolders: _legacyClassFolders,
+    currentSession: _legacyCurrentSession,
+    ...nextPreferences
+  } = preferences;
+  writePreferences(nextPreferences);
+}
+
 function dispatchIncomingPayload(payload) {
   const chatWindow = focusOrCreateChatWindow();
   const deliverPayload = () => {
@@ -375,17 +410,29 @@ function dispatchIncomingPayload(payload) {
   deliverPayload();
 }
 
-const incomingMessageServer = createIncomingMessageServer({
+function getBridgeAuthToken() {
+  const configuredToken =
+    typeof process.env.SIDECLICK_BRIDGE_TOKEN === "string"
+      ? process.env.SIDECLICK_BRIDGE_TOKEN.trim()
+      : "";
+
+  return configuredToken || DEFAULT_BRIDGE_AUTH_TOKEN;
+}
+
+const incomingMessageServer = createIncomingMessageBridge({
   dispatchIncomingPayload,
+  authToken: getBridgeAuthToken(),
 });
-const sessionManager = createSessionManager({
+const sessionManager = createSessionLifecycle({
   createSession,
   endSession,
   getClassProfileById,
   saveClassProfile,
-  readPreferences,
-  writePreferences,
-  getPreferenceSnapshot,
+  getCurrentSessionState,
+  setCurrentSessionState,
+  clearCurrentSessionState,
+  getStoredClassFolders,
+  setStoredClassFolders,
   windowsByKey,
   createManagedWindow,
   notifyHomeWindowFoldersChanged,
@@ -393,6 +440,7 @@ const sessionManager = createSessionManager({
 
 app.whenReady().then(async () => {
   await startLocalBackend();
+  migrateLegacyStoredState();
   const isFirstRun = !hasLaunchedBefore();
   applyThemeSource(readStoredThemeSource());
   createStartupWindows(isFirstRun);
@@ -507,26 +555,30 @@ ipcMain.handle("preferences:get", () => {
 });
 
 ipcMain.handle("preferences:update", (_event, patch) => {
+  const safePatch =
+    patch && typeof patch === "object"
+      ? Object.fromEntries(
+          Object.entries(patch).filter(
+            ([key]) => key !== "classFolders" && key !== "currentSession",
+          ),
+        )
+      : {};
   const nextPreferences = {
     ...readPreferences(),
-    ...patch,
+    ...safePatch,
   };
   writePreferences(nextPreferences);
   return getPreferenceSnapshot();
 });
 
 ipcMain.handle("class-folders:get", () => {
-  return getPreferenceSnapshot().classFolders;
+  return getStoredClassFolders();
 });
 
 ipcMain.handle("class-folders:update", (_event, classFolders) => {
-  const nextPreferences = {
-    ...readPreferences(),
-    classFolders: Array.isArray(classFolders) ? classFolders : [],
-  };
-  writePreferences(nextPreferences);
-  notifyHomeWindowFoldersChanged(nextPreferences.classFolders);
-  return nextPreferences.classFolders;
+  const nextClassFolders = setStoredClassFolders(classFolders);
+  notifyHomeWindowFoldersChanged(nextClassFolders);
+  return nextClassFolders;
 });
 
 ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {
@@ -581,7 +633,7 @@ ipcMain.handle("onboarding:complete", (event) => {
 });
 
 ipcMain.handle("session:getCurrent", () => {
-  return getPreferenceSnapshot().currentSession;
+  return sessionManager.getCurrentSession();
 });
 
 ipcMain.handle("session:start", (_event, session) => {

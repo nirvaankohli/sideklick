@@ -2,6 +2,8 @@
 
 This Chrome extension sends SideClick context-menu actions directly to the local Electron app bridge at `http://localhost:4353`.
 
+The extension includes a shared local bridge token and sends a per-request nonce plus timestamp headers. If you change the app's `SIDECLICK_BRIDGE_TOKEN`, update `BRIDGE_AUTH_TOKEN` in `extension/background.js` to match.
+
 ## Load In Chrome
 
 1. Open `chrome://extensions`
@@ -35,5 +37,11 @@ Each action posts a structured local JSON payload like:
   "click_function": "restore-window"
 }
 ```
+
+Headers sent with each request:
+
+- `x-sideclick-token`
+- `x-sideclick-nonce`
+- `x-sideclick-timestamp`
 
 The desktop app restores the chat window, runs the assist request immediately, shows a waiting animation, and streams the response text into the chat bubble. Browser-triggered actions include a visible-tab screenshot, and Electron also captures a screen screenshot before every assist request.
