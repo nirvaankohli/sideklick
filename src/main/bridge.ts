@@ -4,10 +4,10 @@ import { z } from "zod";
 
 const DEFAULT_PORT = 4353;
 const DEFAULT_HOST = "localhost";
-const DEFAULT_ALLOWED_TIMESTAMP_SKEW_MS = 5 * 60 * 1000;
-const BRIDGE_TOKEN_HEADER = "x-sideclick-token";
+const DEFAULT_ALLOWED_REQUEST_TTL_MS = 30 * 1000;
+const BRIDGE_EXPIRES_HEADER = "x-sideclick-expires";
 const BRIDGE_NONCE_HEADER = "x-sideclick-nonce";
-const BRIDGE_TIMESTAMP_HEADER = "x-sideclick-timestamp";
+const BRIDGE_SIGNATURE_HEADER = "x-sideclick-signature";
 
 const incomingPayloadSchema = z.object({
   action_type: z.string().trim().min(1),
@@ -53,18 +53,41 @@ function isValidNonce(value: string | null): value is string {
   return typeof value === "string" && /^[A-Za-z0-9:_-]{16,128}$/.test(value);
 }
 
-function tokensMatch(expectedToken: string, providedToken: string | null): boolean {
-  if (!providedToken) {
+function signaturesMatch(
+  expectedSignature: string,
+  providedSignature: string | null,
+): boolean {
+  if (!providedSignature) {
     return false;
   }
 
-  const expectedBuffer = Buffer.from(expectedToken, "utf8");
-  const providedBuffer = Buffer.from(providedToken, "utf8");
+  const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+  const providedBuffer = Buffer.from(providedSignature, "utf8");
   if (expectedBuffer.length !== providedBuffer.length) {
     return false;
   }
 
   return crypto.timingSafeEqual(expectedBuffer, providedBuffer);
+}
+
+function buildSignatureInput({
+  method,
+  pathname,
+  expires,
+  nonce,
+  body,
+}: {
+  method: string;
+  pathname: string;
+  expires: string;
+  nonce: string;
+  body: string;
+}) {
+  return [method.toUpperCase(), pathname, expires, nonce, body].join("\n");
+}
+
+function createSignature(secret: string, signatureInput: string) {
+  return crypto.createHmac("sha256", secret).update(signatureInput).digest("hex");
 }
 
 function readRequestBody(req: http.IncomingMessage): Promise<string> {
@@ -136,18 +159,18 @@ function validateIncomingPayload(parsed: Record<string, unknown>) {
 
 export function createIncomingMessageBridge({
   dispatchIncomingPayload,
-  authToken,
+  authSecret,
   host = DEFAULT_HOST,
   port = DEFAULT_PORT,
   log = console,
-  allowedTimestampSkewMs = DEFAULT_ALLOWED_TIMESTAMP_SKEW_MS,
+  allowedRequestTtlMs = DEFAULT_ALLOWED_REQUEST_TTL_MS,
 }: {
   dispatchIncomingPayload: (payload: Record<string, unknown>) => void;
-  authToken: string;
+  authSecret: string;
   host?: string;
   port?: number;
   log?: Pick<typeof console, "log" | "error">;
-  allowedTimestampSkewMs?: number;
+  allowedRequestTtlMs?: number;
 }) {
   let server: http.Server | null = null;
   const seenNonces = new Map<string, number>();
@@ -160,29 +183,28 @@ export function createIncomingMessageBridge({
     }
   }
 
-  function authenticateRequest(req: http.IncomingMessage) {
-    const providedToken = getHeaderValue(req, BRIDGE_TOKEN_HEADER);
-    if (!tokensMatch(authToken, providedToken)) {
-      return { ok: false, statusCode: 401, error: "Unauthorized caller" };
-    }
-
+  function authenticateRequest(req: http.IncomingMessage, rawBody: string) {
     const nonce = getHeaderValue(req, BRIDGE_NONCE_HEADER);
     if (!isValidNonce(nonce)) {
       return { ok: false, statusCode: 401, error: "Missing or invalid nonce" };
     }
 
-    const timestamp = parseTimestamp(getHeaderValue(req, BRIDGE_TIMESTAMP_HEADER));
-    if (timestamp === null) {
+    const expires = parseTimestamp(getHeaderValue(req, BRIDGE_EXPIRES_HEADER));
+    if (expires === null) {
       return {
         ok: false,
         statusCode: 401,
-        error: "Missing or invalid request timestamp",
+        error: "Missing or invalid request expiry",
       };
     }
 
     const now = Date.now();
-    if (Math.abs(now - timestamp) > allowedTimestampSkewMs) {
-      return { ok: false, statusCode: 401, error: "Expired request timestamp" };
+    if (expires < now) {
+      return { ok: false, statusCode: 401, error: "Expired request" };
+    }
+
+    if (expires - now > allowedRequestTtlMs) {
+      return { ok: false, statusCode: 401, error: "Request expiry too far in future" };
     }
 
     pruneSeenNonces(now);
@@ -190,7 +212,23 @@ export function createIncomingMessageBridge({
       return { ok: false, statusCode: 409, error: "Replay detected for nonce" };
     }
 
-    seenNonces.set(nonce, now + allowedTimestampSkewMs);
+    const providedSignature = getHeaderValue(req, BRIDGE_SIGNATURE_HEADER);
+    const expectedSignature = createSignature(
+      authSecret,
+      buildSignatureInput({
+        method: req.method || "POST",
+        pathname: req.url || "/",
+        expires: String(expires),
+        nonce,
+        body: rawBody,
+      }),
+    );
+
+    if (!signaturesMatch(expectedSignature, providedSignature)) {
+      return { ok: false, statusCode: 401, error: "Unauthorized caller" };
+    }
+
+    seenNonces.set(nonce, expires);
     return { ok: true };
   }
 
@@ -208,16 +246,16 @@ export function createIncomingMessageBridge({
           return;
         }
 
-        const authResult = authenticateRequest(req);
-        if (!authResult.ok) {
-          res.statusCode = authResult.statusCode;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ ok: false, error: authResult.error }));
-          return;
-        }
-
         try {
           const rawBody = await readRequestBody(req);
+          const authResult = authenticateRequest(req, rawBody);
+          if (!authResult.ok) {
+            res.statusCode = authResult.statusCode;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ ok: false, error: authResult.error }));
+            return;
+          }
+
           const parsed = rawBody ? JSON.parse(rawBody) : {};
           dispatchIncomingPayload(validateIncomingPayload(parsed as Record<string, unknown>));
           res.statusCode = 200;

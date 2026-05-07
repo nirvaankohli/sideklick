@@ -30,9 +30,9 @@
                 <path d="M7 6h10v2H7zM7 11h10v2H7zM7 16h10v2H7z"></path>
               </svg>
             </button>
-            <button id="theme-icon-toggle" class="icon-button" type="button" aria-label="Toggle light or dark theme">
+            <button id="open-settings" class="icon-button" type="button" aria-label="Open settings">
               <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12.2 3.2c.5 0 .8.4.8.8 0 .2 0 .4-.1.5-1 1.8-1.3 4-.7 6.1 1 3.2 4 5.4 7.4 5.4.4 0 .8.3.8.8 0 .2-.1.4-.2.5-1.7 2.3-4.4 3.7-7.3 3.7-5 0-9-4-9-9 0-4 2.7-7.4 6.5-8.6.1-.1.3-.2.5-.2Z"></path>
+                <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.28 7.28 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.13.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.41 1.05.72 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.22 1.13-.53 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"></path>
               </svg>
             </button>
             <button id="minimize-native" class="icon-button" type="button" aria-label="Minimize window">
@@ -50,7 +50,7 @@
 
         <section class="content">
           <div class="home-workspace no-drag">
-            <div class="home-layout">
+            <div id="home-dashboard-view" class="home-view home-view-active">
               <section class="home-browser">
                 <div class="home-browser-header">
                   <div>
@@ -82,85 +82,157 @@
                   <p id="empty-copy" class="empty-copy">Create a class folder to start organizing courses, notes, and study context.</p>
                 </div>
               </section>
+            </div>
 
-              <aside class="privacy-panel">
-                <div class="privacy-panel-header">
-                  <div>
-                    <p class="panel-label">Privacy</p>
-                    <p id="privacy-panel-status" class="panel-help">Review screenshot and sync preferences.</p>
+            <div id="home-settings-view" class="home-view" hidden>
+              <section class="settings-shell">
+                <header class="settings-header">
+                  <button id="settings-home-button" class="settings-back-button" type="button" aria-label="Back to home">
+                    <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M15.4 5.4 8.8 12l6.6 6.6-1.4 1.4L6 12l8-8z"></path>
+                    </svg>
+                  </button>
+                  <div class="settings-header-copy">
+                    <p class="panel-label">Settings</p>
+                    <h2 class="settings-title">SideClick Settings</h2>
                   </div>
+                </header>
+
+                <div class="settings-grid">
+                  <section class="settings-card">
+                    <div class="setup-section-header">
+                      <div>
+                        <p class="panel-label">Appearance</p>
+                        <p id="settings-theme-status" class="panel-help">Current preference: System</p>
+                      </div>
+                    </div>
+                    <div class="theme-choice-grid">
+                      <button data-home-theme="light" class="theme-choice-button" type="button">
+                        <span class="theme-choice-icon">Light</span>
+                        <span class="theme-choice-title">Light</span>
+                        <span class="theme-choice-copy">Brighter contrast for daytime use.</span>
+                      </button>
+                      <button data-home-theme="dark" class="theme-choice-button" type="button">
+                        <span class="theme-choice-icon">Dark</span>
+                        <span class="theme-choice-title">Dark</span>
+                        <span class="theme-choice-copy">Lower glare over dense pages.</span>
+                      </button>
+                      <button data-home-theme="system" class="theme-choice-button" type="button">
+                        <span class="theme-choice-icon">System</span>
+                        <span class="theme-choice-title">System</span>
+                        <span class="theme-choice-copy">Follow your device automatically.</span>
+                      </button>
+                    </div>
+                  </section>
+
+                  <section class="settings-card">
+                    <div class="setup-section-header">
+                      <div>
+                        <p class="panel-label">Discovery</p>
+                        <p id="settings-source-status" class="panel-help">No source selected yet.</p>
+                      </div>
+                    </div>
+                    <div class="choice-grid source-grid">
+                      <button data-home-source="teacher" class="info-choice-button" type="button">
+                        <span class="choice-kicker">Teacher</span>
+                        <span class="choice-title">Recommended by a teacher or class</span>
+                      </button>
+                      <button data-home-source="friend" class="info-choice-button" type="button">
+                        <span class="choice-kicker">Friend</span>
+                        <span class="choice-title">Found through a friend</span>
+                      </button>
+                      <button data-home-source="hackathon" class="info-choice-button" type="button">
+                        <span class="choice-kicker">Hackathon</span>
+                        <span class="choice-title">Found through Big Red Hacks or a demo</span>
+                      </button>
+                      <button data-home-source="search" class="info-choice-button" type="button">
+                        <span class="choice-kicker">Search</span>
+                        <span class="choice-title">Found online while searching for study help</span>
+                      </button>
+                    </div>
+                  </section>
+
+                  <section class="settings-card">
+                    <div class="setup-section-header">
+                      <div>
+                        <p class="panel-label">Study Profile</p>
+                        <p id="settings-profile-status" class="panel-help">Pick the closest fit.</p>
+                      </div>
+                    </div>
+                    <div class="choice-grid profile-grid">
+                      <button data-home-profile="advanced" class="info-choice-button profile-choice" type="button">
+                        <span class="choice-kicker">AP / Honors</span>
+                        <span class="choice-title">High-context support for demanding classes.</span>
+                      </button>
+                      <button data-home-profile="catch-up" class="info-choice-button profile-choice" type="button">
+                        <span class="choice-kicker">Catch-Up</span>
+                        <span class="choice-title">Rebuild foundations and surface repeated confusion.</span>
+                      </button>
+                      <button data-home-profile="exam" class="info-choice-button profile-choice" type="button">
+                        <span class="choice-kicker">Exam Focused</span>
+                        <span class="choice-title">Prioritize what matters most before tests.</span>
+                      </button>
+                    </div>
+                  </section>
+
+                  <section class="settings-card settings-privacy-card">
+                    <div class="setup-section-header">
+                      <div>
+                        <p class="panel-label">Privacy</p>
+                        <p id="settings-privacy-status" class="panel-help">Review capture and sync preferences.</p>
+                      </div>
+                    </div>
+
+                    <div class="settings-compact-stack">
+                      <div class="settings-inline-group">
+                        <div class="settings-inline-copy">
+                          <span class="settings-inline-label">Screenshots</span>
+                          <span id="privacy-screenshot-status" class="settings-inline-value">Disabled</span>
+                        </div>
+                        <div class="settings-chip-group">
+                          <button data-screenshot-policy="disabled" class="settings-chip-button" type="button">Off</button>
+                          <button data-screenshot-policy="manual" class="settings-chip-button" type="button">Manual</button>
+                          <button data-screenshot-policy="automatic" class="settings-chip-button" type="button">Auto</button>
+                        </div>
+                      </div>
+
+                      <div class="settings-inline-group">
+                        <div class="settings-inline-copy">
+                          <span class="settings-inline-label">Sync consent</span>
+                          <span id="privacy-sync-status" class="settings-inline-value">Not set</span>
+                        </div>
+                        <div class="settings-chip-group">
+                          <button data-sync-consent="unknown" class="settings-chip-button" type="button">Later</button>
+                          <button data-sync-consent="granted" class="settings-chip-button" type="button">Allow</button>
+                          <button data-sync-consent="denied" class="settings-chip-button" type="button">Deny</button>
+                        </div>
+                      </div>
+
+                      <label class="settings-toggle-row" for="privacy-local-only-toggle">
+                        <div class="settings-inline-copy">
+                          <span class="settings-inline-label">Local-only mode</span>
+                          <span class="settings-inline-value">Keep SideClick focused on on-device workflows.</span>
+                        </div>
+                        <input id="privacy-local-only-toggle" type="checkbox" />
+                      </label>
+                    </div>
+                  </section>
+
+                  <section class="settings-card settings-card-secondary">
+                    <div class="setup-section-header">
+                      <div>
+                        <p class="panel-label">Notes</p>
+                        <p class="panel-help">Quick reference for the desktop app.</p>
+                      </div>
+                    </div>
+                    <ul class="settings-list">
+                      <li>Use the pin button to collapse Home into the docked view.</li>
+                      <li>Resize from the lower-right corner when you need more room.</li>
+                      <li>Theme changes apply across Home, Chat, and quiz views.</li>
+                    </ul>
+                  </section>
                 </div>
-
-                <section class="privacy-panel-block">
-                  <div class="setup-section-header privacy-block-header">
-                    <div>
-                      <h2 class="privacy-block-title">Screenshot policy</h2>
-                      <p class="privacy-block-copy">Choose when SideClick may use screenshots for visual help.</p>
-                    </div>
-                    <p id="privacy-screenshot-status" class="panel-help">Screenshots disabled.</p>
-                  </div>
-                  <div class="choice-grid privacy-choice-grid">
-                    <button id="privacy-screenshot-disabled" data-screenshot-policy="disabled" class="info-choice-button" type="button">
-                      <span class="choice-kicker">Off</span>
-                      <span class="choice-title">Disable screenshots</span>
-                      <span class="choice-copy">No manual attachments and no automatic screen capture.</span>
-                    </button>
-                    <button id="privacy-screenshot-manual" data-screenshot-policy="manual" class="info-choice-button" type="button">
-                      <span class="choice-kicker">Manual</span>
-                      <span class="choice-title">Only use screenshots I attach</span>
-                      <span class="choice-copy">Blocks automatic capture but allows manual visual uploads.</span>
-                    </button>
-                    <button id="privacy-screenshot-automatic" data-screenshot-policy="automatic" class="info-choice-button" type="button">
-                      <span class="choice-kicker">Auto</span>
-                      <span class="choice-title">Allow automatic screenshots</span>
-                      <span class="choice-copy">Lets SideClick capture a screenshot when the action needs visual context.</span>
-                    </button>
-                  </div>
-                </section>
-
-                <section class="privacy-panel-block">
-                  <div class="setup-section-header privacy-block-header">
-                    <div>
-                      <h2 class="privacy-block-title">Storage mode</h2>
-                      <p class="privacy-block-copy">Control whether SideClick should stay strictly local.</p>
-                    </div>
-                  </div>
-                  <label class="privacy-toggle-card" for="privacy-local-only-toggle">
-                    <div class="privacy-toggle-copy">
-                      <span class="choice-title">Local-only mode</span>
-                      <span class="choice-copy">Keep SideClick focused on on-device storage and local workflows.</span>
-                    </div>
-                    <input id="privacy-local-only-toggle" type="checkbox" />
-                  </label>
-                </section>
-
-                <section class="privacy-panel-block">
-                  <div class="setup-section-header privacy-block-header">
-                    <div>
-                      <h2 class="privacy-block-title">Sync consent</h2>
-                      <p class="privacy-block-copy">Record whether you are comfortable with future sync features.</p>
-                    </div>
-                    <p id="privacy-sync-status" class="panel-help">Consent not set.</p>
-                  </div>
-                  <div class="choice-grid privacy-consent-grid">
-                    <button data-sync-consent="unknown" class="info-choice-button profile-choice" type="button">
-                      <span class="choice-kicker">Later</span>
-                      <span class="choice-title">Ask me later</span>
-                      <span class="choice-copy">Keep future sync undecided for now.</span>
-                    </button>
-                    <button data-sync-consent="granted" class="info-choice-button profile-choice" type="button">
-                      <span class="choice-kicker">Yes</span>
-                      <span class="choice-title">I would consider sync</span>
-                      <span class="choice-copy">You are open to future consent-based sync capabilities.</span>
-                    </button>
-                    <button data-sync-consent="denied" class="info-choice-button profile-choice" type="button">
-                      <span class="choice-kicker">No</span>
-                      <span class="choice-title">Keep it fully local</span>
-                      <span class="choice-copy">Do not assume consent for any future sync or cross-device features.</span>
-                    </button>
-                  </div>
-                </section>
-              </aside>
+              </section>
             </div>
           </div>
         </section>

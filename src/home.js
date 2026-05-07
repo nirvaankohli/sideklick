@@ -1,10 +1,13 @@
 const root = document.querySelector(".window-shell");
 const shrinkWindow = document.querySelector("#shrink-window");
-const themeIconToggle = document.querySelector("#theme-icon-toggle");
+const openSettingsButton = document.querySelector("#open-settings");
 const minimizeNative = document.querySelector("#minimize-native");
 const closeWindow = document.querySelector("#close-window");
 const compactCloseWindow = document.querySelector("#compact-close-window");
 const restoreWindow = document.querySelector("#restore-window");
+const homeDashboardView = document.querySelector("#home-dashboard-view");
+const homeSettingsView = document.querySelector("#home-settings-view");
+const settingsHomeButton = document.querySelector("#settings-home-button");
 const createQuizButton = document.querySelector("#create-quiz");
 const backFolderButton = document.querySelector("#back-folder");
 const newFolderButton = document.querySelector("#new-folder");
@@ -67,10 +70,16 @@ const quizExplanationText = document.querySelector("#quiz-explanation-text");
 const saveQuizButton = document.querySelector("#save-quiz-button");
 const quizSubmitButton = document.querySelector("#quiz-submit-button");
 const resizeHandle = document.querySelector("#resize-handle");
-const privacyPanelStatus = document.querySelector("#privacy-panel-status");
+const settingsThemeStatus = document.querySelector("#settings-theme-status");
+const settingsSourceStatus = document.querySelector("#settings-source-status");
+const settingsProfileStatus = document.querySelector("#settings-profile-status");
+const settingsPrivacyStatus = document.querySelector("#settings-privacy-status");
 const privacyScreenshotStatus = document.querySelector("#privacy-screenshot-status");
 const privacySyncStatus = document.querySelector("#privacy-sync-status");
 const privacyLocalOnlyToggle = document.querySelector("#privacy-local-only-toggle");
+const settingsThemeButtons = Array.from(document.querySelectorAll("[data-home-theme]"));
+const settingsSourceButtons = Array.from(document.querySelectorAll("[data-home-source]"));
+const settingsProfileButtons = Array.from(document.querySelectorAll("[data-home-profile]"));
 const privacyScreenshotButtons = Array.from(document.querySelectorAll("[data-screenshot-policy]"));
 const privacySyncButtons = Array.from(document.querySelectorAll("[data-sync-consent]"));
 
@@ -83,18 +92,32 @@ let activeQuizClassFolder = null;
 let uploadedQuizMaterial = "";
 let activeQuiz = null;
 let quizHasBeenChecked = false;
+let activeHomeView = "dashboard";
 let privacySettings = null;
 
+const sourceLabels = {
+  teacher: "Teacher or class recommendation",
+  friend: "Friend recommendation",
+  hackathon: "Big Red Hacks or demo",
+  search: "Online search",
+};
+
+const profileLabels = {
+  advanced: "AP / Honors",
+  "catch-up": "Catch-Up",
+  exam: "Exam Focused",
+};
+
 const screenshotPolicyLabels = {
-  automatic: "Automatic screenshots enabled",
-  manual: "Manual screenshots only",
-  disabled: "Screenshots disabled",
+  automatic: "Automatic",
+  manual: "Manual only",
+  disabled: "Disabled",
 };
 
 const syncConsentLabels = {
-  unknown: "Consent not set",
-  granted: "Open to future sync",
-  denied: "No sync consent",
+  unknown: "Ask later",
+  granted: "Allowed",
+  denied: "Denied",
 };
 
 function makeId() {
@@ -141,6 +164,34 @@ function scheduleFitText() {
   });
 }
 
+function humanLabel(themeSource, shouldUseDarkColors) {
+  if (themeSource === "system") {
+    return `System (${shouldUseDarkColors ? "Dark" : "Light"})`;
+  }
+
+  return `${themeSource.charAt(0).toUpperCase()}${themeSource.slice(1)}`;
+}
+
+function resolveShouldUseDarkColors(themeSource) {
+  if (themeSource === "dark") {
+    return true;
+  }
+
+  if (themeSource === "light") {
+    return false;
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function setHomeView(nextView) {
+  activeHomeView = nextView === "settings" ? "settings" : "dashboard";
+  homeDashboardView.hidden = activeHomeView !== "dashboard";
+  homeSettingsView.hidden = activeHomeView !== "settings";
+  homeDashboardView.classList.toggle("home-view-active", activeHomeView === "dashboard");
+  homeSettingsView.classList.toggle("home-view-active", activeHomeView === "settings");
+}
+
 function applyPrivacySettings(settings) {
   privacySettings = settings;
 
@@ -157,9 +208,30 @@ function applyPrivacySettings(settings) {
   privacyLocalOnlyToggle.checked = Boolean(settings.localOnlyMode);
   privacyScreenshotStatus.textContent = screenshotPolicyLabels[settings.screenshotPolicy];
   privacySyncStatus.textContent = syncConsentLabels[settings.syncConsent];
-  privacyPanelStatus.textContent = settings.localOnlyMode
-    ? "Local-only mode is on. Privacy-sensitive defaults stay conservative."
-    : "Local-only mode is off. Review screenshot and consent settings carefully.";
+  settingsPrivacyStatus.textContent = settings.localOnlyMode
+    ? "Local-only mode is on with conservative defaults."
+    : "Review capture and sync preferences carefully.";
+}
+
+function applyPreferenceSelections(preferences) {
+  const { discoverySource, customerProfile } = preferences;
+
+  for (const button of settingsSourceButtons) {
+    button.dataset.selected =
+      button.dataset.homeSource === discoverySource ? "true" : "false";
+  }
+
+  for (const button of settingsProfileButtons) {
+    button.dataset.selected =
+      button.dataset.homeProfile === customerProfile ? "true" : "false";
+  }
+
+  settingsSourceStatus.textContent = discoverySource
+    ? `Current source: ${sourceLabels[discoverySource]}`
+    : "No source selected yet.";
+  settingsProfileStatus.textContent = customerProfile
+    ? `Current profile: ${profileLabels[customerProfile]}`
+    : "Pick the closest fit.";
 }
 
 function normalizeFolders(source) {
@@ -966,6 +1038,18 @@ function applyThemeState({ shouldUseDarkColors }) {
   root.dataset.tone = currentTone;
 }
 
+function applyThemePreference({ themeSource, shouldUseDarkColors }) {
+  applyThemeState({ shouldUseDarkColors });
+
+  for (const button of settingsThemeButtons) {
+    button.dataset.selected =
+      button.dataset.homeTheme === themeSource ? "true" : "false";
+  }
+
+  settingsThemeStatus.textContent =
+    `Current preference: ${humanLabel(themeSource, shouldUseDarkColors)}`;
+}
+
 function setMode(mode) {
   root.dataset.mode = mode;
 }
@@ -1003,16 +1087,18 @@ shrinkWindow.addEventListener("click", async () => {
   await window.overlayApi.minimizeToDock();
 });
 
-themeIconToggle.addEventListener("click", async () => {
-  const nextSource = currentTone === "dark" ? "light" : "dark";
-  const result = await window.overlayApi.setThemeSource(nextSource);
-  applyThemeState(result);
+openSettingsButton.addEventListener("click", () => {
+  setHomeView("settings");
+});
+
+settingsHomeButton.addEventListener("click", () => {
+  setHomeView("dashboard");
 });
 
 quizThemeToggle.addEventListener("click", async () => {
   const nextSource = currentTone === "dark" ? "light" : "dark";
   const result = await window.overlayApi.setThemeSource(nextSource);
-  applyThemeState(result);
+  applyThemePreference(result);
 });
 
 minimizeNative.addEventListener("click", async () => {
@@ -1096,6 +1182,31 @@ quizMaterialFile.addEventListener("change", async () => {
   quizSourceUploaded.checked = true;
 });
 
+for (const button of settingsThemeButtons) {
+  button.addEventListener("click", async () => {
+    const result = await window.overlayApi.setThemeSource(button.dataset.homeTheme);
+    applyThemePreference(result);
+  });
+}
+
+for (const button of settingsSourceButtons) {
+  button.addEventListener("click", async () => {
+    const preferences = await window.overlayApi.updatePreferences({
+      discoverySource: button.dataset.homeSource,
+    });
+    applyPreferenceSelections(preferences);
+  });
+}
+
+for (const button of settingsProfileButtons) {
+  button.addEventListener("click", async () => {
+    const preferences = await window.overlayApi.updatePreferences({
+      customerProfile: button.dataset.homeProfile,
+    });
+    applyPreferenceSelections(preferences);
+  });
+}
+
 for (const button of privacyScreenshotButtons) {
   button.addEventListener("click", async () => {
     const settings = await window.overlayApi.updatePrivacySettings({
@@ -1130,7 +1241,9 @@ quizSubmitButton.addEventListener("click", () => {
   gradeQuiz();
 });
 
-window.overlayApi.onThemeChanged(applyThemeState);
+window.overlayApi.onThemeChanged((payload) => {
+  applyThemePreference(payload);
+});
 window.overlayApi.onWindowMode(({ mode }) => setMode(mode));
 window.overlayApi.onClassFoldersChanged((nextFolders) => {
   folders = normalizeFolders(Array.isArray(nextFolders) ? nextFolders : []);
@@ -1138,8 +1251,9 @@ window.overlayApi.onClassFoldersChanged((nextFolders) => {
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
-  const [storedFolders, settings] = await Promise.all([
+  const [storedFolders, preferences, settings] = await Promise.all([
     window.overlayApi.getClassFolders(),
+    window.overlayApi.getPreferences(),
     window.overlayApi.getPrivacySettings(),
   ]);
   const normalizedFolders = normalizeFolders(storedFolders);
@@ -1152,7 +1266,13 @@ window.addEventListener("DOMContentLoaded", async () => {
   } else {
     folders = normalizedFolders;
   }
+  applyThemePreference({
+    themeSource: preferences.themeSource || "system",
+    shouldUseDarkColors: resolveShouldUseDarkColors(preferences.themeSource || "system"),
+  });
+  applyPreferenceSelections(preferences);
   applyPrivacySettings(settings);
+  setHomeView("dashboard");
   renderFolders();
   attachResizeHandle(resizeHandle);
 });

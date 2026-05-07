@@ -1,5 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
 const { once } = require("node:events");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");
@@ -10,16 +11,36 @@ async function loadBridgeModule() {
   );
 }
 
-function createAuthHeaders({
-  token = "test-token",
+function createSignature({
+  secret = "test-secret",
+  method = "POST",
+  pathname = "/",
+  expires,
   nonce = "nonce-1234567890abcd",
-  timestamp = Date.now(),
+  body = "",
+} = {}) {
+  return crypto
+    .createHmac("sha256", secret)
+    .update([method.toUpperCase(), pathname, String(expires), nonce, body].join("\n"))
+    .digest("hex");
+}
+
+function createAuthHeaders({
+  secret = "test-secret",
+  nonce = "nonce-1234567890abcd",
+  expires = Date.now() + 30_000,
+  body = "",
 } = {}) {
   return {
     "Content-Type": "application/json",
-    "x-sideclick-token": token,
     "x-sideclick-nonce": nonce,
-    "x-sideclick-timestamp": String(timestamp),
+    "x-sideclick-expires": String(expires),
+    "x-sideclick-signature": createSignature({
+      secret,
+      nonce,
+      expires,
+      body,
+    }),
   };
 }
 
@@ -28,7 +49,7 @@ test("incoming message bridge normalizes a payload and dispatches it", async () 
   const dispatched = [];
   const logs = [];
   const bridge = createIncomingMessageBridge({
-    authToken: "test-token",
+    authSecret: "test-secret",
     host: "127.0.0.1",
     port: 0,
     dispatchIncomingPayload(payload) {
@@ -46,20 +67,21 @@ test("incoming message bridge normalizes a payload and dispatches it", async () 
   await once(server, "listening");
   const address = server.address();
   assert.equal(typeof address.port, "number");
+  const requestBody = JSON.stringify({
+    actionType: "explain",
+    selectedText: "hello",
+    surroundingText: "context",
+    pageTitle: "Page",
+    pageUrl: "https://example.com",
+    userNote: "note",
+    screenshotDataUrl: "data:image/png;base64,abc",
+    click_function: "restore-window",
+  });
 
   const response = await fetch(`http://127.0.0.1:${address.port}`, {
     method: "POST",
-    headers: createAuthHeaders(),
-    body: JSON.stringify({
-      actionType: "explain",
-      selectedText: "hello",
-      surroundingText: "context",
-      pageTitle: "Page",
-      pageUrl: "https://example.com",
-      userNote: "note",
-      screenshotDataUrl: "data:image/png;base64,abc",
-      click_function: "restore-window",
-    }),
+    headers: createAuthHeaders({ body: requestBody }),
+    body: requestBody,
   });
 
   assert.equal(response.status, 200);
@@ -85,7 +107,7 @@ test("incoming message bridge normalizes a payload and dispatches it", async () 
 test("incoming message bridge rejects non-POST requests and invalid JSON", async () => {
   const { createIncomingMessageBridge } = await loadBridgeModule();
   const bridge = createIncomingMessageBridge({
-    authToken: "test-token",
+    authSecret: "test-secret",
     host: "127.0.0.1",
     port: 0,
     dispatchIncomingPayload() {
@@ -110,7 +132,7 @@ test("incoming message bridge rejects non-POST requests and invalid JSON", async
 
   const invalidJsonResponse = await fetch(`http://127.0.0.1:${address.port}`, {
     method: "POST",
-    headers: createAuthHeaders(),
+    headers: createAuthHeaders({ body: "{not-json" }),
     body: "{not-json",
   });
   assert.equal(invalidJsonResponse.status, 400);
@@ -123,11 +145,11 @@ test("incoming message bridge rejects non-POST requests and invalid JSON", async
   await once(server, "close");
 });
 
-test("incoming message bridge rejects missing auth, replayed nonces, stale timestamps, and invalid payloads", async () => {
+test("incoming message bridge rejects missing auth, bad signatures, replayed nonces, expired requests, and invalid payloads", async () => {
   const { createIncomingMessageBridge } = await loadBridgeModule();
   const dispatched = [];
   const bridge = createIncomingMessageBridge({
-    authToken: "test-token",
+    authSecret: "test-secret",
     host: "127.0.0.1",
     port: 0,
     dispatchIncomingPayload(payload) {
@@ -137,7 +159,7 @@ test("incoming message bridge rejects missing auth, replayed nonces, stale times
       log() {},
       error() {},
     },
-    allowedTimestampSkewMs: 1000,
+    allowedRequestTtlMs: 1000,
   });
 
   const server = bridge.start();
@@ -150,7 +172,7 @@ test("incoming message bridge rejects missing auth, replayed nonces, stale times
     headers: {
       "Content-Type": "application/json",
       "x-sideclick-nonce": "nonce-unauthorized-1234",
-      "x-sideclick-timestamp": String(Date.now()),
+      "x-sideclick-expires": String(Date.now() + 500),
     },
     body: JSON.stringify({ action_type: "chat", selected_text: "" }),
   });
@@ -163,32 +185,72 @@ test("incoming message bridge rejects missing auth, replayed nonces, stale times
   const staleResponse = await fetch(url, {
     method: "POST",
     headers: createAuthHeaders({
-      timestamp: Date.now() - 5000,
+      expires: Date.now() - 5000,
       nonce: "nonce-stale-123456789",
+      body: JSON.stringify({ action_type: "chat", selected_text: "" }),
     }),
     body: JSON.stringify({ action_type: "chat", selected_text: "" }),
   });
   assert.equal(staleResponse.status, 401);
   assert.deepEqual(await staleResponse.json(), {
     ok: false,
-    error: "Expired request timestamp",
+    error: "Expired request",
   });
 
+  const tooFarFutureBody = JSON.stringify({ action_type: "chat", selected_text: "" });
+  const tooFarFutureResponse = await fetch(url, {
+    method: "POST",
+    headers: createAuthHeaders({
+      expires: Date.now() + 5000,
+      nonce: "nonce-too-far-1234567",
+      body: tooFarFutureBody,
+    }),
+    body: tooFarFutureBody,
+  });
+  assert.equal(tooFarFutureResponse.status, 401);
+  assert.deepEqual(await tooFarFutureResponse.json(), {
+    ok: false,
+    error: "Request expiry too far in future",
+  });
+
+  const badSignatureBody = JSON.stringify({ action_type: "chat", selected_text: "" });
+  const badSignatureResponse = await fetch(url, {
+    method: "POST",
+    headers: createAuthHeaders({
+      secret: "wrong-secret",
+      nonce: "nonce-bad-signature1",
+      expires: Date.now() + 500,
+      body: badSignatureBody,
+    }),
+    body: badSignatureBody,
+  });
+  assert.equal(badSignatureResponse.status, 401);
+  assert.deepEqual(await badSignatureResponse.json(), {
+    ok: false,
+    error: "Unauthorized caller",
+  });
+
+  const firstValidBody = JSON.stringify({ action_type: "chat", selected_text: "" });
   const firstValidResponse = await fetch(url, {
     method: "POST",
     headers: createAuthHeaders({
       nonce: "nonce-replay-123456789",
+      expires: Date.now() + 500,
+      body: firstValidBody,
     }),
-    body: JSON.stringify({ action_type: "chat", selected_text: "" }),
+    body: firstValidBody,
   });
   assert.equal(firstValidResponse.status, 200);
 
+  const replayBody = JSON.stringify({ action_type: "chat", selected_text: "" });
   const replayResponse = await fetch(url, {
     method: "POST",
     headers: createAuthHeaders({
       nonce: "nonce-replay-123456789",
+      expires: Date.now() + 500,
+      body: replayBody,
     }),
-    body: JSON.stringify({ action_type: "chat", selected_text: "" }),
+    body: replayBody,
   });
   assert.equal(replayResponse.status, 409);
   assert.deepEqual(await replayResponse.json(), {
@@ -196,16 +258,19 @@ test("incoming message bridge rejects missing auth, replayed nonces, stale times
     error: "Replay detected for nonce",
   });
 
+  const invalidPayloadBody = JSON.stringify({
+    action_type: "chat",
+    selected_text: "",
+    page_url: "not-a-url",
+  });
   const invalidPayloadResponse = await fetch(url, {
     method: "POST",
     headers: createAuthHeaders({
       nonce: "nonce-invalid-payload-123",
+      expires: Date.now() + 500,
+      body: invalidPayloadBody,
     }),
-    body: JSON.stringify({
-      action_type: "chat",
-      selected_text: "",
-      page_url: "not-a-url",
-    }),
+    body: invalidPayloadBody,
   });
   assert.equal(invalidPayloadResponse.status, 400);
   assert.deepEqual(await invalidPayloadResponse.json(), {
@@ -222,7 +287,7 @@ test("incoming message bridge rejects missing auth, replayed nonces, stale times
 test("incoming message bridge start is idempotent", async () => {
   const { createIncomingMessageBridge } = await loadBridgeModule();
   const bridge = createIncomingMessageBridge({
-    authToken: "test-token",
+    authSecret: "test-secret",
     host: "127.0.0.1",
     port: 0,
     dispatchIncomingPayload() {},

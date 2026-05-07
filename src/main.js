@@ -57,7 +57,7 @@ const windowsByKey = new Map();
 const windowState = new Map();
 const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
 const LOCAL_API_BASE_URL = "http://127.0.0.1:3001";
-const DEFAULT_BRIDGE_AUTH_TOKEN = "sideclick-local-dev-token";
+const DEFAULT_BRIDGE_AUTH_SECRET = "sideclick-local-dev-secret";
 
 function getAppLogoPath() {
   return path.join(process.cwd(), "assets", "images", "logo", "logo.png");
@@ -417,18 +417,18 @@ function dispatchIncomingPayload(payload) {
   deliverPayload();
 }
 
-function getBridgeAuthToken() {
-  const configuredToken =
-    typeof process.env.SIDECLICK_BRIDGE_TOKEN === "string"
-      ? process.env.SIDECLICK_BRIDGE_TOKEN.trim()
+function getBridgeAuthSecret() {
+  const configuredSecret =
+    typeof process.env.SIDECLICK_BRIDGE_SECRET === "string"
+      ? process.env.SIDECLICK_BRIDGE_SECRET.trim()
       : "";
 
-  return configuredToken || DEFAULT_BRIDGE_AUTH_TOKEN;
+  return configuredSecret || DEFAULT_BRIDGE_AUTH_SECRET;
 }
 
 const incomingMessageServer = createIncomingMessageBridge({
   dispatchIncomingPayload,
-  authToken: getBridgeAuthToken(),
+  authSecret: getBridgeAuthSecret(),
 });
 const sessionManager = createSessionLifecycle({
   createSession,
