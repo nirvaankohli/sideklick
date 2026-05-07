@@ -67,6 +67,12 @@ const quizExplanationText = document.querySelector("#quiz-explanation-text");
 const saveQuizButton = document.querySelector("#save-quiz-button");
 const quizSubmitButton = document.querySelector("#quiz-submit-button");
 const resizeHandle = document.querySelector("#resize-handle");
+const privacyPanelStatus = document.querySelector("#privacy-panel-status");
+const privacyScreenshotStatus = document.querySelector("#privacy-screenshot-status");
+const privacySyncStatus = document.querySelector("#privacy-sync-status");
+const privacyLocalOnlyToggle = document.querySelector("#privacy-local-only-toggle");
+const privacyScreenshotButtons = Array.from(document.querySelectorAll("[data-screenshot-policy]"));
+const privacySyncButtons = Array.from(document.querySelectorAll("[data-sync-consent]"));
 
 let currentTone = "light";
 let folders = [];
@@ -77,6 +83,19 @@ let activeQuizClassFolder = null;
 let uploadedQuizMaterial = "";
 let activeQuiz = null;
 let quizHasBeenChecked = false;
+let privacySettings = null;
+
+const screenshotPolicyLabels = {
+  automatic: "Automatic screenshots enabled",
+  manual: "Manual screenshots only",
+  disabled: "Screenshots disabled",
+};
+
+const syncConsentLabels = {
+  unknown: "Consent not set",
+  granted: "Open to future sync",
+  denied: "No sync consent",
+};
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
@@ -120,6 +139,27 @@ function scheduleFitText() {
       .querySelectorAll("[data-fit-text]")
       .forEach((element) => fitTextToBox(element));
   });
+}
+
+function applyPrivacySettings(settings) {
+  privacySettings = settings;
+
+  for (const button of privacyScreenshotButtons) {
+    button.dataset.selected =
+      button.dataset.screenshotPolicy === settings.screenshotPolicy ? "true" : "false";
+  }
+
+  for (const button of privacySyncButtons) {
+    button.dataset.selected =
+      button.dataset.syncConsent === settings.syncConsent ? "true" : "false";
+  }
+
+  privacyLocalOnlyToggle.checked = Boolean(settings.localOnlyMode);
+  privacyScreenshotStatus.textContent = screenshotPolicyLabels[settings.screenshotPolicy];
+  privacySyncStatus.textContent = syncConsentLabels[settings.syncConsent];
+  privacyPanelStatus.textContent = settings.localOnlyMode
+    ? "Local-only mode is on. Privacy-sensitive defaults stay conservative."
+    : "Local-only mode is off. Review screenshot and consent settings carefully.";
 }
 
 function normalizeFolders(source) {
@@ -1055,6 +1095,31 @@ quizMaterialFile.addEventListener("change", async () => {
   quizFileName.textContent = file.name;
   quizSourceUploaded.checked = true;
 });
+
+for (const button of privacyScreenshotButtons) {
+  button.addEventListener("click", async () => {
+    const settings = await window.overlayApi.updatePrivacySettings({
+      screenshotPolicy: button.dataset.screenshotPolicy,
+    });
+    applyPrivacySettings(settings);
+  });
+}
+
+for (const button of privacySyncButtons) {
+  button.addEventListener("click", async () => {
+    const settings = await window.overlayApi.updatePrivacySettings({
+      syncConsent: button.dataset.syncConsent,
+    });
+    applyPrivacySettings(settings);
+  });
+}
+
+privacyLocalOnlyToggle.addEventListener("change", async () => {
+  const settings = await window.overlayApi.updatePrivacySettings({
+    localOnlyMode: privacyLocalOnlyToggle.checked,
+  });
+  applyPrivacySettings(settings);
+});
 generateQuizButton.addEventListener("click", async () => {
   await generateQuizForActiveSession();
 });
@@ -1073,7 +1138,10 @@ window.overlayApi.onClassFoldersChanged((nextFolders) => {
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
-  const storedFolders = await window.overlayApi.getClassFolders();
+  const [storedFolders, settings] = await Promise.all([
+    window.overlayApi.getClassFolders(),
+    window.overlayApi.getPrivacySettings(),
+  ]);
   const normalizedFolders = normalizeFolders(storedFolders);
   const shouldPersistNormalized =
     normalizedFolders.length !== storedFolders.length ||
@@ -1084,6 +1152,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   } else {
     folders = normalizedFolders;
   }
+  applyPrivacySettings(settings);
   renderFolders();
   attachResizeHandle(resizeHandle);
 });

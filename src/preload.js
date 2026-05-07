@@ -11,6 +11,10 @@ contextBridge.exposeInMainWorld("overlayApi", {
   getClassFolders: () => ipcRenderer.invoke("class-folders:get"),
   updateClassFolders: (folders) =>
     ipcRenderer.invoke("class-folders:update", folders),
+  getPrivacySettings: () => ipcRenderer.invoke("privacy-settings:get"),
+  setPrivacySettings: (settings) => ipcRenderer.invoke("privacy-settings:set", settings),
+  updatePrivacySettings: (patch) => ipcRenderer.invoke("privacy-settings:update", patch),
+  resetPrivacySettings: () => ipcRenderer.invoke("privacy-settings:reset"),
   saveClassProfile: (classProfile) => ipcRenderer.invoke("backend:saveClassProfile", classProfile),
   assist: (payload) => ipcRenderer.invoke("backend:assist", payload),
   submitFeedback: (payload) => ipcRenderer.invoke("backend:feedback", payload),

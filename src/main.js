@@ -37,11 +37,18 @@ const {
 } = require("./config/windows");
 const {
   capturePrimaryDisplayScreenshot,
+  enforceScreenshotPolicy,
   shouldCaptureAutomaticScreenshot,
 } = require("./main/capture.ts");
 const {
   createIncomingMessageBridge,
 } = require("./main/bridge.ts");
+const {
+  getPrivacySettings,
+  resetPrivacySettings,
+  setPrivacySettings,
+  updatePrivacySettings,
+} = require("./main/privacy/settings.ts");
 const {
   createSessionLifecycle,
 } = require("./main/session.ts");
@@ -581,6 +588,22 @@ ipcMain.handle("class-folders:update", (_event, classFolders) => {
   return nextClassFolders;
 });
 
+ipcMain.handle("privacy-settings:get", () => {
+  return getPrivacySettings();
+});
+
+ipcMain.handle("privacy-settings:set", (_event, nextSettings) => {
+  return setPrivacySettings(nextSettings);
+});
+
+ipcMain.handle("privacy-settings:update", (_event, patch) => {
+  return updatePrivacySettings(patch);
+});
+
+ipcMain.handle("privacy-settings:reset", () => {
+  return resetPrivacySettings();
+});
+
 ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {
   return callLocalApi("/api/classes", {
     method: "POST",
@@ -589,8 +612,9 @@ ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {
 });
 
 ipcMain.handle("backend:assist", async (_event, payload) => {
-  let screenshotDataUrl = payload?.screenshotDataUrl ?? null;
-  if (shouldCaptureAutomaticScreenshot(payload)) {
+  const privacySettings = getPrivacySettings();
+  let screenshotDataUrl = enforceScreenshotPolicy(payload, privacySettings);
+  if (shouldCaptureAutomaticScreenshot(payload, privacySettings)) {
     screenshotDataUrl = await capturePrimaryDisplayScreenshot({
       desktopCapturer,
       screen,

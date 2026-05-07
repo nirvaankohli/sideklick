@@ -12,9 +12,13 @@ const choiceButtons = {
 };
 const sourceButtons = Array.from(document.querySelectorAll("[data-source]"));
 const profileButtons = Array.from(document.querySelectorAll("[data-profile]"));
+const privacyPolicyButtons = Array.from(document.querySelectorAll("[data-onboarding-screenshot-policy]"));
+const syncConsentButtons = Array.from(document.querySelectorAll("[data-onboarding-sync-consent]"));
 const stepButtons = Array.from(document.querySelectorAll("[data-step-target]"));
 const stepPanels = Array.from(document.querySelectorAll("[data-step-panel]"));
 const resizeHandle = document.querySelector("#resize-handle");
+const privacyStatus = document.querySelector("#privacy-onboarding-status");
+const localOnlyToggle = document.querySelector("#onboarding-local-only-toggle");
 let activeStep = 1;
 
 const sourceLabels = {
@@ -28,6 +32,18 @@ const profileLabels = {
   advanced: "AP / Honors",
   "catch-up": "Catch-Up",
   exam: "Exam Focused"
+};
+
+const screenshotPolicyLabels = {
+  automatic: "Automatic screenshots enabled",
+  manual: "Manual screenshots only",
+  disabled: "Screenshots disabled",
+};
+
+const syncConsentLabels = {
+  unknown: "Consent not set",
+  granted: "Open to future sync",
+  denied: "No sync consent",
 };
 
 function humanLabel(themeSource, shouldUseDarkColors) {
@@ -68,6 +84,23 @@ function applyPreferenceSelections(preferences) {
     : "Pick the closest fit.";
 }
 
+function applyPrivacySelections(settings) {
+  const { screenshotPolicy, localOnlyMode, syncConsent } = settings;
+
+  for (const button of privacyPolicyButtons) {
+    button.dataset.selected =
+      button.dataset.onboardingScreenshotPolicy === screenshotPolicy ? "true" : "false";
+  }
+
+  for (const button of syncConsentButtons) {
+    button.dataset.selected =
+      button.dataset.onboardingSyncConsent === syncConsent ? "true" : "false";
+  }
+
+  localOnlyToggle.checked = Boolean(localOnlyMode);
+  privacyStatus.textContent = `${screenshotPolicyLabels[screenshotPolicy]}. ${syncConsentLabels[syncConsent]}.`;
+}
+
 function setActiveStep(nextStep) {
   activeStep = nextStep;
   root.dataset.activeStep = String(activeStep);
@@ -80,8 +113,8 @@ function setActiveStep(nextStep) {
     panel.hidden = panel.dataset.stepPanel !== String(activeStep);
   }
 
-  stepCaption.textContent = `Step ${activeStep} of 3`;
-  continueButton.textContent = activeStep === 3 ? "Open SideClick" : "Continue";
+  stepCaption.textContent = `Step ${activeStep} of 4`;
+  continueButton.textContent = activeStep === 4 ? "Open SideClick" : "Continue";
 }
 
 function attachResizeHandle(handle) {
@@ -144,12 +177,37 @@ for (const button of profileButtons) {
   });
 }
 
+for (const button of privacyPolicyButtons) {
+  button.addEventListener("click", async () => {
+    const settings = await window.overlayApi.updatePrivacySettings({
+      screenshotPolicy: button.dataset.onboardingScreenshotPolicy,
+    });
+    applyPrivacySelections(settings);
+  });
+}
+
+for (const button of syncConsentButtons) {
+  button.addEventListener("click", async () => {
+    const settings = await window.overlayApi.updatePrivacySettings({
+      syncConsent: button.dataset.onboardingSyncConsent,
+    });
+    applyPrivacySelections(settings);
+  });
+}
+
+localOnlyToggle.addEventListener("change", async () => {
+  const settings = await window.overlayApi.updatePrivacySettings({
+    localOnlyMode: localOnlyToggle.checked,
+  });
+  applyPrivacySelections(settings);
+});
+
 closeWindow.addEventListener("click", async () => {
   await window.overlayApi.closeWindow();
 });
 
 continueButton.addEventListener("click", async () => {
-  if (activeStep < 3) {
+  if (activeStep < 4) {
     setActiveStep(activeStep + 1);
     return;
   }
@@ -160,8 +218,12 @@ continueButton.addEventListener("click", async () => {
 window.overlayApi.onThemeChanged(applyThemeState);
 
 window.addEventListener("DOMContentLoaded", async () => {
-  const preferences = await window.overlayApi.getPreferences();
+  const [preferences, privacySettings] = await Promise.all([
+    window.overlayApi.getPreferences(),
+    window.overlayApi.getPrivacySettings(),
+  ]);
   applyPreferenceSelections(preferences);
+  applyPrivacySelections(privacySettings);
   setActiveStep(1);
   attachResizeHandle(resizeHandle);
 });

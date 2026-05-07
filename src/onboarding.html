@@ -48,6 +48,10 @@
             <span class="step-index">3</span>
             <span class="step-label">Profile</span>
           </button>
+          <button class="step-node" data-step-target="4" type="button">
+            <span class="step-index">4</span>
+            <span class="step-label">Privacy</span>
+          </button>
         </nav>
 
         <section class="content">
@@ -135,11 +139,59 @@
                 </button>
               </div>
             </section>
+
+            <section class="setup-section" data-step-panel="4">
+              <div class="setup-section-header">
+                <p class="panel-label">4. Privacy Consent</p>
+                <p id="privacy-onboarding-status" class="panel-help">Screenshots are off until you opt in.</p>
+              </div>
+              <div class="choice-grid privacy-choice-grid">
+                <button data-onboarding-screenshot-policy="disabled" class="info-choice-button" type="button">
+                  <span class="choice-kicker">Off</span>
+                  <span class="choice-title">Do not use screenshots</span>
+                  <span class="choice-copy">Start with screenshots fully disabled.</span>
+                </button>
+                <button data-onboarding-screenshot-policy="manual" class="info-choice-button" type="button">
+                  <span class="choice-kicker">Manual</span>
+                  <span class="choice-title">Only when I attach one</span>
+                  <span class="choice-copy">Allow visual help only when you explicitly paste or attach a screenshot.</span>
+                </button>
+                <button data-onboarding-screenshot-policy="automatic" class="info-choice-button" type="button">
+                  <span class="choice-kicker">Auto</span>
+                  <span class="choice-title">Allow automatic screenshots</span>
+                  <span class="choice-copy">Let SideClick capture screenshots automatically when the action needs visual context.</span>
+                </button>
+              </div>
+              <label class="privacy-toggle-card" for="onboarding-local-only-toggle">
+                <div class="privacy-toggle-copy">
+                  <span class="choice-title">Keep SideClick local-only</span>
+                  <span class="choice-copy">Stay focused on on-device storage and local workflows unless you change this later.</span>
+                </div>
+                <input id="onboarding-local-only-toggle" type="checkbox" />
+              </label>
+              <div class="choice-grid privacy-consent-grid">
+                <button data-onboarding-sync-consent="unknown" class="info-choice-button profile-choice" type="button">
+                  <span class="choice-kicker">Later</span>
+                  <span class="choice-title">Ask me later about sync</span>
+                  <span class="choice-copy">Keep future sync consent undecided.</span>
+                </button>
+                <button data-onboarding-sync-consent="granted" class="info-choice-button profile-choice" type="button">
+                  <span class="choice-kicker">Yes</span>
+                  <span class="choice-title">I would consider sync</span>
+                  <span class="choice-copy">You are open to future consent-based sync features.</span>
+                </button>
+                <button data-onboarding-sync-consent="denied" class="info-choice-button profile-choice" type="button">
+                  <span class="choice-kicker">No</span>
+                  <span class="choice-title">No sync consent</span>
+                  <span class="choice-copy">Do not assume consent for future sync or cross-device features.</span>
+                </button>
+              </div>
+            </section>
           </div>
         </section>
 
         <footer class="onboarding-footer no-drag">
-          <p id="step-caption" class="panel-help onboarding-caption">Step 1 of 3</p>
+          <p id="step-caption" class="panel-help onboarding-caption">Step 1 of 4</p>
           <button id="continue-button" class="continue-button" type="button">Continue</button>
         </footer>
         <button id="resize-handle" class="resize-handle no-drag" type="button" aria-label="Resize window"></button>

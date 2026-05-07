@@ -164,17 +164,91 @@ test("capturePrimaryDisplayScreenshot throws when no usable thumbnail exists", a
 
 test("shouldCaptureAutomaticScreenshot only auto-captures non-chat actions without an existing screenshot", () => {
   return loadCaptureModule().then(({ shouldCaptureAutomaticScreenshot }) => {
-  assert.equal(shouldCaptureAutomaticScreenshot({ actionType: "explain" }), true);
-  assert.equal(shouldCaptureAutomaticScreenshot({ actionType: " chat " }), false);
-  assert.equal(
-    shouldCaptureAutomaticScreenshot({
-      actionType: "explain",
-      screenshotDataUrl: "data:image/png;base64,abc",
-    }),
-    false,
-  );
-  assert.equal(shouldCaptureAutomaticScreenshot({ actionType: "" }), false);
+    const automaticPolicy = {
+      screenshotPolicy: "automatic",
+      localOnlyMode: true,
+      syncConsent: "unknown",
+    };
+    const manualPolicy = {
+      screenshotPolicy: "manual",
+      localOnlyMode: true,
+      syncConsent: "unknown",
+    };
+
+    assert.equal(
+      shouldCaptureAutomaticScreenshot(
+        { actionType: "explain" },
+        automaticPolicy,
+      ),
+      true,
+    );
+    assert.equal(
+      shouldCaptureAutomaticScreenshot(
+        { actionType: " chat " },
+        automaticPolicy,
+      ),
+      false,
+    );
+    assert.equal(
+      shouldCaptureAutomaticScreenshot(
+        {
+          actionType: "explain",
+          screenshotDataUrl: "data:image/png;base64,abc",
+        },
+        automaticPolicy,
+      ),
+      false,
+    );
+    assert.equal(
+      shouldCaptureAutomaticScreenshot({ actionType: "" }, automaticPolicy),
+      false,
+    );
+    assert.equal(
+      shouldCaptureAutomaticScreenshot({ actionType: "explain" }, manualPolicy),
+      false,
+    );
   });
+});
+
+test("enforceScreenshotPolicy blocks manual uploads unless the screenshot policy allows them", () => {
+  return loadCaptureModule().then(
+    ({
+      canAttachManualScreenshot,
+      enforceScreenshotPolicy,
+      getScreenshotPolicyErrorMessage,
+    }) => {
+      const disabledPolicy = {
+        screenshotPolicy: "disabled",
+        localOnlyMode: true,
+        syncConsent: "unknown",
+      };
+      const manualPolicy = {
+        screenshotPolicy: "manual",
+        localOnlyMode: true,
+        syncConsent: "unknown",
+      };
+
+      assert.equal(canAttachManualScreenshot(disabledPolicy), false);
+      assert.equal(canAttachManualScreenshot(manualPolicy), true);
+      assert.equal(
+        enforceScreenshotPolicy(
+          { screenshotDataUrl: "data:image/png;base64,abc" },
+          manualPolicy,
+        ),
+        "data:image/png;base64,abc",
+      );
+      assert.throws(
+        () =>
+          enforceScreenshotPolicy(
+            { screenshotDataUrl: "data:image/png;base64,abc" },
+            disabledPolicy,
+          ),
+        new RegExp(
+          getScreenshotPolicyErrorMessage(disabledPolicy).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        ),
+      );
+    },
+  );
 });
 
 test("redaction helpers replace embedded image payloads recursively", () => {

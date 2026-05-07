@@ -2,6 +2,13 @@ const MAX_SCREENSHOT_EDGE = 1280;
 const SCREENSHOT_JPEG_QUALITY = 72;
 const REDACTED_IMAGE_PLACEHOLDER = "[redacted image payload]";
 
+import {
+  getPrivacySettings,
+  type PrivacySettings,
+} from "./privacy/settings.ts";
+
+const MANUAL_SCREENSHOT_POLICIES = new Set(["automatic", "manual"]);
+
 export async function capturePrimaryDisplayScreenshot({
   desktopCapturer,
   screen,
@@ -49,11 +56,54 @@ export async function capturePrimaryDisplayScreenshot({
     .toString("base64")}`;
 }
 
+export function canAttachManualScreenshot(
+  privacySettings: PrivacySettings = getPrivacySettings(),
+): boolean {
+  return MANUAL_SCREENSHOT_POLICIES.has(privacySettings.screenshotPolicy);
+}
+
+export function getScreenshotPolicyErrorMessage(
+  privacySettings: PrivacySettings = getPrivacySettings(),
+): string {
+  if (privacySettings.screenshotPolicy === "disabled") {
+    return "Screenshots are disabled. Opt in from Privacy settings before attaching one.";
+  }
+
+  return "Screenshot uploads are blocked by your current Privacy settings.";
+}
+
+export function enforceScreenshotPolicy(
+  payload: {
+    screenshotDataUrl?: string | null;
+  },
+  privacySettings: PrivacySettings = getPrivacySettings(),
+): string | null {
+  const screenshotDataUrl =
+    typeof payload?.screenshotDataUrl === "string" &&
+    payload.screenshotDataUrl.trim()
+      ? payload.screenshotDataUrl
+      : null;
+
+  if (!screenshotDataUrl) {
+    return null;
+  }
+
+  if (!canAttachManualScreenshot(privacySettings)) {
+    throw new Error(getScreenshotPolicyErrorMessage(privacySettings));
+  }
+
+  return screenshotDataUrl;
+}
+
 export function shouldCaptureAutomaticScreenshot(payload: {
   screenshotDataUrl?: string | null;
   actionType?: string | null;
-}): boolean {
+}, privacySettings: PrivacySettings = getPrivacySettings()): boolean {
   if (payload?.screenshotDataUrl) {
+    return false;
+  }
+
+  if (privacySettings.screenshotPolicy !== "automatic") {
     return false;
   }
 
