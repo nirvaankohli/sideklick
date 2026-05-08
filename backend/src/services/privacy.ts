@@ -18,14 +18,12 @@ type DatabaseLike = ReturnType<typeof getDatabase>;
 
 type PrivacySettingsRow = {
   screenshot_policy: PrivacySettings["screenshotPolicy"];
-  local_only_mode: number;
   sync_consent: PrivacySettings["syncConsent"];
   updated_at: string;
 };
 
 const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
   screenshotPolicy: "disabled",
-  localOnlyMode: true,
   syncConsent: "unknown",
 };
 
@@ -36,7 +34,6 @@ function mapPrivacySettings(row: PrivacySettingsRow | undefined): PrivacySetting
 
   return privacySettingsSchema.parse({
     screenshotPolicy: row.screenshot_policy,
-    localOnlyMode: Boolean(row.local_only_mode),
     syncConsent: row.sync_consent,
     updatedAt: row.updated_at,
   });
@@ -61,7 +58,6 @@ function getRawPrivacySettings(
     `
       SELECT
         screenshot_policy,
-        local_only_mode,
         sync_consent,
         updated_at
       FROM privacy_settings
@@ -73,7 +69,7 @@ function getRawPrivacySettings(
 
 function buildPrivacyRetentionPolicy(settings: PrivacySettings) {
   return {
-    keepLatestInteractionsPerSession: settings.localOnlyMode ? 6 : 10,
+    keepLatestInteractionsPerSession: settings.syncConsent === "denied" ? 6 : 10,
     compactAfterJobCount: settings.syncConsent === "denied" ? 1 : 3,
   };
 }
@@ -94,13 +90,11 @@ export function getUserPrivacySettings(
       INSERT INTO privacy_settings (
         user_id,
         screenshot_policy,
-        local_only_mode,
         sync_consent,
         updated_at
       ) VALUES (
         @userId,
         @screenshotPolicy,
-        @localOnlyMode,
         @syncConsent,
         CURRENT_TIMESTAMP
       )
@@ -108,7 +102,6 @@ export function getUserPrivacySettings(
   ).run({
     userId,
     screenshotPolicy: DEFAULT_PRIVACY_SETTINGS.screenshotPolicy,
-    localOnlyMode: DEFAULT_PRIVACY_SETTINGS.localOnlyMode ? 1 : 0,
     syncConsent: DEFAULT_PRIVACY_SETTINGS.syncConsent,
   });
 
@@ -133,26 +126,22 @@ export function updateUserPrivacySettings(
       INSERT INTO privacy_settings (
         user_id,
         screenshot_policy,
-        local_only_mode,
         sync_consent,
         updated_at
       ) VALUES (
         @userId,
         @screenshotPolicy,
-        @localOnlyMode,
         @syncConsent,
         CURRENT_TIMESTAMP
       )
       ON CONFLICT(user_id) DO UPDATE SET
         screenshot_policy = excluded.screenshot_policy,
-        local_only_mode = excluded.local_only_mode,
         sync_consent = excluded.sync_consent,
         updated_at = CURRENT_TIMESTAMP
     `,
   ).run({
     userId,
     screenshotPolicy: nextSettings.screenshotPolicy,
-    localOnlyMode: nextSettings.localOnlyMode ? 1 : 0,
     syncConsent: nextSettings.syncConsent,
   });
 

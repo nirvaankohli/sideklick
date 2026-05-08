@@ -67,6 +67,7 @@ const DEFAULT_BRIDGE_AUTH_SECRET = "sideclick-local-dev-secret";
 const DEFAULT_MANAGED_BACKEND_URL = "";
 const DEFAULT_MANAGED_BACKEND_JWT = "";
 const DEFAULT_BACKEND_JWT_SECRET = "sideclick-managed-backend-dev-secret";
+const MANAGED_AUTH_KEY = "managedAuth";
 
 function getAppLogoPath() {
   return path.join(process.cwd(), "assets", "images", "logo", "logo.png");
@@ -112,6 +113,46 @@ function getPreferenceSnapshot() {
     classFolders: getStoredClassFolders(),
     currentSession: getCurrentSessionState(),
   };
+}
+
+function getStoredManagedAuth() {
+  const preferences = readPreferences();
+  const candidate = preferences[MANAGED_AUTH_KEY];
+  if (!candidate || typeof candidate !== "object") {
+    return null;
+  }
+
+  const token =
+    typeof candidate.token === "string" && candidate.token.trim()
+      ? candidate.token.trim()
+      : "";
+  const user =
+    candidate.user && typeof candidate.user === "object" ? candidate.user : null;
+
+  if (!token || !user) {
+    return null;
+  }
+
+  return {
+    token,
+    user,
+  };
+}
+
+function setStoredManagedAuth(authSession) {
+  const nextPreferences = {
+    ...readPreferences(),
+    [MANAGED_AUTH_KEY]: authSession,
+  };
+  writePreferences(nextPreferences);
+  return authSession;
+}
+
+function clearStoredManagedAuth() {
+  const nextPreferences = { ...readPreferences() };
+  delete nextPreferences[MANAGED_AUTH_KEY];
+  writePreferences(nextPreferences);
+  return null;
 }
 
 function readStoredThemeSource() {
@@ -176,13 +217,27 @@ function getDefaultBounds(config) {
   const display = screen.getPrimaryDisplay();
   const { workArea } = display;
   const { width, height } = config.layout.expanded;
-  const { padding, topOffset } = config.layout.anchor;
+  const {
+    padding,
+    topOffset,
+    horizontal = "right",
+    vertical = "top",
+  } = config.layout.anchor;
+
+  const x =
+    horizontal === "center"
+      ? workArea.x + Math.round((workArea.width - width) / 2)
+      : workArea.x + workArea.width - width - padding;
+  const y =
+    vertical === "middle"
+      ? workArea.y + Math.round((workArea.height - height) / 2)
+      : workArea.y + topOffset;
 
   return {
     width,
     height,
-    x: workArea.x + workArea.width - width - padding,
-    y: workArea.y + topOffset,
+    x,
+    y,
   };
 }
 
@@ -355,7 +410,15 @@ function getManagedBackendJwt() {
       ? process.env.MANAGED_BACKEND_JWT.trim()
       : "";
 
-  return configuredJwt || DEFAULT_MANAGED_BACKEND_JWT || createLocalBackendJwt();
+  if (configuredJwt) {
+    return configuredJwt;
+  }
+
+  const storedAuth = getStoredManagedAuth();
+  if (storedAuth?.token) {
+    return storedAuth.token;
+  }
+  return null;
 }
 
 function getBackendJwtSecret() {
@@ -420,7 +483,7 @@ async function callManagedBackend(endpoint, options = {}) {
     "Content-Type": "application/json",
   };
 
-  const managedBackendJwt = getManagedBackendJwt();
+  const managedBackendJwt = options.skipAuth ? null : getManagedBackendJwt();
   if (managedBackendJwt) {
     headers.Authorization = `Bearer ${managedBackendJwt}`;
   }
@@ -533,6 +596,10 @@ function migrateLegacyStoredState() {
   writePreferences(nextPreferences);
 }
 
+function shouldShowOnboardingGate() {
+  return !hasLaunchedBefore() || !getStoredManagedAuth();
+}
+
 function dispatchIncomingPayload(payload) {
   const chatWindow = focusOrCreateChatWindow();
   const deliverPayload = () => {
@@ -580,11 +647,11 @@ const sessionManager = createSessionLifecycle({
 app.whenReady().then(async () => {
   await startLocalBackend();
   migrateLegacyStoredState();
-  const isFirstRun = !hasLaunchedBefore();
+  const shouldOpenOnboarding = shouldShowOnboardingGate();
   applyThemeSource(readStoredThemeSource());
-  createStartupWindows(isFirstRun);
+  createStartupWindows(shouldOpenOnboarding);
   incomingMessageServer.start();
-  if (isFirstRun) {
+  if (!hasLaunchedBefore()) {
     markAppLaunched();
   }
 
@@ -592,7 +659,7 @@ app.whenReady().then(async () => {
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createStartupWindows(false);
+      createStartupWindows(shouldShowOnboardingGate());
     }
   });
 });
@@ -779,6 +846,48 @@ ipcMain.handle("backend:quiz", async (_event, payload) => {
   });
 });
 
+ipcMain.handle("backend:authRegister", async (_event, payload) => {
+  const session = await callManagedBackend("/api/auth/register", {
+    method: "POST",
+    body: payload,
+    skipAuth: true,
+  });
+  return setStoredManagedAuth(session);
+});
+
+ipcMain.handle("backend:authLogin", async (_event, payload) => {
+  const session = await callManagedBackend("/api/auth/login", {
+    method: "POST",
+    body: payload,
+    skipAuth: true,
+  });
+  return setStoredManagedAuth(session);
+});
+
+ipcMain.handle("backend:authLogout", () => {
+  return clearStoredManagedAuth();
+});
+
+ipcMain.handle("backend:authSession", async () => {
+  const storedAuth = getStoredManagedAuth();
+  if (!storedAuth?.token) {
+    return null;
+  }
+
+  try {
+    const result = await callManagedBackend("/api/auth/me", {
+      method: "GET",
+    });
+    return setStoredManagedAuth({
+      token: storedAuth.token,
+      user: result.user,
+    });
+  } catch {
+    clearStoredManagedAuth();
+    return null;
+  }
+});
+
 ipcMain.handle("backend:exportAccount", async (_event, options) => {
   const includeContent =
     !options || typeof options !== "object" || options.includeContent !== false;
@@ -798,6 +907,9 @@ ipcMain.handle("backend:deleteAccount", async () => {
 });
 
 ipcMain.handle("onboarding:complete", (event) => {
+  if (!getStoredManagedAuth()) {
+    throw new Error("Sign in or create an account before continuing.");
+  }
   const win = BrowserWindow.fromWebContents(event.sender);
   createStartupWindows(false);
   if (win && !win.isDestroyed()) {

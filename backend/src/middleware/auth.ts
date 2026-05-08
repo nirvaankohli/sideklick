@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 
-import { getDatabase } from "../db";
+import { getDatabase } from "../db/index.ts";
 
 type JwtClaims = {
   sub: string;

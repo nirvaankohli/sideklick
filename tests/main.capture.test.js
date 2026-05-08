@@ -166,12 +166,10 @@ test("shouldCaptureAutomaticScreenshot only auto-captures non-chat actions witho
   return loadCaptureModule().then(({ shouldCaptureAutomaticScreenshot }) => {
     const automaticPolicy = {
       screenshotPolicy: "automatic",
-      localOnlyMode: true,
       syncConsent: "unknown",
     };
     const manualPolicy = {
       screenshotPolicy: "manual",
-      localOnlyMode: true,
       syncConsent: "unknown",
     };
 
@@ -219,12 +217,10 @@ test("enforceScreenshotPolicy blocks manual uploads unless the screenshot policy
     }) => {
       const disabledPolicy = {
         screenshotPolicy: "disabled",
-        localOnlyMode: true,
         syncConsent: "unknown",
       };
       const manualPolicy = {
         screenshotPolicy: "manual",
-        localOnlyMode: true,
         syncConsent: "unknown",
       };
 

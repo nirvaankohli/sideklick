@@ -6,6 +6,8 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
+    "reset:first-launch": "node scripts/reset-first-launch.js",
+    "reset:first-launch:full": "node scripts/reset-first-launch.js --full",
     "rebuild:native": "npm rebuild better-sqlite3 --runtime=electron --target=37.2.0 --dist-url=https://electronjs.org/headers --build-from-source",
     "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js",
     "test": "node --experimental-strip-types --test --test-isolation=none"

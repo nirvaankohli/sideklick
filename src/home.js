@@ -76,7 +76,13 @@ const settingsProfileStatus = document.querySelector("#settings-profile-status")
 const settingsPrivacyStatus = document.querySelector("#settings-privacy-status");
 const privacyScreenshotStatus = document.querySelector("#privacy-screenshot-status");
 const privacySyncStatus = document.querySelector("#privacy-sync-status");
-const privacyLocalOnlyToggle = document.querySelector("#privacy-local-only-toggle");
+const accountAuthStatus = document.querySelector("#account-auth-status");
+const accountEmailInput = document.querySelector("#account-email-input");
+const accountPasswordInput = document.querySelector("#account-password-input");
+const accountDisplayNameInput = document.querySelector("#account-display-name-input");
+const accountLoginButton = document.querySelector("#account-login-button");
+const accountRegisterButton = document.querySelector("#account-register-button");
+const accountLogoutButton = document.querySelector("#account-logout-button");
 const privacyExportButton = document.querySelector("#privacy-export-button");
 const privacyDeleteAccountButton = document.querySelector("#privacy-delete-account-button");
 const privacyAccountStatus = document.querySelector("#privacy-account-status");
@@ -97,6 +103,7 @@ let activeQuiz = null;
 let quizHasBeenChecked = false;
 let activeHomeView = "dashboard";
 let privacySettings = null;
+let authSession = null;
 
 const sourceLabels = {
   teacher: "Teacher or class recommendation",
@@ -208,12 +215,66 @@ function applyPrivacySettings(settings) {
       button.dataset.syncConsent === settings.syncConsent ? "true" : "false";
   }
 
-  privacyLocalOnlyToggle.checked = Boolean(settings.localOnlyMode);
   privacyScreenshotStatus.textContent = screenshotPolicyLabels[settings.screenshotPolicy];
   privacySyncStatus.textContent = syncConsentLabels[settings.syncConsent];
-  settingsPrivacyStatus.textContent = settings.localOnlyMode
-    ? "Local-only mode is on with conservative defaults."
-    : "Review capture and sync preferences carefully.";
+  settingsPrivacyStatus.textContent =
+    settings.syncConsent === "denied"
+      ? "Screenshots are controlled locally and sync consent is denied."
+      : "Review screenshot and sync preferences carefully.";
+}
+
+function applyAuthSession(nextSession) {
+  authSession = nextSession && typeof nextSession === "object" ? nextSession : null;
+  const currentUser = authSession?.user ?? null;
+  accountAuthStatus.textContent = currentUser
+    ? `Signed in as ${currentUser.displayName || currentUser.email}`
+    : "Not signed in.";
+  accountLogoutButton.disabled = !currentUser;
+  privacyExportButton.disabled = !currentUser;
+  privacyDeleteAccountButton.disabled = !currentUser;
+}
+
+function readAuthFormValues() {
+  return {
+    email: accountEmailInput.value.trim(),
+    password: accountPasswordInput.value,
+    displayName: accountDisplayNameInput.value.trim(),
+  };
+}
+
+function setAuthButtonsDisabled(disabled) {
+  accountLoginButton.disabled = disabled;
+  accountRegisterButton.disabled = disabled;
+  accountLogoutButton.disabled = disabled || !authSession?.user;
+}
+
+async function submitAuthRequest(mode) {
+  const { email, password, displayName } = readAuthFormValues();
+  setAuthButtonsDisabled(true);
+  setPrivacyAccountStatus(
+    mode === "register" ? "Creating account..." : "Signing in...",
+    "neutral",
+  );
+
+  try {
+    const session =
+      mode === "register"
+        ? await window.overlayApi.registerAccount({ email, password, displayName })
+        : await window.overlayApi.loginAccount({ email, password });
+    applyAuthSession(session);
+    accountPasswordInput.value = "";
+    setPrivacyAccountStatus(
+      mode === "register" ? "Account created and signed in." : "Signed in.",
+      "success",
+    );
+  } catch (error) {
+    setPrivacyAccountStatus(
+      error instanceof Error ? error.message : "Authentication failed.",
+      "danger",
+    );
+  } finally {
+    setAuthButtonsDisabled(false);
+  }
 }
 
 function setPrivacyAccountStatus(message, tone = "neutral") {
@@ -1246,12 +1307,16 @@ for (const button of privacySyncButtons) {
     applyPrivacySettings(settings);
   });
 }
-
-privacyLocalOnlyToggle.addEventListener("change", async () => {
-  const settings = await window.overlayApi.updatePrivacySettings({
-    localOnlyMode: privacyLocalOnlyToggle.checked,
-  });
-  applyPrivacySettings(settings);
+accountLoginButton.addEventListener("click", async () => {
+  await submitAuthRequest("login");
+});
+accountRegisterButton.addEventListener("click", async () => {
+  await submitAuthRequest("register");
+});
+accountLogoutButton.addEventListener("click", async () => {
+  await window.overlayApi.logoutAccount();
+  applyAuthSession(null);
+  setPrivacyAccountStatus("Signed out.", "neutral");
 });
 privacyExportButton.addEventListener("click", async () => {
   privacyExportButton.disabled = true;
@@ -1319,10 +1384,11 @@ window.overlayApi.onClassFoldersChanged((nextFolders) => {
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
-  const [storedFolders, preferences, settings] = await Promise.all([
+  const [storedFolders, preferences, settings, session] = await Promise.all([
     window.overlayApi.getClassFolders(),
     window.overlayApi.getPreferences(),
     window.overlayApi.getPrivacySettings(),
+    window.overlayApi.getAuthSession(),
   ]);
   const normalizedFolders = normalizeFolders(storedFolders);
   const shouldPersistNormalized =
@@ -1340,6 +1406,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   applyPreferenceSelections(preferences);
   applyPrivacySettings(settings);
+  applyAuthSession(session);
   setPrivacyAccountStatus("Theme changes apply across Home, Chat, and quiz views.");
   setHomeView("dashboard");
   renderFolders();

@@ -123,14 +123,24 @@ export type QuizResponse = {
 
 export type PrivacySettings = {
   screenshotPolicy: "automatic" | "manual" | "disabled";
-  localOnlyMode: boolean;
   syncConsent: "unknown" | "granted" | "denied";
   updatedAt?: string;
 };
 
 export type PrivacySettingsPatch = Partial<
-  Pick<PrivacySettings, "screenshotPolicy" | "localOnlyMode" | "syncConsent">
+  Pick<PrivacySettings, "screenshotPolicy" | "syncConsent">
 >;
+
+export type AuthUser = {
+  id: string;
+  email: string;
+  displayName: string | null;
+};
+
+export type AuthSession = {
+  token: string;
+  user: AuthUser;
+};
 
 export type RetentionJobType =
   | "retention_cleanup"

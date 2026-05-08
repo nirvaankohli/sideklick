@@ -66,6 +66,8 @@ function buildSystemPrompt(): string {
     "Keep each paragraph compact so it reads naturally inside a narrow chat bubble.",
     "When the answer has steps, comparisons, examples, or takeaways, use Markdown bullets or numbered lists.",
     "Make the response as clear as possible.",
+    "When there is a more direct or more simple answer available, go for that instead of a longer more complex answer, even if the longer answer is more complete.",
+    "However, if the question clearly calls for a more detailed answer, then give that detailed answer. Also insure the completeness of the answer when the question is complex or multi-faceted.",
     "Prefer 1 to 4 short sentences unless the request clearly needs more.",
     "If one sentence can answer the question well, use one sentence.",
     "Treat context sources differently: the current selected text and action are highest priority, surrounding text and page metadata come next, older memory is supporting context.",

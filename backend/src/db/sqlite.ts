@@ -111,6 +111,8 @@ function createTables(db: DatabaseLike): void {
       id TEXT PRIMARY KEY,
       email TEXT,
       display_name TEXT,
+      password_hash TEXT,
+      password_salt TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
@@ -272,6 +274,21 @@ function ensureSessionColumns(db: DatabaseLike): void {
   }
 }
 
+function ensureUserColumns(db: DatabaseLike): void {
+  const columns = db
+    .prepare("PRAGMA table_info(users)")
+    .all() as Array<{ name: string }>;
+  const columnNames = new Set(columns.map((column) => column.name));
+
+  if (!columnNames.has("password_hash")) {
+    db.exec("ALTER TABLE users ADD COLUMN password_hash TEXT;");
+  }
+
+  if (!columnNames.has("password_salt")) {
+    db.exec("ALTER TABLE users ADD COLUMN password_salt TEXT;");
+  }
+}
+
 export function getLegacyDatabase(): DatabaseLike {
   if (database) {
     return database;
@@ -285,6 +302,7 @@ export function getLegacyDatabase(): DatabaseLike {
   ensureInteractionColumns(database);
   ensureGapColumns(database);
   ensureSessionColumns(database);
+  ensureUserColumns(database);
 
   return database;
 }

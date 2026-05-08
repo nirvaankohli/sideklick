@@ -151,7 +151,6 @@ export const quizResponseSchema = z.object({
 
 export const privacySettingsSchema = z.object({
   screenshotPolicy: z.enum(["automatic", "manual", "disabled"]),
-  localOnlyMode: z.boolean(),
   syncConsent: z.enum(["unknown", "granted", "denied"]),
   updatedAt: timestampString.optional(),
 }).strict();
@@ -172,6 +171,12 @@ export const exportRequestQuerySchema = z.object({
     .union([z.literal("true"), z.literal("false")])
     .optional()
     .transform((value) => value !== "false"),
+}).strict();
+
+export const authCredentialsSchema = z.object({
+  email: z.string().trim().email(),
+  password: z.string().min(8).max(200),
+  displayName: z.string().trim().min(1).max(120).optional(),
 }).strict();
 
 export type ClassProfileInput = z.infer<typeof classProfileSchema>;

@@ -16,6 +16,7 @@ import { requireJwtAuth } from "./middleware/auth";
 import { writeAuditEvent } from "./observability/audit";
 import { buildHealthSnapshot } from "./observability/health";
 import { incrementMetric, recordDurationMetric } from "./observability/metrics";
+import { authRouter } from "./routes/auth";
 import { assistRouter } from "./routes/assist";
 import { classesRouter } from "./routes/classes";
 import { feedbackRouter } from "./routes/feedback";
@@ -151,6 +152,7 @@ export function createServer(): Express {
   app.use(express.json({ limit: "25mb" }));
   // Keep API routes grouped here so Electron/main-process startup only needs
   // to call `startServer()` and the rest of the backend stays modular.
+  app.use("/api/auth", authRouter);
   app.use("/api/assist", assistRouter);
   app.use("/api/classes", classesRouter);
   app.use("/api/feedback", feedbackRouter);

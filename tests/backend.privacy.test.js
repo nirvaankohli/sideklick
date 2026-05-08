@@ -108,7 +108,6 @@ function createTestDatabase() {
             const record = {
               user_id: value.userId,
               screenshot_policy: value.screenshotPolicy,
-              local_only_mode: value.localOnlyMode,
               sync_consent: value.syncConsent,
               updated_at: nowString(),
             };
@@ -369,7 +368,7 @@ function createTestDatabase() {
             );
           }
 
-          if (normalized.includes("select screenshot_policy, local_only_mode, sync_consent, updated_at from privacy_settings")) {
+          if (normalized.includes("select screenshot_policy, sync_consent, updated_at from privacy_settings")) {
             return clone(
               tables.privacy_settings.find((row) => row.user_id === value) ?? undefined,
             );
@@ -595,7 +594,7 @@ test("privacy worker compaction keeps recent interactions and strips older paylo
     request_count: 0,
     screenshot_preview: null,
   });
-  updateUserPrivacySettings("user-2", { localOnlyMode: true }, db);
+  updateUserPrivacySettings("user-2", { syncConsent: "denied" }, db);
 
   for (let index = 0; index < 12; index += 1) {
     db.tables.interactions.push({
@@ -659,7 +658,6 @@ test("privacy workflows export redacted data and delete owned records", async ()
     {
       screenshotPolicy: "manual",
       syncConsent: "granted",
-      localOnlyMode: false,
     },
     db,
   );

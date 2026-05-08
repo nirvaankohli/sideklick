@@ -18,8 +18,14 @@ const stepButtons = Array.from(document.querySelectorAll("[data-step-target]"));
 const stepPanels = Array.from(document.querySelectorAll("[data-step-panel]"));
 const resizeHandle = document.querySelector("#resize-handle");
 const privacyStatus = document.querySelector("#privacy-onboarding-status");
-const localOnlyToggle = document.querySelector("#onboarding-local-only-toggle");
+const authStatus = document.querySelector("#auth-status");
+const authEmailInput = document.querySelector("#auth-email-input");
+const authPasswordInput = document.querySelector("#auth-password-input");
+const authDisplayNameInput = document.querySelector("#auth-display-name-input");
+const authLoginButton = document.querySelector("#auth-login-button");
+const authRegisterButton = document.querySelector("#auth-register-button");
 let activeStep = 1;
+let authSession = null;
 
 const sourceLabels = {
   teacher: "Teacher or class recommendation",
@@ -85,7 +91,7 @@ function applyPreferenceSelections(preferences) {
 }
 
 function applyPrivacySelections(settings) {
-  const { screenshotPolicy, localOnlyMode, syncConsent } = settings;
+  const { screenshotPolicy, syncConsent } = settings;
 
   for (const button of privacyPolicyButtons) {
     button.dataset.selected =
@@ -97,12 +103,57 @@ function applyPrivacySelections(settings) {
       button.dataset.onboardingSyncConsent === syncConsent ? "true" : "false";
   }
 
-  localOnlyToggle.checked = Boolean(localOnlyMode);
   privacyStatus.textContent = `${screenshotPolicyLabels[screenshotPolicy]}. ${syncConsentLabels[syncConsent]}.`;
 }
 
+function applyAuthSession(nextSession) {
+  authSession = nextSession && typeof nextSession === "object" ? nextSession : null;
+  authStatus.textContent = authSession?.user
+    ? `Signed in as ${authSession.user.displayName || authSession.user.email}.`
+    : "Create an account or sign in before using the app.";
+  authLoginButton.disabled = false;
+  authRegisterButton.disabled = false;
+}
+
+function setAuthButtonsDisabled(disabled) {
+  authLoginButton.disabled = disabled;
+  authRegisterButton.disabled = disabled;
+}
+
+async function submitAuth(mode) {
+  setAuthButtonsDisabled(true);
+  authStatus.textContent =
+    mode === "register" ? "Creating account..." : "Signing in...";
+
+  try {
+    const session =
+      mode === "register"
+        ? await window.overlayApi.registerAccount({
+            email: authEmailInput.value.trim(),
+            password: authPasswordInput.value,
+            displayName: authDisplayNameInput.value.trim(),
+          })
+        : await window.overlayApi.loginAccount({
+            email: authEmailInput.value.trim(),
+            password: authPasswordInput.value,
+          });
+    applyAuthSession(session);
+    authPasswordInput.value = "";
+    setActiveStep(2);
+  } catch (error) {
+    authStatus.textContent =
+      error instanceof Error ? error.message : "Authentication failed.";
+  } finally {
+    setAuthButtonsDisabled(false);
+  }
+}
+
 function setActiveStep(nextStep) {
-  activeStep = nextStep;
+  if (nextStep > 1 && !authSession?.user) {
+    activeStep = 1;
+  } else {
+    activeStep = nextStep;
+  }
   root.dataset.activeStep = String(activeStep);
 
   for (const button of stepButtons) {
@@ -115,9 +166,14 @@ function setActiveStep(nextStep) {
 
   stepCaption.textContent = `Step ${activeStep} of 4`;
   continueButton.textContent = activeStep === 4 ? "Open SideClick" : "Continue";
+  continueButton.disabled = activeStep === 1 && !authSession?.user;
 }
 
 function attachResizeHandle(handle) {
+  if (!handle) {
+    return;
+  }
+
   let startPointer = null;
   let startBounds = null;
 
@@ -194,12 +250,11 @@ for (const button of syncConsentButtons) {
     applyPrivacySelections(settings);
   });
 }
-
-localOnlyToggle.addEventListener("change", async () => {
-  const settings = await window.overlayApi.updatePrivacySettings({
-    localOnlyMode: localOnlyToggle.checked,
-  });
-  applyPrivacySelections(settings);
+authLoginButton.addEventListener("click", async () => {
+  await submitAuth("login");
+});
+authRegisterButton.addEventListener("click", async () => {
+  await submitAuth("register");
 });
 
 closeWindow.addEventListener("click", async () => {
@@ -218,12 +273,14 @@ continueButton.addEventListener("click", async () => {
 window.overlayApi.onThemeChanged(applyThemeState);
 
 window.addEventListener("DOMContentLoaded", async () => {
-  const [preferences, privacySettings] = await Promise.all([
+  const [preferences, privacySettings, session] = await Promise.all([
     window.overlayApi.getPreferences(),
     window.overlayApi.getPrivacySettings(),
+    window.overlayApi.getAuthSession(),
   ]);
   applyPreferenceSelections(preferences);
   applyPrivacySelections(privacySettings);
+  applyAuthSession(session);
   setActiveStep(1);
   attachResizeHandle(resizeHandle);
 });

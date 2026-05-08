@@ -43,13 +43,19 @@ const windowTemplates = {
     layout: {
       expanded: {
         width: 980,
-        height: 690,
-        minWidth: 820,
+        height: 720,
+        minWidth: 840,
         minHeight: 620,
       },
       compact: {
         width: 280,
         height: 80,
+      },
+      anchor: {
+        horizontal: "center",
+        vertical: "middle",
+        padding: 18,
+        topOffset: 72,
       },
     },
   },

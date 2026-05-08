@@ -1,5 +1,7 @@
 export type { DatabaseCounts } from "./database";
 export type {
+  AuthSession,
+  AuthUser,
   AssistRequest,
   AssistResponse,
   BuiltContext,

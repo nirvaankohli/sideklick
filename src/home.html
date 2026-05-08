@@ -207,14 +207,6 @@
                           <button data-sync-consent="denied" class="settings-chip-button" type="button">Deny</button>
                         </div>
                       </div>
-
-                      <label class="settings-toggle-row" for="privacy-local-only-toggle">
-                        <div class="settings-inline-copy">
-                          <span class="settings-inline-label">Local-only mode</span>
-                          <span class="settings-inline-value">Keep SideClick focused on on-device workflows.</span>
-                        </div>
-                        <input id="privacy-local-only-toggle" type="checkbox" />
-                      </label>
                     </div>
                   </section>
 
@@ -222,10 +214,27 @@
                     <div class="setup-section-header">
                       <div>
                         <p class="panel-label">Account</p>
-                        <p class="panel-help">Export your data or remove your account data from the managed backend.</p>
+                        <p class="panel-help">Sign in to your managed backend account, then export or delete your data.</p>
                       </div>
                     </div>
                     <div class="settings-compact-stack">
+                      <div class="settings-inline-group settings-auth-group">
+                        <div class="settings-inline-copy">
+                          <span class="settings-inline-label">Authentication</span>
+                          <span id="account-auth-status" class="settings-inline-value">Not signed in.</span>
+                        </div>
+                        <div class="settings-auth-fields">
+                          <input id="account-email-input" class="settings-text-input" type="email" placeholder="Email" />
+                          <input id="account-password-input" class="settings-text-input" type="password" placeholder="Password" />
+                          <input id="account-display-name-input" class="settings-text-input" type="text" placeholder="Display name (for sign up)" />
+                        </div>
+                        <div class="settings-chip-group settings-auth-actions">
+                          <button id="account-login-button" class="settings-chip-button" type="button">Sign In</button>
+                          <button id="account-register-button" class="settings-chip-button" type="button">Create Account</button>
+                          <button id="account-logout-button" class="settings-chip-button" type="button">Sign Out</button>
+                        </div>
+                      </div>
+
                       <div class="settings-inline-group settings-inline-group-actions">
                         <div class="settings-inline-copy">
                           <span class="settings-inline-label">Export account data</span>
