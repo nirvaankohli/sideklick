@@ -36,6 +36,21 @@ function installAnimationFrameStub(dom) {
   };
 }
 
+async function waitFor(assertion, timeoutMs = 1500) {
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      assertion();
+      return;
+    } catch (error) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+  }
+
+  assertion();
+}
+
 test("incoming payload shows action plus pasted text card and sends the assist request directly", async () => {
   const dom = createDom();
   installAnimationFrameStub(dom);
@@ -102,7 +117,14 @@ test("incoming payload shows action plus pasted text card and sends the assist r
     click_function: "restore-window",
   });
 
-  await new Promise((resolve) => setTimeout(resolve, 700));
+  await waitFor(() => {
+    const assistantMessages = document.querySelectorAll(".chat-message.assistant .chat-message-copy");
+    const finalAssistantMessage = assistantMessages[assistantMessages.length - 1]?.textContent;
+    assert.equal(
+      finalAssistantMessage,
+      "It means the variable references the root shell element.",
+    );
+  });
 
   assert.equal(expandWindowCalls, 1);
   assert.equal(assistCalls, 1);
@@ -124,13 +146,6 @@ test("incoming payload shows action plus pasted text card and sends the assist r
   assert.equal(
     pastedMessage?.textContent,
     "const root = document.querySelector('.window-shell');",
-  );
-
-  const assistantMessages = document.querySelectorAll(".chat-message.assistant .chat-message-copy");
-  const finalAssistantMessage = assistantMessages[assistantMessages.length - 1]?.textContent;
-  assert.equal(
-    finalAssistantMessage,
-    "It means the variable references the root shell element.",
   );
 
   dom.window.close();
@@ -191,9 +206,10 @@ test("manual chat submit shows the typed message instead of the action label", a
   chatInput.value = "What is meiosis?";
   chatForm.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
 
-  await new Promise((resolve) => setTimeout(resolve, 700));
+  await waitFor(() => {
+    assert.equal(assistCalls, 1);
+  });
 
-  assert.equal(assistCalls, 1);
   const userMessages = document.querySelectorAll(
     ".chat-message.user:not(.incoming-payload) .chat-message-copy",
   );

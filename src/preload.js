@@ -19,6 +19,8 @@ contextBridge.exposeInMainWorld("overlayApi", {
   assist: (payload) => ipcRenderer.invoke("backend:assist", payload),
   submitFeedback: (payload) => ipcRenderer.invoke("backend:feedback", payload),
   generateQuiz: (payload) => ipcRenderer.invoke("backend:quiz", payload),
+  exportAccountData: (options) => ipcRenderer.invoke("backend:exportAccount", options),
+  deleteAccount: () => ipcRenderer.invoke("backend:deleteAccount"),
   completeOnboarding: () => ipcRenderer.invoke("onboarding:complete"),
   getCurrentSession: () => ipcRenderer.invoke("session:getCurrent"),
   startSession: (session) => ipcRenderer.invoke("session:start", session),

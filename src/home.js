@@ -77,6 +77,9 @@ const settingsPrivacyStatus = document.querySelector("#settings-privacy-status")
 const privacyScreenshotStatus = document.querySelector("#privacy-screenshot-status");
 const privacySyncStatus = document.querySelector("#privacy-sync-status");
 const privacyLocalOnlyToggle = document.querySelector("#privacy-local-only-toggle");
+const privacyExportButton = document.querySelector("#privacy-export-button");
+const privacyDeleteAccountButton = document.querySelector("#privacy-delete-account-button");
+const privacyAccountStatus = document.querySelector("#privacy-account-status");
 const settingsThemeButtons = Array.from(document.querySelectorAll("[data-home-theme]"));
 const settingsSourceButtons = Array.from(document.querySelectorAll("[data-home-source]"));
 const settingsProfileButtons = Array.from(document.querySelectorAll("[data-home-profile]"));
@@ -211,6 +214,25 @@ function applyPrivacySettings(settings) {
   settingsPrivacyStatus.textContent = settings.localOnlyMode
     ? "Local-only mode is on with conservative defaults."
     : "Review capture and sync preferences carefully.";
+}
+
+function setPrivacyAccountStatus(message, tone = "neutral") {
+  privacyAccountStatus.textContent = message;
+  privacyAccountStatus.dataset.tone = tone;
+}
+
+function triggerJsonDownload(fileName, payload) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function applyPreferenceSelections(preferences) {
@@ -1231,6 +1253,52 @@ privacyLocalOnlyToggle.addEventListener("change", async () => {
   });
   applyPrivacySettings(settings);
 });
+privacyExportButton.addEventListener("click", async () => {
+  privacyExportButton.disabled = true;
+  setPrivacyAccountStatus("Preparing export...", "neutral");
+
+  try {
+    const result = await window.overlayApi.exportAccountData({
+      includeContent: true,
+    });
+    const fileName = `sideclick-export-${new Date().toISOString().slice(0, 10)}.json`;
+    triggerJsonDownload(fileName, result.export);
+    setPrivacyAccountStatus("Export downloaded.", "success");
+  } catch (error) {
+    setPrivacyAccountStatus(
+      error instanceof Error ? error.message : "Export failed.",
+      "danger",
+    );
+  } finally {
+    privacyExportButton.disabled = false;
+  }
+});
+privacyDeleteAccountButton.addEventListener("click", async () => {
+  const confirmed = window.confirm(
+    "Delete managed backend account data? This cannot be undone.",
+  );
+  if (!confirmed) {
+    return;
+  }
+
+  privacyDeleteAccountButton.disabled = true;
+  setPrivacyAccountStatus("Queueing account deletion...", "neutral");
+
+  try {
+    await window.overlayApi.deleteAccount();
+    setPrivacyAccountStatus(
+      "Account deletion was queued. Local privacy settings remain on this device.",
+      "success",
+    );
+  } catch (error) {
+    setPrivacyAccountStatus(
+      error instanceof Error ? error.message : "Account deletion failed.",
+      "danger",
+    );
+  } finally {
+    privacyDeleteAccountButton.disabled = false;
+  }
+});
 generateQuizButton.addEventListener("click", async () => {
   await generateQuizForActiveSession();
 });
@@ -1272,6 +1340,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   applyPreferenceSelections(preferences);
   applyPrivacySettings(settings);
+  setPrivacyAccountStatus("Theme changes apply across Home, Chat, and quiz views.");
   setHomeView("dashboard");
   renderFolders();
   attachResizeHandle(resizeHandle);

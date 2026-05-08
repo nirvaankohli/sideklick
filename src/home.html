@@ -221,15 +221,31 @@
                   <section class="settings-card settings-card-secondary">
                     <div class="setup-section-header">
                       <div>
-                        <p class="panel-label">Notes</p>
-                        <p class="panel-help">Quick reference for the desktop app.</p>
+                        <p class="panel-label">Account</p>
+                        <p class="panel-help">Export your data or remove your account data from the managed backend.</p>
                       </div>
                     </div>
-                    <ul class="settings-list">
-                      <li>Use the pin button to collapse Home into the docked view.</li>
-                      <li>Resize from the lower-right corner when you need more room.</li>
-                      <li>Theme changes apply across Home, Chat, and quiz views.</li>
-                    </ul>
+                    <div class="settings-compact-stack">
+                      <div class="settings-inline-group settings-inline-group-actions">
+                        <div class="settings-inline-copy">
+                          <span class="settings-inline-label">Export account data</span>
+                          <span class="settings-inline-value">Download a JSON export of your classes, sessions, and privacy state.</span>
+                        </div>
+                        <button id="privacy-export-button" class="ghost-button settings-action-button" type="button">Export</button>
+                      </div>
+
+                      <div class="settings-inline-group settings-inline-group-actions settings-danger-row">
+                        <div class="settings-inline-copy">
+                          <span class="settings-inline-label">Delete account data</span>
+                          <span class="settings-inline-value">Queues permanent deletion of managed backend data for this account.</span>
+                        </div>
+                        <button id="privacy-delete-account-button" class="ghost-button settings-action-button settings-danger-button" type="button">Delete</button>
+                      </div>
+
+                      <p id="privacy-account-status" class="panel-help settings-account-status">
+                        Theme changes apply across Home, Chat, and quiz views.
+                      </p>
+                    </div>
                   </section>
                 </div>
               </section>

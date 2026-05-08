@@ -853,6 +853,10 @@ button {
   background: rgba(255, 255, 255, 0.64);
 }
 
+.settings-inline-group-actions {
+  align-items: center;
+}
+
 .settings-inline-copy {
   display: grid;
   gap: 4px;
@@ -924,6 +928,32 @@ button {
   width: 18px;
   height: 18px;
   accent-color: #5cb5ff;
+}
+
+.settings-action-button {
+  min-width: 88px;
+  justify-content: center;
+}
+
+.settings-danger-row {
+  border-color: rgba(255, 107, 114, 0.16);
+}
+
+.settings-danger-button {
+  background: rgba(255, 107, 114, 0.12);
+  border-color: rgba(255, 107, 114, 0.22);
+}
+
+.settings-account-status {
+  min-height: 1.4em;
+}
+
+.settings-account-status[data-tone="success"] {
+  color: #8fd3ff;
+}
+
+.settings-account-status[data-tone="danger"] {
+  color: var(--danger);
 }
 
 .settings-list {

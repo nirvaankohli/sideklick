@@ -1,5 +1,7 @@
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
+const https = require("https");
 require("tsx/cjs");
 const {
   app,
@@ -12,11 +14,11 @@ const {
 const {
   startServer,
   stopServer,
-} = require("./main/server/index.ts");
+} = require("../backend/src/server.ts");
 const {
   createSession,
   endSession,
-} = require("./main/server/services/sessions.ts");
+} = require("../backend/src/services/sessions.ts");
 const {
   clearCurrentSessionState,
   getCurrentSessionState,
@@ -25,11 +27,11 @@ const {
   hasStoredCurrentSession,
   setCurrentSessionState,
   setStoredClassFolders,
-} = require("./main/server/services/app-state.ts");
+} = require("../backend/src/services/app-state.ts");
 const {
   getClassProfileById,
   saveClassProfile,
-} = require("./main/server/services/classes.ts");
+} = require("../backend/src/services/classes.ts");
 const {
   getFirstRunStartupWindowConfigs,
   getStartupWindowConfigs,
@@ -52,12 +54,19 @@ const {
 const {
   createSessionLifecycle,
 } = require("./main/session.ts");
+const {
+  enqueueOfflineRequest,
+} = require("./main/cache/local.ts");
 
 const windowsByKey = new Map();
 const windowState = new Map();
 const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
-const LOCAL_API_BASE_URL = "http://127.0.0.1:3001";
+const LOCAL_API_BASE_URL =
+  process.env.LOCAL_API_BASE_URL || "http://127.0.0.1:3001";
 const DEFAULT_BRIDGE_AUTH_SECRET = "sideclick-local-dev-secret";
+const DEFAULT_MANAGED_BACKEND_URL = "";
+const DEFAULT_MANAGED_BACKEND_JWT = "";
+const DEFAULT_BACKEND_JWT_SECRET = "sideclick-managed-backend-dev-secret";
 
 function getAppLogoPath() {
   return path.join(process.cwd(), "assets", "images", "logo", "logo.png");
@@ -313,6 +322,10 @@ function createStartupWindows(isFirstRun) {
 }
 
 async function startLocalBackend() {
+  if (shouldUseManagedBackend()) {
+    return;
+  }
+
   try {
     await startServer({
       host: "127.0.0.1",
@@ -323,15 +336,125 @@ async function startLocalBackend() {
   }
 }
 
-async function callLocalApi(endpoint, options = {}) {
-  const response = await fetch(`${LOCAL_API_BASE_URL}${endpoint}`, {
+function shouldUseManagedBackend() {
+  return Boolean(getManagedBackendBaseUrl());
+}
+
+function getManagedBackendBaseUrl() {
+  const configuredUrl =
+    typeof process.env.MANAGED_BACKEND_URL === "string"
+      ? process.env.MANAGED_BACKEND_URL.trim()
+      : "";
+
+  return configuredUrl || DEFAULT_MANAGED_BACKEND_URL;
+}
+
+function getManagedBackendJwt() {
+  const configuredJwt =
+    typeof process.env.MANAGED_BACKEND_JWT === "string"
+      ? process.env.MANAGED_BACKEND_JWT.trim()
+      : "";
+
+  return configuredJwt || DEFAULT_MANAGED_BACKEND_JWT || createLocalBackendJwt();
+}
+
+function getBackendJwtSecret() {
+  const configuredSecret =
+    typeof process.env.BACKEND_JWT_SECRET === "string"
+      ? process.env.BACKEND_JWT_SECRET.trim()
+      : "";
+
+  return configuredSecret || DEFAULT_BACKEND_JWT_SECRET;
+}
+
+function base64UrlEncode(value) {
+  return Buffer.from(value, "utf8").toString("base64url");
+}
+
+function createLocalBackendJwt() {
+  const header = base64UrlEncode(JSON.stringify({
+    alg: "HS256",
+    typ: "JWT",
+  }));
+  const payload = base64UrlEncode(JSON.stringify({
+    sub: "local-electron-client",
+    exp: Math.floor(Date.now() / 1000) + 60 * 60,
+  }));
+  const signature = crypto
+    .createHmac("sha256", getBackendJwtSecret())
+    .update(`${header}.${payload}`)
+    .digest("base64url");
+
+  return `${header}.${payload}.${signature}`;
+}
+
+function normalizeManagedBackendBaseUrl(baseUrl) {
+  if (!baseUrl) {
+    return LOCAL_API_BASE_URL.replace(/\/+$/, "");
+  }
+
+  const parsedUrl = new URL(baseUrl);
+  if (
+    parsedUrl.protocol !== "https:" &&
+    process.env.MANAGED_BACKEND_ALLOW_HTTP !== "true"
+  ) {
+    throw new Error("Managed backend URL must use HTTPS.");
+  }
+
+  return parsedUrl.toString().replace(/\/+$/, "");
+}
+
+function buildOfflineRequestKey(endpoint, options = {}) {
+  const method = options.method || "GET";
+  const payload = options.body === undefined ? "" : JSON.stringify(options.body);
+  return crypto
+    .createHash("sha256")
+    .update(`${method}:${endpoint}:${payload}`)
+    .digest("hex");
+}
+
+async function callManagedBackend(endpoint, options = {}) {
+  const baseUrl = normalizeManagedBackendBaseUrl(getManagedBackendBaseUrl());
+  const requestUrl = `${baseUrl}${endpoint}`;
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  const managedBackendJwt = getManagedBackendJwt();
+  if (managedBackendJwt) {
+    headers.Authorization = `Bearer ${managedBackendJwt}`;
+  }
+
+  const fetchOptions = {
     method: options.method || "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body:
       options.body === undefined ? undefined : JSON.stringify(options.body),
-  });
+  };
+
+  if (
+    requestUrl.startsWith("https://") &&
+    process.env.MANAGED_BACKEND_ALLOW_SELF_SIGNED === "true"
+  ) {
+    fetchOptions.agent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+  }
+
+  let response;
+  try {
+    response = await fetch(requestUrl, fetchOptions);
+  } catch (error) {
+    if ((options.method || "GET") !== "GET") {
+      enqueueOfflineRequest({
+        requestKey: buildOfflineRequestKey(endpoint, options),
+        endpoint,
+        method: options.method || "GET",
+        payload: options.body ?? null,
+      });
+    }
+    throw error;
+  }
 
   const rawText = await response.text();
   let payload = null;
@@ -342,10 +465,19 @@ async function callLocalApi(endpoint, options = {}) {
   }
 
   if (!response.ok) {
+    if ((options.method || "GET") !== "GET") {
+      enqueueOfflineRequest({
+        requestKey: buildOfflineRequestKey(endpoint, options),
+        endpoint,
+        method: options.method || "GET",
+        payload: options.body ?? null,
+        retryAfter: response.headers.get("retry-after"),
+      });
+    }
     throw new Error(
       payload && typeof payload.error === "string"
         ? payload.error
-        : rawText || `Local API request failed for ${endpoint}`,
+        : rawText || `Managed backend request failed for ${endpoint}`,
     );
   }
 
@@ -605,7 +737,7 @@ ipcMain.handle("privacy-settings:reset", () => {
 });
 
 ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {
-  return callLocalApi("/api/classes", {
+  return callManagedBackend("/api/classes", {
     method: "POST",
     body: classProfile,
   });
@@ -624,7 +756,7 @@ ipcMain.handle("backend:assist", async (_event, payload) => {
     });
   }
 
-  return callLocalApi("/api/assist", {
+  return callManagedBackend("/api/assist", {
     method: "POST",
     body: {
       ...payload,
@@ -634,16 +766,34 @@ ipcMain.handle("backend:assist", async (_event, payload) => {
 });
 
 ipcMain.handle("backend:feedback", async (_event, payload) => {
-  return callLocalApi("/api/feedback", {
+  return callManagedBackend("/api/feedback", {
     method: "POST",
     body: payload,
   });
 });
 
 ipcMain.handle("backend:quiz", async (_event, payload) => {
-  return callLocalApi("/api/quiz", {
+  return callManagedBackend("/api/quiz", {
     method: "POST",
     body: payload,
+  });
+});
+
+ipcMain.handle("backend:exportAccount", async (_event, options) => {
+  const includeContent =
+    !options || typeof options !== "object" || options.includeContent !== false;
+  const query = includeContent ? "" : "?includeContent=false";
+  return callManagedBackend(`/api/export${query}`, {
+    method: "GET",
+  });
+});
+
+ipcMain.handle("backend:deleteAccount", async () => {
+  return callManagedBackend("/api/account", {
+    method: "DELETE",
+    body: {
+      confirm: true,
+    },
   });
 });
 
