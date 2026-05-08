@@ -13,7 +13,7 @@ const chatInput = document.querySelector("#chat-input");
 const resizeHandle = document.querySelector("#resize-handle");
 
 const ACTION_LABELS = {
-  chat: "Ask SideClick",
+  chat: "Ask SideKlick",
   explain: "Explain this",
   connect: "Connect to what I know",
   example: "Give me an example",
@@ -595,7 +595,7 @@ async function executeAssistRequest(normalizedPayload) {
   if (!currentSession || !currentSession.classId) {
     addMessage(
       "assistant",
-      "Start a class session from Home before sending SideClick actions.",
+      "Start a class session from Home before sending SideKlick actions.",
     );
     return;
   }

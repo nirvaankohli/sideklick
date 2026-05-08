@@ -8,10 +8,9 @@ const restoreWindow = document.querySelector("#restore-window");
 const homeDashboardView = document.querySelector("#home-dashboard-view");
 const homeSettingsView = document.querySelector("#home-settings-view");
 const settingsHomeButton = document.querySelector("#settings-home-button");
-const createQuizButton = document.querySelector("#create-quiz");
 const backFolderButton = document.querySelector("#back-folder");
 const newFolderButton = document.querySelector("#new-folder");
-const createFolderButton = document.querySelector("#create-folder");
+const folderActionMenu = document.querySelector("#folder-action-menu");
 const folderNameInput = document.querySelector("#folder-name-input");
 const folderGrid = document.querySelector("#folder-grid");
 const breadcrumbs = document.querySelector("#breadcrumbs");
@@ -26,6 +25,10 @@ const cancelClassModal = document.querySelector("#cancel-class-modal");
 const saveClassModal = document.querySelector("#save-class-modal");
 const classFields = document.querySelector("#class-fields");
 const sessionFields = document.querySelector("#session-fields");
+const nameFieldLabel = document.querySelector("#name-field-label");
+const teacherNameField = document.querySelector("#teacher-name-field");
+const teacherNotesField = document.querySelector("#teacher-notes-field");
+const additionalNotesLabel = document.querySelector("#additional-notes-label");
 const classCourseInput = document.querySelector("#class-course-input");
 const classTeacherInput = document.querySelector("#class-teacher-input");
 const classDescriptionInput = document.querySelector("#class-description-input");
@@ -96,6 +99,7 @@ let currentTone = "light";
 let folders = [];
 let currentPath = [];
 let currentModalMode = "class";
+let isFolderActionMenuOpen = false;
 let fitTextFrame = null;
 let activeQuizClassFolder = null;
 let uploadedQuizMaterial = "";
@@ -132,6 +136,103 @@ const syncConsentLabels = {
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function isContainerType(type) {
+  return type === "class" || type === "unit" || type === "lesson";
+}
+
+function getContainerDepth(path = currentPath) {
+  return path.length;
+}
+
+function getCurrentNode() {
+  return getFolderAtPath(currentPath);
+}
+
+function getCurrentClassFolder() {
+  if (currentPath.length === 0) {
+    return null;
+  }
+
+  return getFolderAtPath([currentPath[0]]);
+}
+
+function getCurrentContainerType() {
+  if (currentPath.length === 0) {
+    return "root";
+  }
+
+  return getCurrentNode()?.type || "root";
+}
+
+function getCurrentUnitLessonLineage() {
+  const lineage = [];
+  let currentChildren = folders;
+
+  for (const segment of currentPath) {
+    const next = (currentChildren || []).find((item) => item.id === segment);
+    if (!next) {
+      break;
+    }
+    if (next.type === "unit" || next.type === "lesson") {
+      lineage.push(next);
+    }
+    currentChildren = next.children || [];
+  }
+
+  return lineage;
+}
+
+function buildCurrentUnitPathLabel() {
+  const lineage = getCurrentUnitLessonLineage();
+  if (lineage.length === 0) {
+    return null;
+  }
+  return lineage.map((item) => item.name).join(" > ");
+}
+
+function buildHierarchyContextNotes() {
+  const lineage = getCurrentUnitLessonLineage();
+  const lines = lineage.flatMap((item) => {
+    const label = item.type === "unit" ? "Unit" : "Lesson";
+    return [
+      `${label}: ${item.name}`,
+      item.description ? `${label} description: ${item.description}` : null,
+      item.additionalNotes ? `${label} notes: ${item.additionalNotes}` : null,
+    ].filter(Boolean);
+  });
+
+  return lines.length > 0 ? lines.join("\n") : null;
+}
+
+function getContextualCreateActions() {
+  const containerType = getCurrentContainerType();
+
+  if (containerType === "root") {
+    return [{ key: "class", label: "Class" }];
+  }
+
+  if (containerType === "class") {
+    return [
+      { key: "unit", label: "Unit" },
+      { key: "session", label: "Session" },
+      { key: "quiz", label: "Quiz" },
+    ];
+  }
+
+  if (containerType === "unit") {
+    return [
+      { key: "lesson", label: "Lesson" },
+      { key: "session", label: "Session" },
+      { key: "quiz", label: "Quiz" },
+    ];
+  }
+
+  return [
+    { key: "session", label: "Session" },
+    { key: "quiz", label: "Quiz" },
+  ];
 }
 
 function fitTextToBox(element, minimumFontSize = 11) {
@@ -318,15 +419,41 @@ function applyPreferenceSelections(preferences) {
 }
 
 function normalizeFolders(source) {
-  return source
-    .filter((item) => item.type === "class")
-    .map((item) => ({
-      ...item,
-      children: Array.isArray(item.children)
-        ? item.children.filter((child) =>
-            child && (child.type === "session" || child.type === "quiz"))
-        : [],
-    }));
+  function normalizeChildren(children, depth) {
+    if (!Array.isArray(children)) {
+      return [];
+    }
+
+    const allowedContainerType = depth === 1 ? "unit" : depth === 2 ? "lesson" : null;
+
+    return children
+      .filter((child) => {
+        if (!child || typeof child !== "object") {
+          return false;
+        }
+
+        if (child.type === "session" || child.type === "quiz") {
+          return true;
+        }
+
+        return Boolean(allowedContainerType && child.type === allowedContainerType);
+      })
+      .map((child) => ({
+        ...child,
+        children: isContainerType(child.type)
+          ? normalizeChildren(child.children, depth + 1)
+          : [],
+      }));
+  }
+
+  return Array.isArray(source)
+    ? source
+      .filter((item) => item?.type === "class")
+      .map((item) => ({
+        ...item,
+        children: normalizeChildren(item.children, 1),
+      }))
+    : [];
 }
 
 function getFolderAtPath(path) {
@@ -394,6 +521,7 @@ function buildBackendClassPayload(values) {
   const noteParts = [
     values.description ? `Description: ${values.description}` : null,
     values.additionalNotes ? `Additional notes: ${values.additionalNotes}` : null,
+    values.hierarchyNotes ? values.hierarchyNotes : null,
   ].filter(Boolean);
   const teacherFocusParts = [
     values.teacherName ? `Teacher: ${values.teacherName}` : null,
@@ -403,7 +531,7 @@ function buildBackendClassPayload(values) {
   return {
     className: values.course,
     subject: values.course,
-    currentUnit: null,
+    currentUnit: values.currentUnit || null,
     teacherFocus: teacherFocusParts.length > 0 ? teacherFocusParts.join(" | ") : null,
     keyConcepts: [],
     notes: noteParts.length > 0 ? noteParts.join("\n") : null
@@ -425,11 +553,14 @@ async function ensureBackendClassId(classFolder) {
       teacherName: classFolder.teacherName || "",
       description: classFolder.description || "",
       teacherNotes: classFolder.teacherNotes || "",
-      additionalNotes: classFolder.additionalNotes || ""
+      additionalNotes: classFolder.additionalNotes || "",
+      currentUnit: buildCurrentUnitPathLabel(),
+      hierarchyNotes: buildHierarchyContextNotes(),
     })
   );
 
-  const parentPath = currentPath.slice(0, -1);
+  const classPath = [classFolder.id];
+  const parentPath = classPath.slice(0, -1);
   const parentNode = getFolderAtPath(parentPath);
   const siblingFolders = parentNode ? parentNode.children || [] : folders;
   const nextChildren = siblingFolders.map((item) =>
@@ -624,7 +755,7 @@ function renderQuizSessionPicker(sessions) {
 }
 
 function openQuizModalForCurrentClass() {
-  const currentClassFolder = getFolderAtPath(currentPath);
+  const currentClassFolder = getCurrentClassFolder();
   if (!currentClassFolder || currentClassFolder.type !== "class") {
     return;
   }
@@ -632,7 +763,7 @@ function openQuizModalForCurrentClass() {
   activeQuizClassFolder = currentClassFolder;
   resetQuizModalState();
   quizModalTitle.textContent = `Quiz: ${currentClassFolder.name || "Class"}`;
-  quizSessionMeta.textContent = "Pick any saved sessions to include, or leave them all unchecked to build from broader class context.";
+  quizSessionMeta.textContent = "Pick any saved sessions from this view, or leave them unchecked to build from broader class context.";
   renderQuizSessionPicker(getCurrentClassSessions());
   quizBackdrop.hidden = false;
 }
@@ -679,7 +810,7 @@ function updateExplainButtons() {
 }
 
 function openSavedQuiz(quizItem) {
-  activeQuizClassFolder = getFolderAtPath(currentPath);
+  activeQuizClassFolder = getCurrentClassFolder();
   resetQuizModalState();
   quizModalTitle.textContent = quizItem.name || "Saved Quiz";
   quizSessionMeta.textContent = `${quizItem.questionCount || 0} questions • Saved ${formatSessionDate(quizItem.createdAt)}`;
@@ -922,16 +1053,32 @@ function renderFolders() {
     : filteredChildren;
   folderGrid.replaceChildren();
   renderBreadcrumbs();
-  backFolderButton.disabled = currentPath.length === 0;
-  createQuizButton.hidden = !isInsideClass();
+  backFolderButton.hidden = currentPath.length === 0;
   emptyState.hidden = visibleChildren.length > 0;
-  folderNameInput.placeholder = isInsideClass() ? "Search sessions" : "Search classes";
-  createFolderButton.textContent = isInsideClass() ? "Start Session" : "Create Class";
-  newFolderButton.textContent = isInsideClass() ? "Start Session" : "Create Class";
-  emptyTitle.textContent = isInsideClass() ? "No saved sessions here." : "No classes here yet.";
-  emptyCopy.textContent = isInsideClass()
-    ? "Stopped sessions stay here so you can see what you named them and keep track of your study history."
-    : "Create a class folder to start organizing courses, notes, and study context.";
+  closeFolderActionMenu();
+  if (currentPath.length === 0) {
+    folderNameInput.placeholder = "Search classes";
+    emptyTitle.textContent = "No classes here yet.";
+    emptyCopy.textContent = "Create a class folder to start organizing courses, notes, and study context.";
+  } else {
+    const currentType = getCurrentContainerType();
+    folderNameInput.placeholder =
+      currentType === "class"
+        ? "Search units, lessons, sessions, or quizzes"
+        : "Search lessons, sessions, or quizzes";
+    emptyTitle.textContent =
+      currentType === "class"
+        ? "Nothing in this class yet."
+        : currentType === "unit"
+          ? "Nothing in this unit yet."
+          : "Nothing in this lesson yet.";
+    emptyCopy.textContent =
+      currentType === "class"
+        ? "Add a unit, start a session, or build a quiz from this class."
+        : currentType === "unit"
+          ? "Add a lesson, start a session, or build a quiz inside this unit."
+          : "Start a session or build a quiz inside this lesson.";
+  }
 
   for (const folder of visibleChildren) {
     const article = document.createElement("article");
@@ -1030,12 +1177,40 @@ function renderFolders() {
 function openModal(mode) {
   currentModalMode = mode;
   classModalBackdrop.hidden = false;
-  classFields.hidden = mode !== "class";
+  classFields.hidden = mode === "session";
   sessionFields.hidden = mode !== "session";
-  classModalKicker.textContent = mode === "class" ? "New class" : "Session setup";
-  classModalTitle.textContent = mode === "class" ? "Create Class" : "Start Session";
-  saveClassModal.textContent = mode === "class" ? "Save Class" : "Start Session";
-  if (mode === "class") {
+  teacherNameField.hidden = mode !== "class";
+  teacherNotesField.hidden = mode !== "class";
+  nameFieldLabel.textContent = mode === "class" ? "Course" : mode === "unit" ? "Unit Name" : "Lesson Name";
+  additionalNotesLabel.textContent = mode === "class" ? "Additional Notes" : "Notes";
+  classCourseInput.placeholder = mode === "class" ? "AP Biology" : mode === "unit" ? "Unit 3" : "Cell Respiration";
+  classDescriptionInput.placeholder = mode === "class" ? "What this class is about" : mode === "unit" ? "What this unit covers" : "What this lesson focuses on";
+  classAdditionalNotesInput.placeholder = mode === "class" ? "Anything else you want saved" : "Extra notes for this folder";
+  classModalKicker.textContent =
+    mode === "class"
+      ? "New class"
+      : mode === "unit"
+        ? "New unit"
+        : mode === "lesson"
+          ? "New lesson"
+          : "Session setup";
+  classModalTitle.textContent =
+    mode === "class"
+      ? "Create Class"
+      : mode === "unit"
+        ? "Create Unit"
+        : mode === "lesson"
+          ? "Create Lesson"
+          : "Start Session";
+  saveClassModal.textContent =
+    mode === "session"
+      ? "Start Session"
+      : mode === "class"
+        ? "Save Class"
+        : mode === "unit"
+          ? "Save Unit"
+          : "Save Lesson";
+  if (mode !== "session") {
     classCourseInput.focus();
   } else {
     sessionNameInput.focus();
@@ -1054,7 +1229,7 @@ function closeModal() {
 }
 
 async function saveModal() {
-  if (currentModalMode === "class") {
+  if (currentModalMode === "class" || currentModalMode === "unit" || currentModalMode === "lesson") {
     const course = classCourseInput.value.trim();
     if (!course) {
       classCourseInput.focus();
@@ -1065,27 +1240,41 @@ async function saveModal() {
     const description = classDescriptionInput.value.trim();
     const teacherNotes = classTeacherNotesInput.value.trim();
     const additionalNotes = classAdditionalNotesInput.value.trim();
-    const backendResult = await window.overlayApi.saveClassProfile(
-      buildBackendClassPayload({
-        course,
+    let nextFolder;
+
+    if (currentModalMode === "class") {
+      const backendResult = await window.overlayApi.saveClassProfile(
+        buildBackendClassPayload({
+          course,
+          teacherName,
+          description,
+          teacherNotes,
+          additionalNotes
+        })
+      );
+
+      nextFolder = {
+        id: makeId(),
+        type: "class",
+        name: course,
+        dbClassId: backendResult.classProfile.id,
         teacherName,
         description,
         teacherNotes,
-        additionalNotes
-      })
-    );
+        additionalNotes,
+        children: []
+      };
+    } else {
+      nextFolder = {
+        id: makeId(),
+        type: currentModalMode,
+        name: course,
+        description,
+        additionalNotes,
+        children: []
+      };
+    }
 
-    const nextFolder = {
-      id: makeId(),
-      type: "class",
-      name: course,
-      dbClassId: backendResult.classProfile.id,
-      teacherName,
-      description,
-      teacherNotes,
-      additionalNotes,
-      children: []
-    };
     const nextChildren = [...getCurrentChildren(), nextFolder];
     const nextFolders = replaceChildrenAtPath(currentPath, nextChildren);
     await persistFolders(nextFolders);
@@ -1099,8 +1288,9 @@ async function saveModal() {
     return;
   }
 
-  const classFolder = getFolderAtPath(currentPath);
+  const classFolder = getCurrentClassFolder();
   const dbClassId = await ensureBackendClassId(classFolder);
+  const hierarchyNotes = buildHierarchyContextNotes();
   closeModal();
   await window.overlayApi.startSession({
     classId: dbClassId,
@@ -1109,9 +1299,12 @@ async function saveModal() {
     description: classFolder?.description || "",
     teacherNotes: classFolder?.teacherNotes || "",
     additionalNotes: classFolder?.additionalNotes || "",
+    currentUnit: buildCurrentUnitPathLabel(),
+    hierarchyNotes,
+    explorerPath: [...currentPath],
     sessionId: null,
     sessionName,
-    sessionNotes: sessionNotesInput.value.trim(),
+    sessionNotes: [sessionNotesInput.value.trim(), hierarchyNotes].filter(Boolean).join("\n\n"),
   });
   await window.overlayApi.minimizeNative();
 }
@@ -1210,14 +1403,11 @@ backFolderButton.addEventListener("click", () => {
 });
 
 newFolderButton.addEventListener("click", () => {
-  openModal(isInsideClass() ? "session" : "class");
-});
-
-createFolderButton.addEventListener("click", () => {
-  openModal(isInsideClass() ? "session" : "class");
-});
-createQuizButton.addEventListener("click", () => {
-  openQuizModalForCurrentClass();
+  if (isFolderActionMenuOpen) {
+    closeFolderActionMenu();
+  } else {
+    openFolderActionMenu();
+  }
 });
 
 folderNameInput.addEventListener("keydown", (event) => {
@@ -1235,6 +1425,19 @@ saveClassModal.addEventListener("click", saveModal);
 classModalBackdrop.addEventListener("click", (event) => {
   if (event.target === classModalBackdrop) {
     closeModal();
+  }
+});
+document.addEventListener("click", (event) => {
+  if (!isFolderActionMenuOpen) {
+    return;
+  }
+
+  if (
+    event.target instanceof Node &&
+    !newFolderButton.contains(event.target) &&
+    !folderActionMenu.contains(event.target)
+  ) {
+    closeFolderActionMenu();
   }
 });
 closeSessionSummaryButton.addEventListener("click", closeSessionSummary);
@@ -1270,6 +1473,41 @@ for (const button of settingsThemeButtons) {
     const result = await window.overlayApi.setThemeSource(button.dataset.homeTheme);
     applyThemePreference(result);
   });
+}
+
+function closeFolderActionMenu() {
+  isFolderActionMenuOpen = false;
+  newFolderButton.dataset.open = "false";
+  newFolderButton.setAttribute("aria-expanded", "false");
+  folderActionMenu.hidden = true;
+  folderActionMenu.replaceChildren();
+}
+
+function openFolderActionMenu() {
+  const actions = getContextualCreateActions();
+  folderActionMenu.replaceChildren();
+
+  actions.forEach((action) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "folder-action-menu-item";
+    button.setAttribute("role", "menuitem");
+    button.textContent = action.label;
+    button.addEventListener("click", () => {
+      closeFolderActionMenu();
+      if (action.key === "quiz") {
+        openQuizModalForCurrentClass();
+      } else {
+        openModal(action.key);
+      }
+    });
+    folderActionMenu.appendChild(button);
+  });
+
+  isFolderActionMenuOpen = true;
+  newFolderButton.dataset.open = "true";
+  newFolderButton.setAttribute("aria-expanded", "true");
+  folderActionMenu.hidden = false;
 }
 
 for (const button of settingsSourceButtons) {

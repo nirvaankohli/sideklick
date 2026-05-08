@@ -3,23 +3,11 @@ function appendStoppedSessionToFolders(
   session: Record<string, any>,
   persistedSession: Record<string, any>,
 ) {
-  if (!Array.isArray(classFolders)) {
-    return [];
-  }
-
-  return classFolders.map((folder) => {
-    if (
-      folder?.type !== "class" ||
-      (folder.dbClassId !== session.classId &&
-        String(folder.name || "").trim() !==
-          String(session.className || "").trim())
-    ) {
-      return folder;
+  function insertSessionAtPath(nodes: unknown[], path: string[]) {
+    if (!Array.isArray(nodes)) {
+      return [];
     }
 
-    const existingChildren = Array.isArray(folder.children)
-      ? folder.children
-      : [];
     const sessionEntry = {
       id: `session-${persistedSession.id}`,
       type: "session",
@@ -35,16 +23,49 @@ function appendStoppedSessionToFolders(
       screenshotPreview: persistedSession.screenshotPreview,
       keyTopics: persistedSession.keyTopics,
     };
-    const dedupedChildren = existingChildren.filter(
-      (child) =>
-        child?.type !== "session" || child.dbSessionId !== persistedSession.id,
-    );
 
-    return {
-      ...folder,
-      children: [sessionEntry, ...dedupedChildren],
-    };
-  });
+    if (path.length === 0) {
+      const dedupedChildren = nodes.filter(
+        (child) => child?.type !== "session" || child.dbSessionId !== persistedSession.id,
+      );
+      return [sessionEntry, ...dedupedChildren];
+    }
+
+    const [head, ...rest] = path;
+    return nodes.map((node) => {
+      if (node?.id !== head) {
+        return node;
+      }
+
+      return {
+        ...node,
+        children: insertSessionAtPath(
+          Array.isArray(node.children) ? node.children : [],
+          rest,
+        ),
+      };
+    });
+  }
+
+  if (!Array.isArray(classFolders)) {
+    return [];
+  }
+
+  const explorerPath = Array.isArray(session.explorerPath)
+    ? session.explorerPath.filter((segment) => typeof segment === "string")
+    : [];
+  if (explorerPath.length > 0) {
+    return insertSessionAtPath(classFolders, explorerPath);
+  }
+
+  const classFolder = classFolders.find(
+    (folder) =>
+      folder?.type === "class" &&
+      (folder.dbClassId === session.classId ||
+        String(folder.name || "").trim() === String(session.className || "").trim()),
+  );
+  const fallbackPath = classFolder?.id ? [classFolder.id] : [];
+  return insertSessionAtPath(classFolders, fallbackPath);
 }
 
 function buildBackendClassPayloadFromSession(session: Record<string, any>) {
@@ -53,6 +74,7 @@ function buildBackendClassPayloadFromSession(session: Record<string, any>) {
     session?.additionalNotes
       ? `Additional notes: ${session.additionalNotes}`
       : null,
+    session?.hierarchyNotes ? session.hierarchyNotes : null,
   ].filter(Boolean);
   const teacherFocusParts = [
     session?.teacherName ? `Teacher: ${session.teacherName}` : null,
@@ -62,7 +84,10 @@ function buildBackendClassPayloadFromSession(session: Record<string, any>) {
   return {
     className: typeof session?.className === "string" ? session.className : "",
     subject: typeof session?.className === "string" ? session.className : "",
-    currentUnit: null,
+    currentUnit:
+      typeof session?.currentUnit === "string" && session.currentUnit.trim()
+        ? session.currentUnit.trim()
+        : null,
     teacherFocus:
       teacherFocusParts.length > 0 ? teacherFocusParts.join(" | ") : null,
     keyConcepts: [],
@@ -128,6 +153,14 @@ export function createSessionLifecycle({
 
   function startSession(session: Record<string, any>) {
     const resolvedClassId = ensureSessionClassId(session);
+    const existingClassProfile = getClassProfileById(resolvedClassId);
+    if (existingClassProfile) {
+      saveClassProfile({
+        ...existingClassProfile,
+        ...buildBackendClassPayloadFromSession(session),
+        id: resolvedClassId,
+      });
+    }
     const persistedSession = createSession(
       resolvedClassId,
       session.sessionName || "Study Session",

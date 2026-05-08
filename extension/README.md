@@ -1,6 +1,6 @@
-# SideClick Chrome Extension
+# SideKlick Chrome Extension
 
-This Chrome extension sends SideClick context-menu actions directly to the local Electron app bridge at `http://localhost:4353`.
+This Chrome extension sends SideKlick context-menu actions directly to the local Electron app bridge at `http://localhost:4353`.
 
 The extension uses signed local requests instead of raw unauthenticated POSTs. Each request includes a per-request nonce, a short expiry, and an HMAC signature over the method, path, expiry, nonce, and JSON body. If you change the app's `SIDECLICK_BRIDGE_SECRET`, update `BRIDGE_AUTH_SECRET` in `extension/background.js` to match.
 
@@ -13,7 +13,7 @@ The extension uses signed local requests instead of raw unauthenticated POSTs. E
 
 ## Available Actions
 
-- `Open SideClick`
+- `Open SideKlick`
 - On selected text:
 - `Explain this`
 - `Connect to what I know`

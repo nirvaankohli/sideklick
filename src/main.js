@@ -216,26 +216,45 @@ function getAnchorBounds(config) {
 function getDefaultBounds(config) {
   const display = screen.getPrimaryDisplay();
   const { workArea } = display;
-  const { width, height } = config.layout.expanded;
+  const {
+    width,
+    height,
+    minWidth,
+    minHeight,
+    viewportWidthRatio,
+    viewportHeightRatio,
+  } = config.layout.expanded;
   const {
     padding,
     topOffset,
     horizontal = "right",
     vertical = "top",
   } = config.layout.anchor;
+  const resolvedWidth = viewportWidthRatio
+    ? Math.max(
+        minWidth || width,
+        Math.min(width, Math.round(workArea.width * viewportWidthRatio)),
+      )
+    : width;
+  const resolvedHeight = viewportHeightRatio
+    ? Math.max(
+        minHeight || height,
+        Math.min(height, Math.round(workArea.height * viewportHeightRatio)),
+      )
+    : height;
 
   const x =
     horizontal === "center"
-      ? workArea.x + Math.round((workArea.width - width) / 2)
-      : workArea.x + workArea.width - width - padding;
+      ? workArea.x + Math.round((workArea.width - resolvedWidth) / 2)
+      : workArea.x + workArea.width - resolvedWidth - padding;
   const y =
     vertical === "middle"
-      ? workArea.y + Math.round((workArea.height - height) / 2)
+      ? workArea.y + Math.round((workArea.height - resolvedHeight) / 2)
       : workArea.y + topOffset;
 
   return {
-    width,
-    height,
+    width: resolvedWidth,
+    height: resolvedHeight,
     x,
     y,
   };
@@ -340,6 +359,7 @@ function createManagedWindow(
     show: false,
     skipTaskbar: browserWindow.skipTaskbar,
     title: config.title,
+    backgroundColor: browserWindow.backgroundColor || "#00000000",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

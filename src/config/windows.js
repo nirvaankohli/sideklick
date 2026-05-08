@@ -1,7 +1,7 @@
 const sharedWindowTemplate = {
   // Point a template at a different renderer entry file if you add more UIs later.
   htmlFile: "index.html",
-  title: "SideClick - Chat & Assistant",
+  title: "SideKlick - Chat & Assistant",
   startMode: "expanded",
   browserWindow: {
     transparent: true,
@@ -37,15 +37,22 @@ const sharedWindowTemplate = {
 const windowTemplates = {
   onboarding: {
     id: "onboarding",
-    title: "SideClick - Welcome",
+    title: "SideKlick - Welcome",
     htmlFile: "onboarding.html",
     description: "First-run startup window for onboarding or setup.",
+    browserWindow: {
+      transparent: false,
+      roundedCorners: true,
+      backgroundColor: "#0d121b",
+    },
     layout: {
       expanded: {
-        width: 980,
-        height: 720,
-        minWidth: 840,
-        minHeight: 620,
+        width: 1320,
+        height: 900,
+        minWidth: 920,
+        minHeight: 680,
+        viewportWidthRatio: 0.82,
+        viewportHeightRatio: 0.82,
       },
       compact: {
         width: 280,
@@ -61,7 +68,7 @@ const windowTemplates = {
   },
   home: {
     id: "home",
-    title: "SideClick - Home",
+    title: "SideKlick - Home",
     htmlFile: "home.html",
     description: "Home window with class folders.",
     layout: {
@@ -79,7 +86,7 @@ const windowTemplates = {
   },
   chat: {
     id: "chat",
-    title: "SideClick - Chat & Assistant",
+    title: "SideKlick - Chat & Assistant",
     description: "Chat window.",
     layout: {
       expanded: {

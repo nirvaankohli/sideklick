@@ -9,7 +9,7 @@ const BRIDGE_SIGNATURE_HEADER = "x-sideclick-signature";
 const MENU_ITEMS = [
   {
     id: "sideclick-open-chat",
-    title: "Open SideClick",
+    title: "Open SideKlick",
     contexts: ["page", "selection"],
     actionType: "chat",
     buildSelectedText: () => "",
@@ -142,7 +142,7 @@ async function sendIncomingPayload(payload) {
 
   if (!response.ok) {
     const message = await response.text().catch(() => "");
-    throw new Error(message || `SideClick local inbox returned ${response.status}.`);
+    throw new Error(message || `SideKlick local inbox returned ${response.status}.`);
   }
 }
 
@@ -177,7 +177,7 @@ chrome.action.onClicked.addListener(async () => {
       click_function: RESTORE_CLICK_FUNCTION,
     });
   } catch (error) {
-    console.error("Failed to open SideClick:", error);
+    console.error("Failed to open SideKlick:", error);
   }
 });
 

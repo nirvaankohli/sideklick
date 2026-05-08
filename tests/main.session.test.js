@@ -42,6 +42,7 @@ test("session lifecycle starts a session, persists state, and creates chat when 
   let storedCurrentSession = null;
   const windowsByKey = new Map();
   const createdWindows = [];
+  let savedClassPayload = null;
 
   const lifecycle = createSessionLifecycle({
     createSession(classId, title, notes) {
@@ -57,10 +58,21 @@ test("session lifecycle starts a session, persists state, and creates chat when 
       throw new Error("not used");
     },
     getClassProfileById(id) {
-      return id === 41 ? { id: 41 } : null;
+      return id === 41
+        ? {
+          id: 41,
+          className: "Chemistry",
+          subject: "Chemistry",
+          currentUnit: null,
+          teacherFocus: null,
+          keyConcepts: [],
+          notes: null,
+        }
+        : null;
     },
-    saveClassProfile() {
-      throw new Error("should not create a new class");
+    saveClassProfile(payload) {
+      savedClassPayload = payload;
+      return payload;
     },
     getCurrentSessionState() {
       return storedCurrentSession;
@@ -96,6 +108,15 @@ test("session lifecycle starts a session, persists state, and creates chat when 
   });
 
   assert.deepEqual(createdWindows, [{ windowKey: "chat", templateKey: "chat" }]);
+  assert.deepEqual(savedClassPayload, {
+    id: 41,
+    className: "Chemistry",
+    subject: "Chemistry",
+    currentUnit: null,
+    teacherFocus: null,
+    keyConcepts: [],
+    notes: null,
+  });
   assert.equal(result.ok, true);
   assert.deepEqual(result.currentSession, {
     classId: 41,

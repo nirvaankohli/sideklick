@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SideClick Home</title>
+    <title>SideKlick Home</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -57,14 +57,14 @@
                     <p class="panel-label">Classes</p>
                     <div id="breadcrumbs" class="breadcrumbs"></div>
                   </div>
-                  <div class="home-browser-actions">
-                    <button id="create-quiz" class="continue-button explorer-quiz-button" type="button" hidden>Create Quiz</button>
-                    <button id="back-folder" class="ghost-button" type="button">Back</button>
-                    <button id="new-folder" class="ghost-button" type="button">Create Class</button>
-                  </div>
                 </div>
 
                 <div class="folder-create-row">
+                  <button id="back-folder" class="icon-button folder-nav-button" type="button" aria-label="Go back" hidden>
+                    <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M15.4 5.4 8.8 12l6.6 6.6-1.4 1.4L6 12l8-8z"></path>
+                    </svg>
+                  </button>
                   <label class="search-input-shell" for="folder-name-input">
                     <span class="search-input-icon" aria-hidden="true">
                       <svg class="icon-svg" viewBox="0 0 24 24">
@@ -73,7 +73,14 @@
                     </span>
                     <input id="folder-name-input" class="folder-name-input" type="text" placeholder="Search classes" />
                   </label>
-                  <button id="create-folder" class="continue-button create-folder-button" type="button">Create Class</button>
+                  <div class="folder-action-menu-shell">
+                    <button id="new-folder" class="folder-plus-button" type="button" aria-label="Open create menu" aria-haspopup="menu" aria-expanded="false">
+                      <svg class="icon-svg folder-plus-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path>
+                      </svg>
+                    </button>
+                    <div id="folder-action-menu" class="folder-action-menu" role="menu" hidden></div>
+                  </div>
                 </div>
 
                 <div id="folder-grid" class="folder-grid"></div>
@@ -94,7 +101,7 @@
                   </button>
                   <div class="settings-header-copy">
                     <p class="panel-label">Settings</p>
-                    <h2 class="settings-title">SideClick Settings</h2>
+                    <h2 class="settings-title">SideKlick Settings</h2>
                   </div>
                 </header>
 
@@ -297,10 +304,10 @@
 
             <div id="class-fields" class="modal-form">
               <label class="modal-field">
-                <span>Course</span>
+                <span id="name-field-label">Course</span>
                 <input id="class-course-input" type="text" placeholder="AP Biology" />
               </label>
-              <label class="modal-field">
+              <label id="teacher-name-field" class="modal-field">
                 <span>Teacher Name</span>
                 <input id="class-teacher-input" type="text" placeholder="Ms. Rivera" />
               </label>
@@ -308,12 +315,12 @@
                 <span>Description</span>
                 <textarea id="class-description-input" rows="3" placeholder="What this class is about"></textarea>
               </label>
-              <label class="modal-field">
+              <label id="teacher-notes-field" class="modal-field">
                 <span>Teacher Notes</span>
                 <textarea id="class-teacher-notes-input" rows="3" placeholder="Teacher focus areas or reminders"></textarea>
               </label>
               <label class="modal-field">
-                <span>Additional Notes</span>
+                <span id="additional-notes-label">Additional Notes</span>
                 <textarea id="class-additional-notes-input" rows="3" placeholder="Anything else you want saved"></textarea>
               </label>
             </div>
