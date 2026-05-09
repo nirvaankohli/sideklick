@@ -38,9 +38,20 @@ type GapRow = {
   class_id: number | null;
   topic: string;
   description: string | null;
+  scope: "session" | "class" | null;
   status: "open" | "improving" | "closed";
   weight: number;
   evidence_count: number;
+  support_signals: string | null;
+  last_confidence: number | null;
+  last_evidence_type:
+    | "self_doubt"
+    | "review_request"
+    | "direct_question"
+    | "note_capture"
+    | "general"
+    | null;
+  last_interaction_type: string | null;
   last_seen_at: string | null;
   created_at: string;
   updated_at: string;
@@ -96,15 +107,35 @@ function uniqueOrdered(items: string[], limit?: number): string[] {
   return result;
 }
 
+function safeParseStringArray(value: string | null | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((entry): entry is string => typeof entry === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 function mapGapRow(row: GapRow): Gap {
   return {
     id: row.id,
     classId: row.class_id,
     topic: row.topic,
     description: row.description,
+    scope: row.scope === "session" ? "session" : "class",
     status: row.status,
     weight: row.weight,
     evidenceCount: row.evidence_count,
+    supportSignals: safeParseStringArray(row.support_signals),
+    lastConfidence: row.last_confidence,
+    lastEvidenceType: row.last_evidence_type,
+    lastInteractionType: row.last_interaction_type,
     lastSeenAt: row.last_seen_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -197,6 +228,18 @@ function getRecencyScore(gap: Gap): number {
   return 0;
 }
 
+function getScopeScore(gap: Gap, requestInput: AssistRequest): number {
+  if (gap.scope === "session" && requestInput.sessionId) {
+    return 3;
+  }
+
+  if (gap.scope === "class") {
+    return 1;
+  }
+
+  return 0;
+}
+
 function getKeywordMatchScore(gap: Gap, requestKeywords: Set<string>): number {
   if (requestKeywords.size === 0) {
     return 0;
@@ -274,11 +317,12 @@ function rankGaps(gaps: Gap[], requestInput: AssistRequest): Gap[] {
   const requestKeywords = buildKeywordSet(requestInput);
 
   // Score gaps with a transparent heuristic:
-  // recurring weak spots + recent evidence + overlap with the current ask.
+  // scope + recurring weak spots + recent evidence + overlap with the current ask.
   return gaps
     .map((gap) => ({
       gap,
       score:
+        getScopeScore(gap, requestInput) +
         getWeightScore(gap) +
         getRecencyScore(gap) +
         getKeywordMatchScore(gap, requestKeywords),
@@ -304,9 +348,14 @@ function getTopActiveGaps(
         class_id,
         topic,
         description,
+        scope,
         status,
         weight,
         evidence_count,
+        support_signals,
+        last_confidence,
+        last_evidence_type,
+        last_interaction_type,
         last_seen_at,
         created_at,
         updated_at
@@ -443,6 +492,32 @@ function buildStudentMemory(
         ? summaryParts.join(" | ")
         : "Very little prior memory yet.",
   };
+}
+
+function compactText(value: string | null | undefined, maxLength = 120): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized.length <= maxLength
+    ? normalized
+    : `${normalized.slice(0, maxLength - 3)}...`;
+}
+
+function summarizeInteraction(
+  interaction: BuiltContext["recentInteractions"][number],
+): string {
+  const prompt = compactText(interaction.question, 90) ?? "Recent question";
+  const response = compactText(interaction.response ?? null, 70);
+
+  return response
+    ? `${interaction.interactionType ?? "assist"}: ${prompt} -> ${response}`
+    : `${interaction.interactionType ?? "assist"}: ${prompt}`;
 }
 
 function getSessionGoal(sessionId?: number): string | null {
@@ -586,6 +661,153 @@ function buildContextGuidance(
   };
 }
 
+function buildWorkingMemory(
+  requestInput: AssistRequest,
+  recentInteractions: BuiltContext["recentInteractions"],
+  sessionGoal: string | null,
+): BuiltContext["workingMemory"] {
+  const currentRequest = uniqueOrdered(
+    [
+      compactText(requestInput.selectedText, 150),
+      compactText(requestInput.userNote ?? null, 120),
+      compactText(requestInput.surroundingText ?? null, 140),
+      requestInput.pageTitle ? `Page title: ${requestInput.pageTitle}` : null,
+      requestInput.actionType ? `Action: ${requestInput.actionType}` : null,
+    ].filter((value): value is string => Boolean(value)),
+    5,
+  );
+  const sessionWindow = uniqueOrdered(
+    [
+      sessionGoal ? `Session goal: ${sessionGoal}` : null,
+      ...recentInteractions.slice(0, 3).map(summarizeInteraction),
+    ].filter((value): value is string => Boolean(value)),
+    4,
+  );
+
+  return {
+    currentRequest,
+    sessionWindow,
+    recentInteractions,
+    summary: buildSummary([
+      currentRequest.length > 0
+        ? `Current request: ${currentRequest.join(" | ")}`
+        : null,
+      sessionWindow.length > 0
+        ? `Session-local context: ${sessionWindow.join(" | ")}`
+        : null,
+    ]),
+  };
+}
+
+function buildEpisodicMemory(
+  recentSessions: BuiltContext["recentSessions"],
+): BuiltContext["episodicMemory"] {
+  const carryForwardItems = uniqueOrdered(
+    recentSessions
+      .map((session) => session.carryForward)
+      .filter((value): value is string => Boolean(value)),
+    4,
+  );
+
+  return {
+    recentSessions,
+    carryForwardItems,
+    summary: buildSummary([
+      recentSessions.length > 0
+        ? `Recent sessions: ${recentSessions.map((session) => session.detailedContext).join(" || ")}`
+        : null,
+      carryForwardItems.length > 0
+        ? `Carry forward: ${carryForwardItems.join(" | ")}`
+        : null,
+    ]),
+  };
+}
+
+function buildSemanticMemory(
+  studentMemory: BuiltContext["studentMemory"],
+  activeGaps: Gap[],
+): BuiltContext["semanticMemory"] {
+  return {
+    activeGaps,
+    recurringTopics: studentMemory.recurringTopics,
+    preferredHelpModes: studentMemory.preferredHelpModes,
+    knownStrengths: studentMemory.knownStrengths,
+    summary: buildSummary([
+      activeGaps.length > 0
+        ? `Active gaps: ${activeGaps.map((gap) => gap.topic).join(", ")}`
+        : null,
+      studentMemory.knownStrengths.length > 0
+        ? `Known strengths: ${studentMemory.knownStrengths.join(", ")}`
+        : null,
+      studentMemory.recurringTopics.length > 0
+        ? `Recurring topics: ${studentMemory.recurringTopics.join(", ")}`
+        : null,
+      studentMemory.preferredHelpModes.length > 0
+        ? `Preferred help modes: ${studentMemory.preferredHelpModes.join(", ")}`
+        : null,
+    ]),
+  };
+}
+
+function buildContextTiers(
+  requestInput: AssistRequest,
+  classProfile: BuiltContext["classProfile"],
+  workingMemory: BuiltContext["workingMemory"],
+  episodicMemory: BuiltContext["episodicMemory"],
+  semanticMemory: BuiltContext["semanticMemory"],
+): BuiltContext["contextTiers"] {
+  return {
+    immediate: uniqueOrdered([
+      ...workingMemory.currentRequest,
+      requestInput.pageTitle ? `Current page: ${requestInput.pageTitle}` : null,
+    ].filter((value): value is string => Boolean(value)), 5),
+    session: uniqueOrdered(workingMemory.sessionWindow, 4),
+    class: uniqueOrdered([
+      classProfile ? `${classProfile.className} (${classProfile.subject})` : null,
+      classProfile?.currentUnit ? `Current unit: ${classProfile.currentUnit}` : null,
+      classProfile?.teacherFocus ? `Teacher focus: ${classProfile.teacherFocus}` : null,
+      semanticMemory.activeGaps[0] ? `Top gap: ${semanticMemory.activeGaps[0].topic}` : null,
+      semanticMemory.knownStrengths[0]
+        ? `Known strength: ${semanticMemory.knownStrengths[0]}`
+        : null,
+    ].filter((value): value is string => Boolean(value)), 5),
+    historical: uniqueOrdered([
+      ...episodicMemory.carryForwardItems,
+      ...episodicMemory.recentSessions.map((session) => session.detailedContext),
+      ...semanticMemory.recurringTopics.map((topic) => `Recurring topic: ${topic}`),
+      ...semanticMemory.preferredHelpModes.map((mode) => `Usually asks for: ${mode}`),
+    ], 6),
+  };
+}
+
+function buildContextPacket(
+  contextTiers: BuiltContext["contextTiers"],
+  contextGuidance: BuiltContext["contextGuidance"],
+  semanticMemory: BuiltContext["semanticMemory"],
+): BuiltContext["contextPacket"] {
+  return {
+    answering: uniqueOrdered([
+      ...contextTiers.immediate,
+      ...contextTiers.session.slice(0, 2),
+      semanticMemory.activeGaps[0]
+        ? `Use this gap only if it clearly applies: ${semanticMemory.activeGaps[0].topic}`
+        : null,
+    ].filter((value): value is string => Boolean(value)), 6),
+    coaching: uniqueOrdered([
+      ...contextTiers.class.slice(0, 3),
+      ...contextTiers.historical.slice(0, 2),
+      semanticMemory.activeGaps[0]
+        ? `Most important weak spot to coach around: ${semanticMemory.activeGaps[0].topic}`
+        : null,
+    ].filter((value): value is string => Boolean(value)), 6),
+    avoid: uniqueOrdered([
+      "Do not let old memory override the current request.",
+      contextGuidance.screenshotUsefulness,
+      contextGuidance.backgroundUsefulness,
+    ], 3),
+  };
+}
+
 function buildSummary(parts: Array<string | null | undefined>): string {
   const filteredParts = parts.filter(
     (part): part is string => Boolean(part && part.trim().length > 0),
@@ -628,6 +850,25 @@ export function buildContext(
   }
   const sessionGoal = getSessionGoal(requestInput.sessionId);
   const contextGuidance = buildContextGuidance(requestInput);
+  const workingMemory = buildWorkingMemory(
+    requestInput,
+    recentInteractions,
+    sessionGoal,
+  );
+  const episodicMemory = buildEpisodicMemory(recentSessionContext);
+  const semanticMemory = buildSemanticMemory(studentMemory, activeGaps);
+  const contextTiers = buildContextTiers(
+    requestInput,
+    classProfile,
+    workingMemory,
+    episodicMemory,
+    semanticMemory,
+  );
+  const contextPacket = buildContextPacket(
+    contextTiers,
+    contextGuidance,
+    semanticMemory,
+  );
 
   // Keep the summary compact so it can be dropped straight into a model prompt.
   const summary = buildSummary([
@@ -651,6 +892,9 @@ export function buildContext(
       ? `Known strengths: ${studentMemory.knownStrengths.join(", ")}`
       : null,
     studentMemory.memorySummary,
+    workingMemory.summary,
+    episodicMemory.summary,
+    semanticMemory.summary,
     recentSessionContext.length > 0
       ? `Recent session topics: ${recentSessionContext.flatMap((session) => session.keyTopics).slice(0, 6).join(", ")}`
       : null,
@@ -666,6 +910,11 @@ export function buildContext(
     studentMemory,
     recentSessions: recentSessionContext,
     contextGuidance,
+    workingMemory,
+    episodicMemory,
+    semanticMemory,
+    contextTiers,
+    contextPacket,
     sessionGoal,
     summary,
   };

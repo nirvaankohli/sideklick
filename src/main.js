@@ -6,6 +6,7 @@ require("tsx/cjs");
 const {
   app,
   BrowserWindow,
+  clipboard,
   desktopCapturer,
   ipcMain,
   nativeTheme,
@@ -38,8 +39,10 @@ const {
   resolveWindowTemplate,
 } = require("./config/windows");
 const {
+  canAttachManualScreenshot,
   capturePrimaryDisplayScreenshot,
   enforceScreenshotPolicy,
+  getScreenshotPolicyErrorMessage,
   shouldCaptureAutomaticScreenshot,
 } = require("./main/capture.ts");
 const {
@@ -63,7 +66,6 @@ const windowState = new Map();
 const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
 const LOCAL_API_BASE_URL =
   process.env.LOCAL_API_BASE_URL || "http://127.0.0.1:3001";
-const DEFAULT_BRIDGE_AUTH_SECRET = "sideclick-local-dev-secret";
 const DEFAULT_MANAGED_BACKEND_URL = "";
 const DEFAULT_MANAGED_BACKEND_JWT = "";
 const DEFAULT_BACKEND_JWT_SECRET = "sideclick-managed-backend-dev-secret";
@@ -642,7 +644,13 @@ function getBridgeAuthSecret() {
       ? process.env.SIDECLICK_BRIDGE_SECRET.trim()
       : "";
 
-  return configuredSecret || DEFAULT_BRIDGE_AUTH_SECRET;
+  if (!configuredSecret) {
+    throw new Error(
+      "[bridge] SIDECLICK_BRIDGE_SECRET must be configured before starting the bridge.",
+    );
+  }
+
+  return configuredSecret;
 }
 
 const incomingMessageServer = createIncomingMessageBridge({
@@ -821,6 +829,43 @@ ipcMain.handle("privacy-settings:update", (_event, patch) => {
 
 ipcMain.handle("privacy-settings:reset", () => {
   return resetPrivacySettings();
+});
+
+ipcMain.handle("capture:screenshot", async () => {
+  const privacySettings = getPrivacySettings();
+  if (!canAttachManualScreenshot(privacySettings)) {
+    throw new Error(getScreenshotPolicyErrorMessage(privacySettings));
+  }
+
+  return capturePrimaryDisplayScreenshot({
+    desktopCapturer,
+    screen,
+  });
+});
+
+ipcMain.handle("clipboard:readAttachment", () => {
+  const image = clipboard.readImage();
+  if (!image.isEmpty()) {
+    const privacySettings = getPrivacySettings();
+    if (!canAttachManualScreenshot(privacySettings)) {
+      throw new Error(getScreenshotPolicyErrorMessage(privacySettings));
+    }
+
+    return {
+      type: "image",
+      dataUrl: `data:image/png;base64,${image.toPNG().toString("base64")}`,
+    };
+  }
+
+  const text = clipboard.readText().trim();
+  if (!text) {
+    return null;
+  }
+
+  return {
+    type: "text",
+    text,
+  };
 });
 
 ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {

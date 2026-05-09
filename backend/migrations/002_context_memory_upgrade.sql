@@ -1,0 +1,23 @@
+ALTER TABLE gaps
+  ADD COLUMN IF NOT EXISTS scope TEXT NOT NULL DEFAULT 'class';
+
+ALTER TABLE gaps
+  ADD COLUMN IF NOT EXISTS support_signals JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+ALTER TABLE gaps
+  ADD COLUMN IF NOT EXISTS last_confidence DOUBLE PRECISION;
+
+ALTER TABLE gaps
+  ADD COLUMN IF NOT EXISTS last_evidence_type TEXT;
+
+ALTER TABLE gaps
+  ADD COLUMN IF NOT EXISTS last_interaction_type TEXT;
+
+ALTER TABLE gap_events
+  ADD COLUMN IF NOT EXISTS evidence_type TEXT;
+
+ALTER TABLE gap_events
+  ADD COLUMN IF NOT EXISTS support_signals JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+ALTER TABLE gap_events
+  ADD COLUMN IF NOT EXISTS request_excerpt TEXT;

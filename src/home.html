@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -7,42 +7,71 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="window-shell home-shell" data-mode="expanded" data-tone="light">
+    <main
+      class="window-shell home-shell"
+      data-mode="expanded"
+      data-tone="light"
+    >
       <section class="overlay-card home-card">
-        <div class="glow glow-one" aria-hidden="true"></div>
-        <div class="glow glow-two" aria-hidden="true"></div>
-
         <header class="topbar">
           <div class="title-group home-title-group">
             <div class="home-title-row">
               <span class="home-title-icon" aria-hidden="true">
-                <img class="app-logo-image" src="../assets/images/logo/logo.png" alt="" />
+                <img
+                  class="app-logo-image"
+                  src="../assets/images/logo/logo.png"
+                  alt=""
+                />
               </span>
               <div>
                 <p class="eyebrow">Dashboard</p>
-                <h1>Home</h1>
+                <h1 id="top-h1">Home</h1>
               </div>
             </div>
           </div>
           <div class="window-actions no-drag">
-            <button id="shrink-window" class="icon-button" type="button" aria-label="Pin home window">
+            <button
+              id="shrink-window"
+              class="icon-button"
+              type="button"
+              aria-label="Pin home window"
+            >
               <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M7 6h10v2H7zM7 11h10v2H7zM7 16h10v2H7z"></path>
               </svg>
             </button>
-            <button id="open-settings" class="icon-button" type="button" aria-label="Open settings">
+            <button
+              id="open-settings"
+              class="icon-button"
+              type="button"
+              aria-label="Open settings"
+            >
               <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.28 7.28 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.13.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.41 1.05.72 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.22 1.13-.53 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"></path>
+                <path
+                  d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.28 7.28 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.13.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.41 1.05.72 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.22 1.13-.53 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"
+                ></path>
               </svg>
             </button>
-            <button id="minimize-native" class="icon-button" type="button" aria-label="Minimize window">
+            <button
+              id="minimize-native"
+              class="icon-button"
+              type="button"
+              aria-label="Minimize window"
+            >
               <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M6 19h12v-2H6z"></path>
               </svg>
             </button>
-            <button id="close-window" class="icon-button danger" type="button" aria-label="Close window">
+            <button
+              id="close-window"
+              class="icon-button danger"
+              type="button"
+              aria-label="Close window"
+            >
               <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
+                <path
+                  d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
+                ></path>
               </svg>
             </button>
           </div>
@@ -60,244 +89,471 @@
                 </div>
 
                 <div class="folder-create-row">
-                  <button id="back-folder" class="icon-button folder-nav-button" type="button" aria-label="Go back" hidden>
-                    <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M15.4 5.4 8.8 12l6.6 6.6-1.4 1.4L6 12l8-8z"></path>
+                  <button
+                    id="back-folder"
+                    class="icon-button folder-nav-button"
+                    type="button"
+                    aria-label="Go back"
+                    hidden
+                  >
+                    <svg
+                      class="icon-svg"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M15.4 5.4 8.8 12l6.6 6.6-1.4 1.4L6 12l8-8z"
+                      ></path>
                     </svg>
                   </button>
                   <label class="search-input-shell" for="folder-name-input">
                     <span class="search-input-icon" aria-hidden="true">
                       <svg class="icon-svg" viewBox="0 0 24 24">
-                        <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79L19 20.49 20.49 19 15.5 14Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"></path>
+                        <path
+                          d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79L19 20.49 20.49 19 15.5 14Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"
+                        ></path>
                       </svg>
                     </span>
-                    <input id="folder-name-input" class="folder-name-input" type="text" placeholder="Search classes" />
+                    <input
+                      id="folder-name-input"
+                      class="folder-name-input"
+                      type="text"
+                      placeholder="Search classes"
+                    />
                   </label>
                   <div class="folder-action-menu-shell">
-                    <button id="new-folder" class="folder-plus-button" type="button" aria-label="Open create menu" aria-haspopup="menu" aria-expanded="false">
-                      <svg class="icon-svg folder-plus-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <button
+                      id="new-folder"
+                      class="folder-plus-button"
+                      type="button"
+                      aria-label="Open create menu"
+                      aria-haspopup="menu"
+                      aria-expanded="false"
+                    >
+                      <svg
+                        class="icon-svg folder-plus-icon"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
                         <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path>
                       </svg>
                     </button>
-                    <div id="folder-action-menu" class="folder-action-menu" role="menu" hidden></div>
+                    <div
+                      id="folder-action-menu"
+                      class="folder-action-menu"
+                      role="menu"
+                      hidden
+                    ></div>
                   </div>
                 </div>
 
                 <div id="folder-grid" class="folder-grid"></div>
                 <div id="empty-state" class="empty-state" hidden>
-                  <p id="empty-title" class="empty-title">No classes here yet.</p>
-                  <p id="empty-copy" class="empty-copy">Create a class folder to start organizing courses, notes, and study context.</p>
+                  <p id="empty-title" class="empty-title">
+                    No classes here yet.
+                  </p>
+                  <p id="empty-copy" class="empty-copy">
+                    Create a class folder to start organizing courses, notes,
+                    and study context.
+                  </p>
                 </div>
               </section>
             </div>
 
             <div id="home-settings-view" class="home-view" hidden>
               <section class="settings-shell">
-                <header class="settings-header">
-                  <button id="settings-home-button" class="settings-back-button" type="button" aria-label="Back to home">
-                    <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M15.4 5.4 8.8 12l6.6 6.6-1.4 1.4L6 12l8-8z"></path>
-                    </svg>
-                  </button>
-                  <div class="settings-header-copy">
-                    <p class="panel-label">Settings</p>
-                    <h2 class="settings-title">SideKlick Settings</h2>
-                  </div>
-                </header>
+                <div class="settings-grid settings-grid-single">
+                  <section class="settings-card settings-card-solid">
+                    <div class="settings-toolbar">
+                      <button
+                        id="settings-home-button"
+                        class="settings-breadcrumb-button"
+                        type="button"
+                        aria-label="Go to home"
+                      >
+                        Home
+                      </button>
+                      <span class="settings-breadcrumb-separator" aria-hidden="true"
+                        >&gt;</span
+                      >
+                      <span class="settings-breadcrumb-current">Settings</span>
+                    </div>
 
-                <div class="settings-grid">
-                  <section class="settings-card">
-                    <div class="setup-section-header">
-                      <div>
+                    <div class="settings-row">
+                      <div class="settings-row-copy">
                         <p class="panel-label">Appearance</p>
-                        <p id="settings-theme-status" class="panel-help">Current preference: System</p>
+                        <p id="settings-theme-status" class="panel-help">
+                          Current preference: System
+                        </p>
+                      </div>
+                      <div class="settings-row-control">
+                        <div class="settings-select-wrap">
+                          <select id="settings-theme-select" class="settings-select">
+                            <option value="system">System</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                          </select>
+                          <span class="settings-select-chevron" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                              <path d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"></path>
+                            </svg>
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div class="theme-choice-grid">
-                      <button data-home-theme="light" class="theme-choice-button" type="button">
-                        <span class="theme-choice-icon">Light</span>
-                        <span class="theme-choice-title">Light</span>
-                        <span class="theme-choice-copy">Brighter contrast for daytime use.</span>
-                      </button>
-                      <button data-home-theme="dark" class="theme-choice-button" type="button">
-                        <span class="theme-choice-icon">Dark</span>
-                        <span class="theme-choice-title">Dark</span>
-                        <span class="theme-choice-copy">Lower glare over dense pages.</span>
-                      </button>
-                      <button data-home-theme="system" class="theme-choice-button" type="button">
-                        <span class="theme-choice-icon">System</span>
-                        <span class="theme-choice-title">System</span>
-                        <span class="theme-choice-copy">Follow your device automatically.</span>
-                      </button>
-                    </div>
-                  </section>
 
-                  <section class="settings-card">
-                    <div class="setup-section-header">
-                      <div>
+                    <div class="settings-row">
+                      <div class="settings-row-copy">
                         <p class="panel-label">Discovery</p>
-                        <p id="settings-source-status" class="panel-help">No source selected yet.</p>
+                        <p id="settings-source-status" class="panel-help">
+                          No source selected yet.
+                        </p>
+                      </div>
+                      <div class="settings-row-control">
+                        <div class="settings-select-wrap">
+                          <select
+                            id="settings-source-select"
+                            class="settings-select"
+                            aria-label="Discovery source"
+                          >
+                            <option value="">Not selected</option>
+                            <option value="teacher">Teacher recommendation</option>
+                            <option value="friend">Friend recommendation</option>
+                            <option value="hackathon">Hackathon or demo</option>
+                            <option value="search">Online search</option>
+                          </select>
+                          <span class="settings-select-chevron" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                              <path d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"></path>
+                            </svg>
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div class="choice-grid source-grid">
-                      <button data-home-source="teacher" class="info-choice-button" type="button">
-                        <span class="choice-kicker">Teacher</span>
-                        <span class="choice-title">Recommended by a teacher or class</span>
-                      </button>
-                      <button data-home-source="friend" class="info-choice-button" type="button">
-                        <span class="choice-kicker">Friend</span>
-                        <span class="choice-title">Found through a friend</span>
-                      </button>
-                      <button data-home-source="hackathon" class="info-choice-button" type="button">
-                        <span class="choice-kicker">Hackathon</span>
-                        <span class="choice-title">Found through Big Red Hacks or a demo</span>
-                      </button>
-                      <button data-home-source="search" class="info-choice-button" type="button">
-                        <span class="choice-kicker">Search</span>
-                        <span class="choice-title">Found online while searching for study help</span>
-                      </button>
-                    </div>
-                  </section>
 
-                  <section class="settings-card">
-                    <div class="setup-section-header">
-                      <div>
+                    <div class="settings-row">
+                      <div class="settings-row-copy">
                         <p class="panel-label">Study Profile</p>
-                        <p id="settings-profile-status" class="panel-help">Pick the closest fit.</p>
+                        <p id="settings-profile-status" class="panel-help">
+                          Pick the closest fit.
+                        </p>
                       </div>
-                    </div>
-                    <div class="choice-grid profile-grid">
-                      <button data-home-profile="advanced" class="info-choice-button profile-choice" type="button">
-                        <span class="choice-kicker">AP / Honors</span>
-                        <span class="choice-title">High-context support for demanding classes.</span>
-                      </button>
-                      <button data-home-profile="catch-up" class="info-choice-button profile-choice" type="button">
-                        <span class="choice-kicker">Catch-Up</span>
-                        <span class="choice-title">Rebuild foundations and surface repeated confusion.</span>
-                      </button>
-                      <button data-home-profile="exam" class="info-choice-button profile-choice" type="button">
-                        <span class="choice-kicker">Exam Focused</span>
-                        <span class="choice-title">Prioritize what matters most before tests.</span>
-                      </button>
-                    </div>
-                  </section>
-
-                  <section class="settings-card settings-privacy-card">
-                    <div class="setup-section-header">
-                      <div>
-                        <p class="panel-label">Privacy</p>
-                        <p id="settings-privacy-status" class="panel-help">Review capture and sync preferences.</p>
-                      </div>
-                    </div>
-
-                    <div class="settings-compact-stack">
-                      <div class="settings-inline-group">
-                        <div class="settings-inline-copy">
-                          <span class="settings-inline-label">Screenshots</span>
-                          <span id="privacy-screenshot-status" class="settings-inline-value">Disabled</span>
-                        </div>
-                        <div class="settings-chip-group">
-                          <button data-screenshot-policy="disabled" class="settings-chip-button" type="button">Off</button>
-                          <button data-screenshot-policy="manual" class="settings-chip-button" type="button">Manual</button>
-                          <button data-screenshot-policy="automatic" class="settings-chip-button" type="button">Auto</button>
-                        </div>
-                      </div>
-
-                      <div class="settings-inline-group">
-                        <div class="settings-inline-copy">
-                          <span class="settings-inline-label">Sync consent</span>
-                          <span id="privacy-sync-status" class="settings-inline-value">Not set</span>
-                        </div>
-                        <div class="settings-chip-group">
-                          <button data-sync-consent="unknown" class="settings-chip-button" type="button">Later</button>
-                          <button data-sync-consent="granted" class="settings-chip-button" type="button">Allow</button>
-                          <button data-sync-consent="denied" class="settings-chip-button" type="button">Deny</button>
+                      <div class="settings-row-control">
+                        <div class="settings-select-wrap">
+                          <select
+                            id="settings-profile-select"
+                            class="settings-select"
+                            aria-label="Study profile"
+                          >
+                            <option value="">Not selected</option>
+                            <option value="advanced">AP / Honors</option>
+                            <option value="catch-up">Catch-Up</option>
+                            <option value="exam">Exam Focused</option>
+                          </select>
+                          <span class="settings-select-chevron" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                              <path d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"></path>
+                            </svg>
+                          </span>
                         </div>
                       </div>
                     </div>
-                  </section>
 
-                  <section class="settings-card settings-card-secondary">
-                    <div class="setup-section-header">
-                      <div>
+                    <div class="settings-row">
+                      <div class="settings-row-copy">
+                        <p class="panel-label">Screenshots</p>
+                        <p id="privacy-screenshot-status" class="panel-help">
+                          Disabled
+                        </p>
+                      </div>
+                      <div class="settings-row-control">
+                        <div class="settings-select-wrap">
+                          <select
+                            id="privacy-screenshot-select"
+                            class="settings-select"
+                            aria-label="Screenshot policy"
+                          >
+                            <option value="disabled">Never</option>
+                            <option value="manual">Manual</option>
+                            <option value="automatic">Automatic</option>
+                          </select>
+                          <span class="settings-select-chevron" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                              <path d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"></path>
+                            </svg>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="settings-row">
+                      <div class="settings-row-copy">
+                        <p class="panel-label">Sync Consent</p>
+                        <p id="privacy-sync-status" class="panel-help">
+                          Not set
+                        </p>
+                      </div>
+                      <div class="settings-row-control">
+                        <div class="settings-select-wrap">
+                          <select
+                            id="privacy-sync-select"
+                            class="settings-select"
+                            aria-label="Sync consent"
+                          >
+                            <option value="unknown">Later</option>
+                            <option value="granted">Allow</option>
+                            <option value="denied">Deny</option>
+                          </select>
+                          <span class="settings-select-chevron" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                              <path d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"></path>
+                            </svg>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="settings-row">
+                      <div class="settings-row-copy">
+                        <p class="panel-label">Local Only</p>
+                        <p id="privacy-local-only-status" class="panel-help">
+                          Local data only
+                        </p>
+                      </div>
+                      <div class="settings-row-control">
+                        <div class="settings-select-wrap">
+                          <select
+                            id="privacy-local-only-select"
+                            class="settings-select"
+                            aria-label="Local only mode"
+                          >
+                            <option value="true">On</option>
+                            <option value="false">Off</option>
+                          </select>
+                          <span class="settings-select-chevron" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                              <path d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"></path>
+                            </svg>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="settings-row settings-row-account">
+                      <div class="settings-row-copy">
                         <p class="panel-label">Account</p>
-                        <p class="panel-help">Sign in to your managed backend account, then export or delete your data.</p>
+                        <p id="account-auth-status" class="panel-help">
+                          Not signed in.
+                        </p>
+                        <p id="settings-privacy-status" class="panel-help">
+                          Review screenshot and sync preferences carefully.
+                        </p>
+                      </div>
+                      <div class="settings-row-control">
+                        <div
+                          id="account-signed-out-panel"
+                          class="settings-auth-layout"
+                        >
+                          <button
+                            id="account-open-auth-gate-button"
+                            class="settings-chip-button"
+                            type="button"
+                          >
+                            Sign In
+                          </button>
+                        </div>
+
+                        <div
+                          id="account-signed-in-panel"
+                          class="settings-account-identity"
+                          hidden
+                        >
+                          <p id="account-identity-display" class="panel-help">
+                            Account user
+                          </p>
+                          <button
+                            id="account-logout-button"
+                            class="settings-chip-button"
+                            type="button"
+                          >
+                            Log Out
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div class="settings-compact-stack">
-                      <div class="settings-inline-group settings-auth-group">
-                        <div class="settings-inline-copy">
-                          <span class="settings-inline-label">Authentication</span>
-                          <span id="account-auth-status" class="settings-inline-value">Not signed in.</span>
-                        </div>
-                        <div class="settings-auth-fields">
-                          <input id="account-email-input" class="settings-text-input" type="email" placeholder="Email" />
-                          <input id="account-password-input" class="settings-text-input" type="password" placeholder="Password" />
-                          <input id="account-display-name-input" class="settings-text-input" type="text" placeholder="Display name (for sign up)" />
-                        </div>
-                        <div class="settings-chip-group settings-auth-actions">
-                          <button id="account-login-button" class="settings-chip-button" type="button">Sign In</button>
-                          <button id="account-register-button" class="settings-chip-button" type="button">Create Account</button>
-                          <button id="account-logout-button" class="settings-chip-button" type="button">Sign Out</button>
-                        </div>
-                      </div>
 
-                      <div class="settings-inline-group settings-inline-group-actions">
-                        <div class="settings-inline-copy">
-                          <span class="settings-inline-label">Export account data</span>
-                          <span class="settings-inline-value">Download a JSON export of your classes, sessions, and privacy state.</span>
-                        </div>
-                        <button id="privacy-export-button" class="ghost-button settings-action-button" type="button">Export</button>
+                    <div class="settings-row settings-row-action">
+                      <div class="settings-row-copy">
+                        <p class="panel-label">Export account data</p>
+                        <p class="panel-help">
+                          Download a JSON export of your classes, sessions, and
+                          privacy state.
+                        </p>
                       </div>
-
-                      <div class="settings-inline-group settings-inline-group-actions settings-danger-row">
-                        <div class="settings-inline-copy">
-                          <span class="settings-inline-label">Delete account data</span>
-                          <span class="settings-inline-value">Queues permanent deletion of managed backend data for this account.</span>
-                        </div>
-                        <button id="privacy-delete-account-button" class="ghost-button settings-action-button settings-danger-button" type="button">Delete</button>
-                      </div>
-
-                      <p id="privacy-account-status" class="panel-help settings-account-status">
-                        Theme changes apply across Home, Chat, and quiz views.
-                      </p>
+                      <button
+                        id="privacy-export-button"
+                        class="ghost-button settings-action-button"
+                        type="button"
+                      >
+                        Export
+                      </button>
                     </div>
+
+                    <div class="settings-row settings-row-action settings-danger-row">
+                      <div class="settings-row-copy">
+                        <p class="panel-label">Delete account data</p>
+                        <p class="panel-help">
+                          Queues permanent deletion of managed backend data for
+                          this account.
+                        </p>
+                      </div>
+                      <button
+                        id="privacy-delete-account-button"
+                        class="ghost-button settings-action-button settings-danger-button"
+                        type="button"
+                      >
+                        Delete
+                      </button>
+                    </div>
+
+                    <p id="privacy-account-status" class="panel-help settings-account-status">
+                      Theme changes apply across Home, Chat, and quiz views.
+                    </p>
                   </section>
                 </div>
+              </section>
+            </div>
+
+            <div id="home-auth-gate-view" class="home-view" hidden>
+                <section class="home-auth-gate-view">
+                  <section class="setup-section home-auth-gate-shell">
+                    <div class="onboarding-question-shell">
+                      <div class="onboarding-question-copy">
+                        <h2 class="onboarding-question-title">
+                          Sign in to continue
+                        </h2>
+                        <p class="onboarding-question-subtitle">
+                          One account unlocks everything.
+                        </p>
+                      </div>
+                    <p id="auth-gate-status" class="panel-help auth-gate-inline-status">
+                      Create an account or sign in to continue.
+                    </p>
+                  </div>
+                  <div class="auth-panel-card auth-panel-card-compact auth-panel-card-primary">
+                    <div class="auth-field-stack">
+                      <input
+                        id="auth-gate-display-name-input"
+                        class="auth-text-input"
+                        type="text"
+                        placeholder="Name"
+                      />
+                      <input
+                        id="auth-gate-email-input"
+                        class="auth-text-input"
+                        type="email"
+                        placeholder="Email"
+                      />
+                      <input
+                        id="auth-gate-password-input"
+                        class="auth-text-input"
+                        type="password"
+                        placeholder="Password"
+                      />
+                    </div>
+                    <div class="auth-button-row auth-button-row-centered">
+                      <button
+                        id="auth-gate-login-button"
+                        class="continue-button"
+                        type="button"
+                      >
+                        Sign In
+                      </button>
+                      <button
+                        id="auth-gate-register-button"
+                        class="ghost-button"
+                        type="button"
+                      >
+                        Create Account
+                      </button>
+                    </div>
+                  </div>
+                </section>
               </section>
             </div>
           </div>
         </section>
 
         <section class="compact-strip no-drag">
-          <div class="compact-copy">
-            <p class="compact-title">Pinned</p>
-          </div>
+          <span class="compact-brand" aria-hidden="true">
+            <img
+              class="app-logo-image compact-logo-image"
+              src="../assets/images/logo/logo.png"
+              alt=""
+            />
+          </span>
           <div class="compact-actions">
-            <button id="restore-window" class="restore-button" type="button" aria-label="Expand home">
+            <button
+              id="restore-window"
+              class="restore-button compact-ask-button"
+              type="button"
+              aria-label="Expand home and ask"
+            >
+              Ask
+            </button>
+            <button
+              id="compact-star-button"
+              class="icon-button compact-star-button"
+              type="button"
+              aria-label="Open settings"
+            >
               <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M8 8h8v2h-4v4h-2V8zm8 8H8v-2h4v-4h2v6z"></path>
+                <path d="M12 2 14.2 9.8 22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2L12 2z"></path>
               </svg>
             </button>
-            <button id="compact-close-window" class="icon-button danger" type="button" aria-label="Close window">
+            <button
+              id="compact-close-window"
+              class="icon-button danger"
+              type="button"
+              aria-label="Close window"
+            >
               <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
+                <path
+                  d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
+                ></path>
               </svg>
             </button>
           </div>
         </section>
-        <button id="resize-handle" class="resize-handle no-drag" type="button" aria-label="Resize window"></button>
+        <button
+          id="resize-handle"
+          class="resize-handle no-drag"
+          type="button"
+          aria-label="Resize window"
+        ></button>
 
         <div id="class-modal-backdrop" class="modal-backdrop no-drag" hidden>
-          <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="class-modal-title">
+          <section
+            class="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="class-modal-title"
+          >
             <div class="modal-header">
               <div>
                 <p class="panel-label" id="class-modal-kicker">New class</p>
                 <h2 id="class-modal-title" class="modal-title">Create Class</h2>
               </div>
-              <button id="close-class-modal" class="icon-button" type="button" aria-label="Close modal">
+              <button
+                id="close-class-modal"
+                class="icon-button"
+                type="button"
+                aria-label="Close modal"
+              >
                 <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
+                  <path
+                    d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
+                  ></path>
                 </svg>
               </button>
             </div>
@@ -305,54 +561,112 @@
             <div id="class-fields" class="modal-form">
               <label class="modal-field">
                 <span id="name-field-label">Course</span>
-                <input id="class-course-input" type="text" placeholder="AP Biology" />
+                <input
+                  id="class-course-input"
+                  type="text"
+                  placeholder="AP Biology"
+                />
               </label>
               <label id="teacher-name-field" class="modal-field">
                 <span>Teacher Name</span>
-                <input id="class-teacher-input" type="text" placeholder="Ms. Rivera" />
+                <input
+                  id="class-teacher-input"
+                  type="text"
+                  placeholder="Ms. Rivera"
+                />
               </label>
               <label class="modal-field">
                 <span>Description</span>
-                <textarea id="class-description-input" rows="3" placeholder="What this class is about"></textarea>
+                <textarea
+                  id="class-description-input"
+                  rows="3"
+                  placeholder="What this class is about"
+                ></textarea>
               </label>
               <label id="teacher-notes-field" class="modal-field">
                 <span>Teacher Notes</span>
-                <textarea id="class-teacher-notes-input" rows="3" placeholder="Teacher focus areas or reminders"></textarea>
+                <textarea
+                  id="class-teacher-notes-input"
+                  rows="3"
+                  placeholder="Teacher focus areas or reminders"
+                ></textarea>
               </label>
               <label class="modal-field">
                 <span id="additional-notes-label">Additional Notes</span>
-                <textarea id="class-additional-notes-input" rows="3" placeholder="Anything else you want saved"></textarea>
+                <textarea
+                  id="class-additional-notes-input"
+                  rows="3"
+                  placeholder="Anything else you want saved"
+                ></textarea>
               </label>
             </div>
 
             <div id="session-fields" class="modal-form" hidden>
               <label class="modal-field">
                 <span>Session Name</span>
-                <input id="session-name-input" type="text" placeholder="Unit 3 Review" />
+                <input
+                  id="session-name-input"
+                  type="text"
+                  placeholder="Unit 3 Review"
+                />
               </label>
               <label class="modal-field">
                 <span>Additional Notes</span>
-                <textarea id="session-notes-input" rows="3" placeholder="Short notes for this session"></textarea>
+                <textarea
+                  id="session-notes-input"
+                  rows="3"
+                  placeholder="Short notes for this session"
+                ></textarea>
               </label>
             </div>
 
             <div class="modal-actions">
-              <button id="cancel-class-modal" class="ghost-button" type="button">Cancel</button>
-              <button id="save-class-modal" class="continue-button" type="button">Save</button>
+              <button
+                id="cancel-class-modal"
+                class="ghost-button"
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                id="save-class-modal"
+                class="continue-button"
+                type="button"
+              >
+                Save
+              </button>
             </div>
           </section>
         </div>
 
-        <div id="session-summary-backdrop" class="modal-backdrop no-drag" hidden>
-          <section class="modal-card session-summary-modal" role="dialog" aria-modal="true" aria-labelledby="session-summary-title">
+        <div
+          id="session-summary-backdrop"
+          class="modal-backdrop no-drag"
+          hidden
+        >
+          <section
+            class="modal-card session-summary-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="session-summary-title"
+          >
             <div class="modal-header">
               <div>
                 <p class="panel-label">Saved session</p>
-                <h2 id="session-summary-title" class="modal-title">Session Summary</h2>
+                <h2 id="session-summary-title" class="modal-title">
+                  Session Summary
+                </h2>
               </div>
-              <button id="close-session-summary" class="icon-button" type="button" aria-label="Close session summary">
+              <button
+                id="close-session-summary"
+                class="icon-button"
+                type="button"
+                aria-label="Close session summary"
+              >
                 <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
+                  <path
+                    d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
+                  ></path>
                 </svg>
               </button>
             </div>
@@ -360,33 +674,60 @@
             <div class="session-summary-preview">
               <p id="session-summary-meta" class="panel-help"></p>
               <div class="session-summary-content">
-                <p id="session-summary-text" class="session-summary-placeholder"></p>
+                <p
+                  id="session-summary-text"
+                  class="session-summary-placeholder"
+                ></p>
               </div>
             </div>
           </section>
         </div>
 
         <div id="quiz-backdrop" class="modal-backdrop no-drag" hidden>
-          <section class="modal-card quiz-modal" role="dialog" aria-modal="true" aria-labelledby="quiz-modal-title">
+          <section
+            class="modal-card quiz-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quiz-modal-title"
+          >
             <div class="modal-header quiz-modal-header">
               <div>
                 <p class="panel-label">Session quiz</p>
                 <h2 id="quiz-modal-title" class="modal-title">Generate Quiz</h2>
               </div>
               <div class="window-actions no-drag quiz-window-actions">
-                <button id="quiz-theme-toggle" class="icon-button" type="button" aria-label="Toggle light or dark theme">
+                <button
+                  id="quiz-theme-toggle"
+                  class="icon-button"
+                  type="button"
+                  aria-label="Toggle light or dark theme"
+                >
                   <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12.2 3.2c.5 0 .8.4.8.8 0 .2 0 .4-.1.5-1 1.8-1.3 4-.7 6.1 1 3.2 4 5.4 7.4 5.4.4 0 .8.3.8.8 0 .2-.1.4-.2.5-1.7 2.3-4.4 3.7-7.3 3.7-5 0-9-4-9-9 0-4 2.7-7.4 6.5-8.6.1-.1.3-.2.5-.2Z"></path>
+                    <path
+                      d="M12.2 3.2c.5 0 .8.4.8.8 0 .2 0 .4-.1.5-1 1.8-1.3 4-.7 6.1 1 3.2 4 5.4 7.4 5.4.4 0 .8.3.8.8 0 .2-.1.4-.2.5-1.7 2.3-4.4 3.7-7.3 3.7-5 0-9-4-9-9 0-4 2.7-7.4 6.5-8.6.1-.1.3-.2.5-.2Z"
+                    ></path>
                   </svg>
                 </button>
-                <button id="quiz-minimize-native" class="icon-button" type="button" aria-label="Minimize window">
+                <button
+                  id="quiz-minimize-native"
+                  class="icon-button"
+                  type="button"
+                  aria-label="Minimize window"
+                >
                   <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M6 19h12v-2H6z"></path>
                   </svg>
                 </button>
-                <button id="close-quiz-modal" class="icon-button danger" type="button" aria-label="Close quiz modal">
+                <button
+                  id="close-quiz-modal"
+                  class="icon-button danger"
+                  type="button"
+                  aria-label="Close quiz modal"
+                >
                   <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
+                    <path
+                      d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
+                    ></path>
                   </svg>
                 </button>
               </div>
@@ -398,14 +739,18 @@
                   <p class="panel-label">Build a study quiz</p>
                   <p id="quiz-session-meta" class="panel-help"></p>
                 </div>
-                <div class="quiz-hero-badge">One class, any mix of sessions</div>
+                <div class="quiz-hero-badge">
+                  One class, any mix of sessions
+                </div>
               </section>
 
               <section class="quiz-panel">
                 <div class="quiz-panel-header">
                   <div>
                     <h3 class="quiz-panel-title">Choose session material</h3>
-                    <p class="quiz-panel-copy">Pick none, one, or several saved sessions.</p>
+                    <p class="quiz-panel-copy">
+                      Pick none, one, or several saved sessions.
+                    </p>
                   </div>
                 </div>
                 <div id="quiz-session-picker" class="quiz-session-picker"></div>
@@ -415,29 +760,51 @@
                 <div class="quiz-panel-header">
                   <div>
                     <h3 class="quiz-panel-title">Sources to use</h3>
-                    <p class="quiz-panel-copy">Control what the quiz should draw from.</p>
+                    <p class="quiz-panel-copy">
+                      Control what the quiz should draw from.
+                    </p>
                   </div>
                 </div>
                 <div class="quiz-source-grid">
                   <label class="quiz-source-option">
-                    <input id="quiz-source-summary" class="quiz-source-input" type="checkbox" checked />
+                    <input
+                      id="quiz-source-summary"
+                      class="quiz-source-input"
+                      type="checkbox"
+                      checked
+                    />
                     <span class="quiz-source-check" aria-hidden="true"></span>
                     <span class="quiz-source-label-copy">Session summary</span>
                   </label>
                   <label class="quiz-source-option">
-                    <input id="quiz-source-notes" class="quiz-source-input" type="checkbox" />
+                    <input
+                      id="quiz-source-notes"
+                      class="quiz-source-input"
+                      type="checkbox"
+                    />
                     <span class="quiz-source-check" aria-hidden="true"></span>
                     <span class="quiz-source-label-copy">Session notes</span>
                   </label>
                   <label class="quiz-source-option">
-                    <input id="quiz-source-topics" class="quiz-source-input" type="checkbox" checked />
+                    <input
+                      id="quiz-source-topics"
+                      class="quiz-source-input"
+                      type="checkbox"
+                      checked
+                    />
                     <span class="quiz-source-check" aria-hidden="true"></span>
                     <span class="quiz-source-label-copy">Key topics</span>
                   </label>
                   <label class="quiz-source-option">
-                    <input id="quiz-source-uploaded" class="quiz-source-input" type="checkbox" />
+                    <input
+                      id="quiz-source-uploaded"
+                      class="quiz-source-input"
+                      type="checkbox"
+                    />
                     <span class="quiz-source-check" aria-hidden="true"></span>
-                    <span class="quiz-source-label-copy">Uploaded material</span>
+                    <span class="quiz-source-label-copy"
+                      >Uploaded material</span
+                    >
                   </label>
                 </div>
               </section>
@@ -446,21 +813,36 @@
                 <div class="quiz-panel-header">
                   <div>
                     <h3 class="quiz-panel-title">Extra material</h3>
-                    <p class="quiz-panel-copy">Upload notes or paste study material to fill in gaps.</p>
+                    <p class="quiz-panel-copy">
+                      Upload notes or paste study material to fill in gaps.
+                    </p>
                   </div>
                 </div>
                 <div class="quiz-upload-panel">
                   <label class="modal-field">
                     <span>Upload material</span>
                     <div class="quiz-file-shell">
-                      <input id="quiz-material-file" class="quiz-file-input" type="file" accept=".txt,.md,.csv,.json,text/plain,text/markdown" />
-                      <label for="quiz-material-file" class="quiz-file-button">Choose file</label>
-                      <span id="quiz-file-name" class="quiz-file-name">No file selected</span>
+                      <input
+                        id="quiz-material-file"
+                        class="quiz-file-input"
+                        type="file"
+                        accept=".txt,.md,.csv,.json,text/plain,text/markdown"
+                      />
+                      <label for="quiz-material-file" class="quiz-file-button"
+                        >Choose file</label
+                      >
+                      <span id="quiz-file-name" class="quiz-file-name"
+                        >No file selected</span
+                      >
                     </div>
                   </label>
                   <label class="modal-field">
                     <span>Or paste material</span>
-                    <textarea id="quiz-material-text" rows="5" placeholder="Paste study material here"></textarea>
+                    <textarea
+                      id="quiz-material-text"
+                      rows="5"
+                      placeholder="Paste study material here"
+                    ></textarea>
                   </label>
                 </div>
               </section>
@@ -469,17 +851,34 @@
                 <div class="quiz-panel-header">
                   <div>
                     <h3 class="quiz-panel-title">Gap focus</h3>
-                    <p class="quiz-panel-copy">Higher values push the quiz harder toward weak spots.</p>
+                    <p class="quiz-panel-copy">
+                      Higher values push the quiz harder toward weak spots.
+                    </p>
                   </div>
-                  <p class="quiz-gap-value">Focus on gaps: <strong id="quiz-gap-focus-value">50%</strong></p>
+                  <p class="quiz-gap-value">
+                    Focus on gaps:
+                    <strong id="quiz-gap-focus-value">50%</strong>
+                  </p>
                 </div>
                 <label class="modal-field quiz-slider-field">
-                  <input id="quiz-gap-focus" type="range" min="0" max="100" value="50" />
+                  <input
+                    id="quiz-gap-focus"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="50"
+                  />
                 </label>
               </section>
 
               <div class="modal-actions">
-                <button id="generate-quiz-button" class="continue-button" type="button">Generate Quiz</button>
+                <button
+                  id="generate-quiz-button"
+                  class="continue-button"
+                  type="button"
+                >
+                  Generate Quiz
+                </button>
               </div>
             </div>
 
@@ -489,7 +888,9 @@
                   <p class="panel-label">Quiz</p>
                   <p id="quiz-subtitle" class="panel-help"></p>
                 </div>
-                <p id="quiz-explain-hint" class="quiz-results-hint">Answer explanations unlock after you check answers.</p>
+                <p id="quiz-explain-hint" class="quiz-results-hint">
+                  Answer explanations unlock after you check answers.
+                </p>
               </div>
               <div id="quiz-insights" class="quiz-insights" hidden>
                 <section class="quiz-insight-card quiz-insight-strengths">
@@ -503,21 +904,49 @@
               </div>
               <div class="quiz-layout">
                 <div id="quiz-questions" class="quiz-question-list"></div>
-                <aside id="quiz-explanation-panel" class="quiz-explanation-panel" hidden>
-                  <p id="quiz-explanation-kicker" class="panel-label">Answer explanation</p>
-                  <h3 id="quiz-explanation-title" class="quiz-explanation-title">Pick a question</h3>
-                  <p id="quiz-explanation-answer" class="quiz-explanation-answer"></p>
-                  <p id="quiz-explanation-text" class="quiz-explanation-text"></p>
+                <aside
+                  id="quiz-explanation-panel"
+                  class="quiz-explanation-panel"
+                  hidden
+                >
+                  <p id="quiz-explanation-kicker" class="panel-label">
+                    Answer explanation
+                  </p>
+                  <h3
+                    id="quiz-explanation-title"
+                    class="quiz-explanation-title"
+                  >
+                    Pick a question
+                  </h3>
+                  <p
+                    id="quiz-explanation-answer"
+                    class="quiz-explanation-answer"
+                  ></p>
+                  <p
+                    id="quiz-explanation-text"
+                    class="quiz-explanation-text"
+                  ></p>
                 </aside>
               </div>
               <div class="modal-actions">
-                <button id="save-quiz-button" class="ghost-button" type="button">Save Quiz</button>
-                <button id="quiz-submit-button" class="continue-button" type="button">Check Answers</button>
+                <button
+                  id="save-quiz-button"
+                  class="ghost-button"
+                  type="button"
+                >
+                  Save Quiz
+                </button>
+                <button
+                  id="quiz-submit-button"
+                  class="continue-button"
+                  type="button"
+                >
+                  Check Answers
+                </button>
               </div>
             </div>
           </section>
         </div>
-
       </section>
     </main>
 

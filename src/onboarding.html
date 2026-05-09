@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -7,36 +7,72 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="window-shell onboarding-shell" data-mode="expanded" data-tone="light" data-onboarding-stage="intro">
+    <main
+      class="window-shell onboarding-shell"
+      data-mode="expanded"
+      data-tone="light"
+      data-onboarding-stage="intro"
+    >
       <section class="overlay-card onboarding-card onboarding-card-solid">
         <header class="onboarding-topbar">
           <div class="onboarding-topbar-spacer" aria-hidden="true"></div>
-          <button id="close-window" class="icon-button danger no-drag" type="button" aria-label="Close window">
+          <button
+            id="close-window"
+            class="icon-button danger no-drag"
+            type="button"
+            aria-label="Close window"
+          >
             <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
+              <path
+                d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
+              ></path>
             </svg>
           </button>
         </header>
 
-        <section id="onboarding-intro-view" class="onboarding-intro-view no-drag">
+        <section
+          id="onboarding-intro-view"
+          class="onboarding-intro-view no-drag"
+        >
           <div class="onboarding-intro-center">
             <div class="onboarding-intro-mark">
-              <span class="home-title-icon session-logo-icon onboarding-intro-logo" aria-hidden="true">
-                <img class="app-logo-image" src="../assets/images/logo/logo.png" alt="" />
+              <span
+                class="home-title-icon session-logo-icon onboarding-intro-logo"
+                aria-hidden="true"
+              >
+                <img
+                  class="app-logo-image"
+                  src="../assets/images/logo/logo.png"
+                  alt=""
+                />
               </span>
               <span class="onboarding-brand-text">SideKlick</span>
             </div>
             <h1 class="onboarding-intro-title">Welcome to SideKlick</h1>
-            <button id="onboarding-get-started" class="continue-button onboarding-intro-button" type="button">
+            <button
+              id="onboarding-get-started"
+              class="continue-button onboarding-intro-button"
+              type="button"
+            >
               Get Started
             </button>
           </div>
         </section>
 
-        <section id="onboarding-setup-view" class="onboarding-setup-view no-drag" hidden>
-          <section class="onboarding-progress-shell" aria-label="Setup progress">
+        <section
+          id="onboarding-setup-view"
+          class="onboarding-setup-view no-drag"
+          hidden
+        >
+          <section
+            class="onboarding-progress-shell"
+            aria-label="Setup progress"
+          >
             <div class="onboarding-progress-track" aria-hidden="true">
-              <div id="onboarding-progress-fill" class="onboarding-progress-fill"></div>
+              <div
+                id="onboarding-progress-fill"
+                class="onboarding-progress-fill"
+              ></div>
             </div>
             <div class="onboarding-progress-labels">
               <div class="onboarding-progress-item" data-step-label="1">
@@ -55,75 +91,169 @@
           </section>
 
           <div class="onboarding-flow">
-            <section class="setup-section onboarding-step-section" data-step-panel="1">
+            <section
+              class="setup-section onboarding-step-section"
+              data-step-panel="1"
+            >
               <div class="onboarding-question-shell">
                 <div class="onboarding-question-copy">
                   <p class="panel-label">Account</p>
-                  <h2 class="onboarding-question-title">Let&apos;s get you signed in.</h2>
-                  <p class="onboarding-question-subtitle">One account keeps your classes, feedback, and history in sync.</p>
+                  <h2 class="onboarding-question-title">
+                    Let&apos;s get you signed in.
+                  </h2>
+                  <p class="onboarding-question-subtitle">
+                    One account keeps your classes, feedback, and history in
+                    sync.
+                  </p>
                 </div>
-                <p id="auth-status" class="panel-help onboarding-inline-status">Create an account or sign in to continue.</p>
+                <p id="auth-status" class="panel-help onboarding-inline-status">
+                  Create an account or sign in to continue.
+                </p>
               </div>
-              <div class="auth-panel-card auth-panel-card-compact auth-panel-card-primary">
+              <div
+                class="auth-panel-card auth-panel-card-compact auth-panel-card-primary"
+              >
                 <div class="auth-field-stack">
-                  <input id="auth-display-name-input" class="auth-text-input" type="text" placeholder="Name" />
-                  <input id="auth-email-input" class="auth-text-input" type="email" placeholder="Email" />
-                  <input id="auth-password-input" class="auth-text-input" type="password" placeholder="Password" />
+                  <input
+                    id="auth-display-name-input"
+                    class="auth-text-input"
+                    type="text"
+                    placeholder="Name"
+                  />
+                  <input
+                    id="auth-email-input"
+                    class="auth-text-input"
+                    type="email"
+                    placeholder="Email"
+                  />
+                  <input
+                    id="auth-password-input"
+                    class="auth-text-input"
+                    type="password"
+                    placeholder="Password"
+                  />
                 </div>
                 <div class="auth-button-row auth-button-row-centered">
-                  <button id="auth-login-button" class="continue-button" type="button">Sign In</button>
-                  <button id="auth-register-button" class="ghost-button" type="button">Create Account</button>
+                  <button
+                    id="auth-login-button"
+                    class="continue-button"
+                    type="button"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    id="auth-register-button"
+                    class="ghost-button"
+                    type="button"
+                  >
+                    Create Account
+                  </button>
                 </div>
               </div>
             </section>
 
-            <section class="setup-section onboarding-step-section" data-step-panel="2" hidden>
+            <section
+              class="setup-section onboarding-step-section"
+              data-step-panel="2"
+              hidden
+            >
               <div class="onboarding-question-shell">
                 <div class="onboarding-question-copy">
                   <p class="panel-label">Appearance</p>
                   <h2 class="onboarding-question-title">Set the look once.</h2>
-                  <p class="onboarding-question-subtitle">Choose the appearance that feels right when SideKlick opens.</p>
+                  <p class="onboarding-question-subtitle">
+                    Choose the appearance that feels right when SideKlick opens.
+                  </p>
                 </div>
-                <p id="theme-status" class="panel-help onboarding-inline-status">Current preference: System</p>
+                <p
+                  id="theme-status"
+                  class="panel-help onboarding-inline-status"
+                >
+                  Current preference: System
+                </p>
               </div>
               <div class="theme-choice-grid">
-                <button id="choose-light" class="theme-choice-button" type="button">
+                <button
+                  id="choose-light"
+                  class="theme-choice-button"
+                  type="button"
+                >
                   <span class="theme-choice-icon">Light</span>
                   <span class="theme-choice-title">Light</span>
-                  <span class="theme-choice-copy">Bright and calm for daytime work.</span>
+                  <span class="theme-choice-copy"
+                    >Bright and calm for daytime work.</span
+                  >
                 </button>
-                <button id="choose-dark" class="theme-choice-button" type="button">
+                <button
+                  id="choose-dark"
+                  class="theme-choice-button"
+                  type="button"
+                >
                   <span class="theme-choice-icon">Dark</span>
                   <span class="theme-choice-title">Dark</span>
-                  <span class="theme-choice-copy">Low-glare and focused for dense sessions.</span>
+                  <span class="theme-choice-copy"
+                    >Low-glare and focused for dense sessions.</span
+                  >
                 </button>
-                <button id="choose-system" class="theme-choice-button" type="button">
+                <button
+                  id="choose-system"
+                  class="theme-choice-button"
+                  type="button"
+                >
                   <span class="theme-choice-icon">System</span>
                   <span class="theme-choice-title">System</span>
-                  <span class="theme-choice-copy">Follow your device automatically.</span>
+                  <span class="theme-choice-copy"
+                    >Follow your device automatically.</span
+                  >
                 </button>
               </div>
             </section>
 
-            <section class="setup-section onboarding-step-section" data-step-panel="3" hidden>
+            <section
+              class="setup-section onboarding-step-section"
+              data-step-panel="3"
+              hidden
+            >
               <div class="onboarding-question-shell">
                 <div class="onboarding-question-copy">
                   <p class="panel-label">Profile</p>
-                  <h2 class="onboarding-question-title">Shape the way SideKlick helps.</h2>
-                  <p class="onboarding-question-subtitle">A couple quick choices help the app tune responses from the start.</p>
+                  <h2 class="onboarding-question-title">
+                    Shape the way SideKlick helps.
+                  </h2>
+                  <p class="onboarding-question-subtitle">
+                    A couple quick choices help the app tune responses from the
+                    start.
+                  </p>
                 </div>
               </div>
               <div class="setup-combined-grid">
                 <div class="setup-stack-block">
-                  <div class="setup-section-header onboarding-subsection-header">
+                  <div
+                    class="setup-section-header onboarding-subsection-header"
+                  >
                     <p class="panel-label">Discovery</p>
-                    <p id="source-status" class="panel-help setup-current-status">No source selected yet.</p>
+                    <p
+                      id="source-status"
+                      class="panel-help setup-current-status"
+                    >
+                      No source selected yet.
+                    </p>
                   </div>
-                  <label class="setup-select-field setup-select-shell" for="discovery-source-select">
-                    <span class="setup-select-label">How did you find SideKlick?</span>
-                    <select id="discovery-source-select" class="setup-select-input">
+                  <label
+                    class="setup-select-field setup-select-shell"
+                    for="discovery-source-select"
+                  >
+                    <span class="setup-select-label"
+                      >How did you find SideKlick?</span
+                    >
+                    <select
+                      id="discovery-source-select"
+                      class="setup-select-input"
+                    >
                       <option value="">Select a source</option>
-                      <option value="teacher">Teacher or class recommendation</option>
+                      <option value="teacher">
+                        Teacher or class recommendation
+                      </option>
                       <option value="friend">Friend recommendation</option>
                       <option value="hackathon">Big Red Hacks or demo</option>
                       <option value="search">Online search</option>
@@ -132,13 +262,28 @@
                 </div>
 
                 <div class="setup-stack-block">
-                  <div class="setup-section-header onboarding-subsection-header">
+                  <div
+                    class="setup-section-header onboarding-subsection-header"
+                  >
                     <p class="panel-label">Profile</p>
-                    <p id="profile-status" class="panel-help setup-current-status">Pick the closest fit.</p>
+                    <p
+                      id="profile-status"
+                      class="panel-help setup-current-status"
+                    >
+                      Pick the closest fit.
+                    </p>
                   </div>
-                  <label class="setup-select-field setup-select-shell" for="customer-profile-select">
-                    <span class="setup-select-label">What kind of support fits best?</span>
-                    <select id="customer-profile-select" class="setup-select-input">
+                  <label
+                    class="setup-select-field setup-select-shell"
+                    for="customer-profile-select"
+                  >
+                    <span class="setup-select-label"
+                      >What kind of support fits best?</span
+                    >
+                    <select
+                      id="customer-profile-select"
+                      class="setup-select-input"
+                    >
                       <option value="">Select a profile</option>
                       <option value="advanced">AP / Honors</option>
                       <option value="catch-up">Catch-Up</option>
@@ -149,25 +294,45 @@
               </div>
             </section>
 
-            <section class="setup-section onboarding-step-section" data-step-panel="4" hidden>
+            <section
+              class="setup-section onboarding-step-section"
+              data-step-panel="4"
+              hidden
+            >
               <div class="onboarding-question-shell">
                 <div class="onboarding-question-copy">
                   <p class="panel-label">Privacy</p>
                   <h2 class="onboarding-question-title">Secure your data.</h2>
-                  <p class="onboarding-question-subtitle">Keep control over what visual context SideKlick can use and whether future sync is okay.</p>
+                  <p class="onboarding-question-subtitle">
+                    Keep control over what visual context SideKlick can use and
+                    whether future sync is okay.
+                  </p>
                 </div>
-                <p id="privacy-onboarding-status" class="panel-help onboarding-inline-status">Screenshots are off until you opt in.</p>
+                <p
+                  id="privacy-onboarding-status"
+                  class="panel-help onboarding-inline-status"
+                >
+                  Screenshots are off until you opt in.
+                </p>
               </div>
               <div class="privacy-stack">
                 <div class="privacy-toggle-card">
                   <div class="privacy-toggle-copy">
                     <p class="privacy-toggle-label">Screenshots</p>
-                    <p class="privacy-toggle-help">Allow screenshots for extra visual context when needed.</p>
+                    <p class="privacy-toggle-help">
+                      Allow screenshots for extra visual context when needed.
+                    </p>
                   </div>
-                  <label class="setup-select-field setup-select-shell privacy-select-field" for="privacy-screenshot-policy-select">
+                  <label
+                    class="setup-select-field setup-select-shell privacy-select-field"
+                    for="privacy-screenshot-policy-select"
+                  >
                     <span class="setup-select-label">Screenshot policy</span>
-                    <select id="privacy-screenshot-policy-select" class="setup-select-input">
-                      <option value="disabled">Off</option>
+                    <select
+                      id="privacy-screenshot-policy-select"
+                      class="setup-select-input"
+                    >
+                      <option value="disabled">Never</option>
                       <option value="manual">Manual</option>
                       <option value="automatic">Auto</option>
                     </select>
@@ -176,14 +341,44 @@
                 <div class="privacy-toggle-card">
                   <div class="privacy-toggle-copy">
                     <p class="privacy-toggle-label">Sync</p>
-                    <p class="privacy-toggle-help">Choose whether SideKlick can ask about syncing your data later.</p>
+                    <p class="privacy-toggle-help">
+                      Choose whether SideKlick can ask about syncing your data
+                      later.
+                    </p>
                   </div>
-                  <label class="setup-select-field setup-select-shell privacy-select-field" for="privacy-sync-consent-select">
+                  <label
+                    class="setup-select-field setup-select-shell privacy-select-field"
+                    for="privacy-sync-consent-select"
+                  >
                     <span class="setup-select-label">Sync preference</span>
-                    <select id="privacy-sync-consent-select" class="setup-select-input">
+                    <select
+                      id="privacy-sync-consent-select"
+                      class="setup-select-input"
+                    >
                       <option value="denied">Off</option>
                       <option value="unknown">Later</option>
                       <option value="granted">On</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="privacy-toggle-card">
+                  <div class="privacy-toggle-copy">
+                    <p class="privacy-toggle-label">Local only</p>
+                    <p class="privacy-toggle-help">
+                      Keep study data on this device unless you turn this off.
+                    </p>
+                  </div>
+                  <label
+                    class="setup-select-field setup-select-shell privacy-select-field"
+                    for="privacy-local-only-select"
+                  >
+                    <span class="setup-select-label">Local-only mode</span>
+                    <select
+                      id="privacy-local-only-select"
+                      class="setup-select-input"
+                    >
+                      <option value="true">On</option>
+                      <option value="false">Off</option>
                     </select>
                   </label>
                 </div>
@@ -192,9 +387,17 @@
           </div>
 
           <footer class="onboarding-footer">
-            <button id="back-button" class="ghost-button onboarding-nav-button" type="button">Back</button>
+            <button
+              id="back-button"
+              class="ghost-button onboarding-nav-button"
+              type="button"
+            >
+              Back
+            </button>
             <p id="step-caption" class="panel-help onboarding-caption">1 / 4</p>
-            <button id="continue-button" class="continue-button" type="button">Continue</button>
+            <button id="continue-button" class="continue-button" type="button">
+              Continue
+            </button>
           </footer>
         </section>
       </section>

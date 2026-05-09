@@ -110,7 +110,7 @@ export function shouldCaptureAutomaticScreenshot(payload: {
   const actionType =
     typeof payload?.actionType === "string" ? payload.actionType.trim() : "";
 
-  return Boolean(actionType && actionType !== "chat");
+  return Boolean(actionType);
 }
 
 export function redactImageDataUrl(value: string): string {

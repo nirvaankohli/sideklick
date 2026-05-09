@@ -33,10 +33,12 @@ test("normalizePrivacySettings preserves valid values", async () => {
   assert.deepEqual(
     normalizePrivacySettings({
       screenshotPolicy: "manual",
+      localOnly: false,
       syncConsent: "granted",
     }),
     {
       screenshotPolicy: "manual",
+      localOnly: false,
       syncConsent: "granted",
     },
   );
@@ -49,6 +51,7 @@ test("privacy settings store reads normalized values and writes updates", async 
   } = await loadPrivacySettingsModule();
   let rawValue = {
     screenshotPolicy: "disabled",
+    localOnly: true,
     syncConsent: "denied",
   };
   const writes = [];
@@ -71,6 +74,7 @@ test("privacy settings store reads normalized values and writes updates", async 
   });
   assert.deepEqual(updated, {
     screenshotPolicy: "manual",
+    localOnly: true,
     syncConsent: "denied",
   });
 
@@ -95,11 +99,13 @@ test("privacy settings store sanitizes invalid writes", async () => {
 
   const result = store.setSettings({
     screenshotPolicy: "not-real",
+    localOnly: false,
     syncConsent: "granted",
   });
 
   assert.deepEqual(result, {
     screenshotPolicy: "disabled",
+    localOnly: false,
     syncConsent: "granted",
   });
   assert.deepEqual(writtenValue, result);

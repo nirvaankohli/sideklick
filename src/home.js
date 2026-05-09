@@ -1,12 +1,15 @@
 const root = document.querySelector(".window-shell");
 const shrinkWindow = document.querySelector("#shrink-window");
 const openSettingsButton = document.querySelector("#open-settings");
+const openSettingsIconPath = openSettingsButton?.querySelector("path");
 const minimizeNative = document.querySelector("#minimize-native");
 const closeWindow = document.querySelector("#close-window");
 const compactCloseWindow = document.querySelector("#compact-close-window");
 const restoreWindow = document.querySelector("#restore-window");
+const compactStarButton = document.querySelector("#compact-star-button");
 const homeDashboardView = document.querySelector("#home-dashboard-view");
 const homeSettingsView = document.querySelector("#home-settings-view");
+const homeAuthGateView = document.querySelector("#home-auth-gate-view");
 const settingsHomeButton = document.querySelector("#settings-home-button");
 const backFolderButton = document.querySelector("#back-folder");
 const newFolderButton = document.querySelector("#new-folder");
@@ -31,13 +34,23 @@ const teacherNotesField = document.querySelector("#teacher-notes-field");
 const additionalNotesLabel = document.querySelector("#additional-notes-label");
 const classCourseInput = document.querySelector("#class-course-input");
 const classTeacherInput = document.querySelector("#class-teacher-input");
-const classDescriptionInput = document.querySelector("#class-description-input");
-const classTeacherNotesInput = document.querySelector("#class-teacher-notes-input");
-const classAdditionalNotesInput = document.querySelector("#class-additional-notes-input");
+const classDescriptionInput = document.querySelector(
+  "#class-description-input",
+);
+const classTeacherNotesInput = document.querySelector(
+  "#class-teacher-notes-input",
+);
+const classAdditionalNotesInput = document.querySelector(
+  "#class-additional-notes-input",
+);
 const sessionNameInput = document.querySelector("#session-name-input");
 const sessionNotesInput = document.querySelector("#session-notes-input");
-const sessionSummaryBackdrop = document.querySelector("#session-summary-backdrop");
-const closeSessionSummaryButton = document.querySelector("#close-session-summary");
+const sessionSummaryBackdrop = document.querySelector(
+  "#session-summary-backdrop",
+);
+const closeSessionSummaryButton = document.querySelector(
+  "#close-session-summary",
+);
 const sessionSummaryTitle = document.querySelector("#session-summary-title");
 const sessionSummaryMeta = document.querySelector("#session-summary-meta");
 const sessionSummaryText = document.querySelector("#session-summary-text");
@@ -68,32 +81,75 @@ const quizQuestions = document.querySelector("#quiz-questions");
 const quizExplainHint = document.querySelector("#quiz-explain-hint");
 const quizExplanationPanel = document.querySelector("#quiz-explanation-panel");
 const quizExplanationTitle = document.querySelector("#quiz-explanation-title");
-const quizExplanationAnswer = document.querySelector("#quiz-explanation-answer");
+const quizExplanationAnswer = document.querySelector(
+  "#quiz-explanation-answer",
+);
 const quizExplanationText = document.querySelector("#quiz-explanation-text");
 const saveQuizButton = document.querySelector("#save-quiz-button");
 const quizSubmitButton = document.querySelector("#quiz-submit-button");
 const resizeHandle = document.querySelector("#resize-handle");
 const settingsThemeStatus = document.querySelector("#settings-theme-status");
 const settingsSourceStatus = document.querySelector("#settings-source-status");
-const settingsProfileStatus = document.querySelector("#settings-profile-status");
-const settingsPrivacyStatus = document.querySelector("#settings-privacy-status");
-const privacyScreenshotStatus = document.querySelector("#privacy-screenshot-status");
+const settingsProfileStatus = document.querySelector(
+  "#settings-profile-status",
+);
+const settingsThemeSelect = document.querySelector("#settings-theme-select");
+const settingsSourceSelect = document.querySelector("#settings-source-select");
+const settingsProfileSelect = document.querySelector("#settings-profile-select");
+const settingsPrivacyStatus = document.querySelector(
+  "#settings-privacy-status",
+);
+const privacyScreenshotStatus = document.querySelector(
+  "#privacy-screenshot-status",
+);
 const privacySyncStatus = document.querySelector("#privacy-sync-status");
+const privacyLocalOnlyStatus = document.querySelector(
+  "#privacy-local-only-status",
+);
+const privacyScreenshotSelect = document.querySelector(
+  "#privacy-screenshot-select",
+);
+const privacySyncSelect = document.querySelector("#privacy-sync-select");
+const privacyLocalOnlySelect = document.querySelector(
+  "#privacy-local-only-select",
+);
 const accountAuthStatus = document.querySelector("#account-auth-status");
-const accountEmailInput = document.querySelector("#account-email-input");
-const accountPasswordInput = document.querySelector("#account-password-input");
-const accountDisplayNameInput = document.querySelector("#account-display-name-input");
-const accountLoginButton = document.querySelector("#account-login-button");
-const accountRegisterButton = document.querySelector("#account-register-button");
+const accountSignedOutPanel = document.querySelector("#account-signed-out-panel");
+const accountSignedInPanel = document.querySelector("#account-signed-in-panel");
+const accountIdentityDisplay = document.querySelector("#account-identity-display");
+const accountOpenAuthGateButton = document.querySelector(
+  "#account-open-auth-gate-button",
+);
 const accountLogoutButton = document.querySelector("#account-logout-button");
 const privacyExportButton = document.querySelector("#privacy-export-button");
-const privacyDeleteAccountButton = document.querySelector("#privacy-delete-account-button");
+const privacyDeleteAccountButton = document.querySelector(
+  "#privacy-delete-account-button",
+);
 const privacyAccountStatus = document.querySelector("#privacy-account-status");
-const settingsThemeButtons = Array.from(document.querySelectorAll("[data-home-theme]"));
-const settingsSourceButtons = Array.from(document.querySelectorAll("[data-home-source]"));
-const settingsProfileButtons = Array.from(document.querySelectorAll("[data-home-profile]"));
-const privacyScreenshotButtons = Array.from(document.querySelectorAll("[data-screenshot-policy]"));
-const privacySyncButtons = Array.from(document.querySelectorAll("[data-sync-consent]"));
+const authGateStatus = document.querySelector("#auth-gate-status");
+const authGateEmailInput = document.querySelector("#auth-gate-email-input");
+const authGatePasswordInput = document.querySelector("#auth-gate-password-input");
+const authGateDisplayNameInput = document.querySelector(
+  "#auth-gate-display-name-input",
+);
+const authGateLoginButton = document.querySelector("#auth-gate-login-button");
+const authGateRegisterButton = document.querySelector("#auth-gate-register-button");
+const settingsThemeButtons = Array.from(
+  document.querySelectorAll("[data-home-theme]"),
+);
+const settingsSourceButtons = Array.from(
+  document.querySelectorAll("[data-home-source]"),
+);
+const settingsProfileButtons = Array.from(
+  document.querySelectorAll("[data-home-profile]"),
+);
+const privacyScreenshotButtons = Array.from(
+  document.querySelectorAll("[data-screenshot-policy]"),
+);
+const privacySyncButtons = Array.from(
+  document.querySelectorAll("[data-sync-consent]"),
+);
+const homeHeader = document.querySelector("#top-h1");
 
 let currentTone = "light";
 let folders = [];
@@ -108,6 +164,27 @@ let quizHasBeenChecked = false;
 let activeHomeView = "dashboard";
 let privacySettings = null;
 let authSession = null;
+let postAuthHomeView = "dashboard";
+const customSettingsDropdowns = new Map();
+const SETTINGS_ICON_PATH =
+  "M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.28 7.28 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.13.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.41 1.05.72 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.22 1.13-.53 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z";
+const HOME_ICON_PATH = "M12 3 3 10.4V21h6.5v-6h5v6H21V10.4z";
+const MUI_CREATE_ACTION_ICON_PATHS = {
+  class:
+    "M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3 1 9l11 6 9-4.91V17h2V9L12 3z",
+
+  unit:
+    "M11.99 18.54 4.62 12.8 3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z",
+
+  lesson:
+    "M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z",
+
+  session:
+    "M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z",
+
+  quiz:
+    "M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5.99 13H12v-2h2.01v2zm1.54-5.07-.9.92c-.65.66-.86 1.16-.86 2.15h-1.8v-.45c0-1 .41-1.91 1.07-2.57l1.24-1.26c.37-.36.58-.86.58-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H9.08c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.26z",
+};
 
 const sourceLabels = {
   teacher: "Teacher or class recommendation",
@@ -125,13 +202,18 @@ const profileLabels = {
 const screenshotPolicyLabels = {
   automatic: "Automatic",
   manual: "Manual only",
-  disabled: "Disabled",
+  disabled: "Never",
 };
 
 const syncConsentLabels = {
   unknown: "Ask later",
   granted: "Allowed",
   denied: "Denied",
+};
+
+const localOnlyLabels = {
+  true: "Local data only",
+  false: "Cloud features allowed",
 };
 
 function makeId() {
@@ -210,28 +292,28 @@ function getContextualCreateActions() {
   const containerType = getCurrentContainerType();
 
   if (containerType === "root") {
-    return [{ key: "class", label: "Class" }];
+    return [{ key: "class", label: "Class", icon: MUI_CREATE_ACTION_ICON_PATHS.class }];
   }
 
   if (containerType === "class") {
     return [
-      { key: "unit", label: "Unit" },
-      { key: "session", label: "Session" },
-      { key: "quiz", label: "Quiz" },
+      { key: "unit", label: "Unit", icon: MUI_CREATE_ACTION_ICON_PATHS.unit },
+      { key: "session", label: "Session", icon: MUI_CREATE_ACTION_ICON_PATHS.session },
+      { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
     ];
   }
 
   if (containerType === "unit") {
     return [
-      { key: "lesson", label: "Lesson" },
-      { key: "session", label: "Session" },
-      { key: "quiz", label: "Quiz" },
+      { key: "lesson", label: "Lesson", icon: MUI_CREATE_ACTION_ICON_PATHS.lesson },
+      { key: "session", label: "Session", icon: MUI_CREATE_ACTION_ICON_PATHS.session },
+      { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
     ];
   }
 
   return [
-    { key: "session", label: "Session" },
-    { key: "quiz", label: "Quiz" },
+    { key: "session", label: "Session", icon: MUI_CREATE_ACTION_ICON_PATHS.session },
+    { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
   ];
 }
 
@@ -296,11 +378,150 @@ function resolveShouldUseDarkColors(themeSource) {
 }
 
 function setHomeView(nextView) {
-  activeHomeView = nextView === "settings" ? "settings" : "dashboard";
+  activeHomeView =
+    nextView === "settings"
+      ? "settings"
+      : nextView === "auth"
+        ? "auth"
+        : "dashboard";
+  homeHeader.textContent =
+    activeHomeView === "dashboard"
+      ? "Home"
+      : activeHomeView === "settings"
+        ? "Settings"
+        : "Sign In";
   homeDashboardView.hidden = activeHomeView !== "dashboard";
   homeSettingsView.hidden = activeHomeView !== "settings";
-  homeDashboardView.classList.toggle("home-view-active", activeHomeView === "dashboard");
-  homeSettingsView.classList.toggle("home-view-active", activeHomeView === "settings");
+  homeAuthGateView.hidden = activeHomeView !== "auth";
+  homeDashboardView.classList.toggle(
+    "home-view-active",
+    activeHomeView === "dashboard",
+  );
+  homeSettingsView.classList.toggle(
+    "home-view-active",
+    activeHomeView === "settings",
+  );
+  homeAuthGateView.classList.toggle("home-view-active", activeHomeView === "auth");
+  if (activeHomeView !== "settings") {
+    for (const controller of customSettingsDropdowns.values()) {
+      controller.close();
+    }
+  }
+  if (openSettingsButton) {
+    const shouldGoHome = activeHomeView === "settings";
+    openSettingsButton.setAttribute(
+      "aria-label",
+      shouldGoHome ? "Back to home" : "Open settings",
+    );
+    openSettingsButton.dataset.mode = shouldGoHome ? "home" : "settings";
+    if (openSettingsIconPath) {
+      openSettingsIconPath.setAttribute(
+        "d",
+        shouldGoHome ? HOME_ICON_PATH : SETTINGS_ICON_PATH,
+      );
+    }
+  }
+}
+
+function initCustomSettingsDropdown(select) {
+  if (!(select instanceof HTMLSelectElement)) {
+    return;
+  }
+
+  if (customSettingsDropdowns.has(select)) {
+    return;
+  }
+
+  const wrap = select.closest(".settings-select-wrap");
+  if (!(wrap instanceof HTMLElement)) {
+    return;
+  }
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "settings-select-button";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+
+  const menu = document.createElement("div");
+  menu.className = "settings-select-menu";
+  menu.hidden = true;
+
+  const optionButtons = [];
+  for (const option of Array.from(select.options)) {
+    const optionButton = document.createElement("button");
+    optionButton.type = "button";
+    optionButton.className = "settings-select-option";
+    optionButton.textContent = option.textContent || "";
+    optionButton.dataset.value = option.value;
+    optionButton.setAttribute("role", "option");
+    optionButton.addEventListener("click", () => {
+      setValue(option.value, true);
+      close();
+    });
+    optionButtons.push(optionButton);
+    menu.appendChild(optionButton);
+  }
+
+  function close() {
+    wrap.dataset.open = "false";
+    menu.hidden = true;
+    trigger.setAttribute("aria-expanded", "false");
+  }
+
+  function open() {
+    for (const controller of customSettingsDropdowns.values()) {
+      controller.close();
+    }
+    wrap.dataset.open = "true";
+    menu.hidden = false;
+    trigger.setAttribute("aria-expanded", "true");
+  }
+
+  function setValue(nextValue, emitChange = false) {
+    const nextOption = Array.from(select.options).find(
+      (option) => option.value === nextValue,
+    );
+    if (!nextOption) {
+      return;
+    }
+
+    const didChange = select.value !== nextOption.value;
+    select.value = nextOption.value;
+    trigger.textContent = nextOption.textContent || "";
+    optionButtons.forEach((optionButton) => {
+      optionButton.dataset.selected =
+        optionButton.dataset.value === select.value ? "true" : "false";
+    });
+
+    if (emitChange && didChange) {
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+
+  trigger.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (menu.hidden) {
+      open();
+    } else {
+      close();
+    }
+  });
+
+  wrap.dataset.open = "false";
+  wrap.append(trigger, menu);
+  select.hidden = true;
+  select.tabIndex = -1;
+  setValue(select.value);
+  customSettingsDropdowns.set(select, { close, setValue });
+}
+
+function syncCustomSettingsDropdown(select) {
+  const controller = customSettingsDropdowns.get(select);
+  if (!controller) {
+    return;
+  }
+  controller.setValue(select.value, false);
 }
 
 function applyPrivacySettings(settings) {
@@ -308,7 +529,9 @@ function applyPrivacySettings(settings) {
 
   for (const button of privacyScreenshotButtons) {
     button.dataset.selected =
-      button.dataset.screenshotPolicy === settings.screenshotPolicy ? "true" : "false";
+      button.dataset.screenshotPolicy === settings.screenshotPolicy
+        ? "true"
+        : "false";
   }
 
   for (const button of privacySyncButtons) {
@@ -316,43 +539,91 @@ function applyPrivacySettings(settings) {
       button.dataset.syncConsent === settings.syncConsent ? "true" : "false";
   }
 
-  privacyScreenshotStatus.textContent = screenshotPolicyLabels[settings.screenshotPolicy];
+  privacyScreenshotStatus.textContent =
+    screenshotPolicyLabels[settings.screenshotPolicy];
   privacySyncStatus.textContent = syncConsentLabels[settings.syncConsent];
+  privacyLocalOnlyStatus.textContent =
+    localOnlyLabels[String(Boolean(settings.localOnly))];
+  if (privacyScreenshotSelect) {
+    privacyScreenshotSelect.value = settings.screenshotPolicy;
+    syncCustomSettingsDropdown(privacyScreenshotSelect);
+  }
+  if (privacySyncSelect) {
+    privacySyncSelect.value = settings.syncConsent;
+    syncCustomSettingsDropdown(privacySyncSelect);
+  }
+  if (privacyLocalOnlySelect) {
+    privacyLocalOnlySelect.value = String(Boolean(settings.localOnly));
+    syncCustomSettingsDropdown(privacyLocalOnlySelect);
+  }
   settingsPrivacyStatus.textContent =
-    settings.syncConsent === "denied"
+    settings.localOnly
+      ? "Local-only mode is on. Screenshots and sync stay under local control."
+      : settings.syncConsent === "denied"
       ? "Screenshots are controlled locally and sync consent is denied."
       : "Review screenshot and sync preferences carefully.";
 }
 
 function applyAuthSession(nextSession) {
-  authSession = nextSession && typeof nextSession === "object" ? nextSession : null;
+  authSession =
+    nextSession && typeof nextSession === "object" ? nextSession : null;
   const currentUser = authSession?.user ?? null;
-  accountAuthStatus.textContent = currentUser
-    ? `Signed in as ${currentUser.displayName || currentUser.email}`
-    : "Not signed in.";
+  if (currentUser) {
+    const displayName = currentUser.displayName || currentUser.email || "User";
+    const email = currentUser.email || "no-email";
+    accountIdentityDisplay.textContent = `${displayName} (${email})`;
+    accountAuthStatus.hidden = true;
+    settingsPrivacyStatus.hidden = true;
+    accountSignedOutPanel.hidden = true;
+    accountSignedInPanel.hidden = false;
+  } else {
+    accountAuthStatus.textContent = "Not signed in.";
+    accountAuthStatus.hidden = false;
+    settingsPrivacyStatus.hidden = false;
+    accountSignedOutPanel.hidden = false;
+    accountSignedInPanel.hidden = true;
+  }
   accountLogoutButton.disabled = !currentUser;
   privacyExportButton.disabled = !currentUser;
   privacyDeleteAccountButton.disabled = !currentUser;
+  if (!currentUser) {
+    setAuthGateStatus("Create an account or sign in to continue.", "neutral");
+  }
 }
 
-function readAuthFormValues() {
+function requireSignedIn(actionLabel) {
+  if (authSession?.user) {
+    return true;
+  }
+  postAuthHomeView = activeHomeView === "settings" ? "settings" : "dashboard";
+  setHomeView("auth");
+  setAuthGateStatus(`Sign in to ${actionLabel}.`, "danger");
+  authGateEmailInput.focus();
+  return false;
+}
+
+function setAuthGateButtonsDisabled(disabled) {
+  authGateLoginButton.disabled = disabled;
+  authGateRegisterButton.disabled = disabled;
+}
+
+function readAuthGateFormValues() {
   return {
-    email: accountEmailInput.value.trim(),
-    password: accountPasswordInput.value,
-    displayName: accountDisplayNameInput.value.trim(),
+    email: authGateEmailInput.value.trim(),
+    password: authGatePasswordInput.value,
+    displayName: authGateDisplayNameInput.value.trim(),
   };
 }
 
-function setAuthButtonsDisabled(disabled) {
-  accountLoginButton.disabled = disabled;
-  accountRegisterButton.disabled = disabled;
-  accountLogoutButton.disabled = disabled || !authSession?.user;
+function setAuthGateStatus(message, tone = "neutral") {
+  authGateStatus.textContent = message;
+  authGateStatus.dataset.tone = tone;
 }
 
-async function submitAuthRequest(mode) {
-  const { email, password, displayName } = readAuthFormValues();
-  setAuthButtonsDisabled(true);
-  setPrivacyAccountStatus(
+async function submitAuthGateRequest(mode) {
+  const { email, password, displayName } = readAuthGateFormValues();
+  setAuthGateButtonsDisabled(true);
+  setAuthGateStatus(
     mode === "register" ? "Creating account..." : "Signing in...",
     "neutral",
   );
@@ -360,21 +631,26 @@ async function submitAuthRequest(mode) {
   try {
     const session =
       mode === "register"
-        ? await window.overlayApi.registerAccount({ email, password, displayName })
+        ? await window.overlayApi.registerAccount({
+            email,
+            password,
+            displayName,
+          })
         : await window.overlayApi.loginAccount({ email, password });
     applyAuthSession(session);
-    accountPasswordInput.value = "";
-    setPrivacyAccountStatus(
+    authGatePasswordInput.value = "";
+    setAuthGateStatus(
       mode === "register" ? "Account created and signed in." : "Signed in.",
       "success",
     );
+    setHomeView(postAuthHomeView);
   } catch (error) {
-    setPrivacyAccountStatus(
+    setAuthGateStatus(
       error instanceof Error ? error.message : "Authentication failed.",
       "danger",
     );
   } finally {
-    setAuthButtonsDisabled(false);
+    setAuthGateButtonsDisabled(false);
   }
 }
 
@@ -416,6 +692,14 @@ function applyPreferenceSelections(preferences) {
   settingsProfileStatus.textContent = customerProfile
     ? `Current profile: ${profileLabels[customerProfile]}`
     : "Pick the closest fit.";
+  if (settingsSourceSelect) {
+    settingsSourceSelect.value = discoverySource || "";
+    syncCustomSettingsDropdown(settingsSourceSelect);
+  }
+  if (settingsProfileSelect) {
+    settingsProfileSelect.value = customerProfile || "";
+    syncCustomSettingsDropdown(settingsProfileSelect);
+  }
 }
 
 function normalizeFolders(source) {
@@ -424,7 +708,8 @@ function normalizeFolders(source) {
       return [];
     }
 
-    const allowedContainerType = depth === 1 ? "unit" : depth === 2 ? "lesson" : null;
+    const allowedContainerType =
+      depth === 1 ? "unit" : depth === 2 ? "lesson" : null;
 
     return children
       .filter((child) => {
@@ -436,7 +721,9 @@ function normalizeFolders(source) {
           return true;
         }
 
-        return Boolean(allowedContainerType && child.type === allowedContainerType);
+        return Boolean(
+          allowedContainerType && child.type === allowedContainerType,
+        );
       })
       .map((child) => ({
         ...child,
@@ -448,11 +735,11 @@ function normalizeFolders(source) {
 
   return Array.isArray(source)
     ? source
-      .filter((item) => item?.type === "class")
-      .map((item) => ({
-        ...item,
-        children: normalizeChildren(item.children, 1),
-      }))
+        .filter((item) => item?.type === "class")
+        .map((item) => ({
+          ...item,
+          children: normalizeChildren(item.children, 1),
+        }))
     : [];
 }
 
@@ -501,13 +788,13 @@ function replaceChildrenAtPath(path, nextChildren, source = folders) {
     if (rest.length === 0) {
       return {
         ...item,
-        children: nextChildren
+        children: nextChildren,
       };
     }
 
     return {
       ...item,
-      children: replaceChildrenAtPath(rest, nextChildren, item.children || [])
+      children: replaceChildrenAtPath(rest, nextChildren, item.children || []),
     };
   });
 }
@@ -520,7 +807,9 @@ async function persistFolders(nextFolders) {
 function buildBackendClassPayload(values) {
   const noteParts = [
     values.description ? `Description: ${values.description}` : null,
-    values.additionalNotes ? `Additional notes: ${values.additionalNotes}` : null,
+    values.additionalNotes
+      ? `Additional notes: ${values.additionalNotes}`
+      : null,
     values.hierarchyNotes ? values.hierarchyNotes : null,
   ].filter(Boolean);
   const teacherFocusParts = [
@@ -532,9 +821,10 @@ function buildBackendClassPayload(values) {
     className: values.course,
     subject: values.course,
     currentUnit: values.currentUnit || null,
-    teacherFocus: teacherFocusParts.length > 0 ? teacherFocusParts.join(" | ") : null,
+    teacherFocus:
+      teacherFocusParts.length > 0 ? teacherFocusParts.join(" | ") : null,
     keyConcepts: [],
-    notes: noteParts.length > 0 ? noteParts.join("\n") : null
+    notes: noteParts.length > 0 ? noteParts.join("\n") : null,
   };
 }
 
@@ -556,7 +846,7 @@ async function ensureBackendClassId(classFolder) {
       additionalNotes: classFolder.additionalNotes || "",
       currentUnit: buildCurrentUnitPathLabel(),
       hierarchyNotes: buildHierarchyContextNotes(),
-    })
+    }),
   );
 
   const classPath = [classFolder.id];
@@ -566,10 +856,10 @@ async function ensureBackendClassId(classFolder) {
   const nextChildren = siblingFolders.map((item) =>
     item.id === classFolder.id
       ? {
-        ...item,
-        dbClassId: result.classProfile.id
-      }
-      : item
+          ...item,
+          dbClassId: result.classProfile.id,
+        }
+      : item,
   );
   const nextFolders = replaceChildrenAtPath(parentPath, nextChildren);
   await persistFolders(nextFolders);
@@ -600,9 +890,10 @@ function formatSessionDate(value) {
 }
 
 function buildSessionCardSentence(session) {
-  const summarySentence = typeof session.summary === "string" && session.summary.trim()
-    ? session.summary.trim().split(/(?<=[.!?])\s+/)[0]
-    : `${session.name || "Saved study session"}.`;
+  const summarySentence =
+    typeof session.summary === "string" && session.summary.trim()
+      ? session.summary.trim().split(/(?<=[.!?])\s+/)[0]
+      : `${session.name || "Saved study session"}.`;
   return summarySentence.trim();
 }
 
@@ -616,13 +907,18 @@ function buildSessionCardStats(session) {
 async function readQuizMaterialFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
-    reader.onerror = () => reject(reader.error || new Error("Failed to read file."));
+    reader.onload = () =>
+      resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () =>
+      reject(reader.error || new Error("Failed to read file."));
     reader.readAsText(file);
   });
 }
 
 function openSessionSummary(session) {
+  if (!requireSignedIn("view saved sessions")) {
+    return;
+  }
   sessionSummaryTitle.textContent = session.name || "Session Summary";
   sessionSummaryMeta.textContent = `${Number.isFinite(session.requestCount) ? session.requestCount : 0} request${session.requestCount === 1 ? "" : "s"} • Ended ${formatSessionDate(session.endedAt)}${Array.isArray(session.keyTopics) && session.keyTopics.length > 0 ? ` • ${session.keyTopics.slice(0, 3).join(", ")}` : ""}`;
   sessionSummaryText.textContent =
@@ -665,7 +961,8 @@ function resetQuizModalState() {
   quizGaps.textContent = "";
   quizQuestions.parentElement?.classList.remove("has-explanation");
   if (quizExplainHint) {
-    quizExplainHint.textContent = "Answer explanations unlock after you check answers.";
+    quizExplainHint.textContent =
+      "Answer explanations unlock after you check answers.";
   }
 }
 
@@ -699,9 +996,10 @@ function joinTopics(topics) {
 }
 
 function buildQuizInsights(correctTopics, gapTopics, unansweredTopics) {
-  const strengths = correctTopics.length > 0
-    ? `You showed strength on ${joinTopics(correctTopics.slice(0, 3))}.`
-    : "No clear strengths yet because nothing was answered correctly.";
+  const strengths =
+    correctTopics.length > 0
+      ? `You showed strength on ${joinTopics(correctTopics.slice(0, 3))}.`
+      : "No clear strengths yet because nothing was answered correctly.";
 
   const gapParts = [];
   if (gapTopics.length > 0) {
@@ -711,9 +1009,10 @@ function buildQuizInsights(correctTopics, gapTopics, unansweredTopics) {
     gapParts.push(`come back to ${joinTopics(unansweredTopics.slice(0, 2))}`);
   }
 
-  const gaps = gapParts.length > 0
-    ? `${gapParts.join(", and ")}.`
-    : "No major gaps showed up in this round.";
+  const gaps =
+    gapParts.length > 0
+      ? `${gapParts.join(", and ")}.`
+      : "No major gaps showed up in this round.";
 
   return { strengths, gaps };
 }
@@ -724,7 +1023,8 @@ function renderQuizSessionPicker(sessions) {
   if (sessions.length === 0) {
     const empty = document.createElement("p");
     empty.className = "quiz-picker-empty";
-    empty.textContent = "No saved sessions selected. The quiz will use class context and any uploaded material.";
+    empty.textContent =
+      "No saved sessions selected. The quiz will use class context and any uploaded material.";
     quizSessionPicker.appendChild(empty);
     return;
   }
@@ -755,6 +1055,9 @@ function renderQuizSessionPicker(sessions) {
 }
 
 function openQuizModalForCurrentClass() {
+  if (!requireSignedIn("start a quiz")) {
+    return;
+  }
   const currentClassFolder = getCurrentClassFolder();
   if (!currentClassFolder || currentClassFolder.type !== "class") {
     return;
@@ -763,7 +1066,8 @@ function openQuizModalForCurrentClass() {
   activeQuizClassFolder = currentClassFolder;
   resetQuizModalState();
   quizModalTitle.textContent = `Quiz: ${currentClassFolder.name || "Class"}`;
-  quizSessionMeta.textContent = "Pick any saved sessions from this view, or leave them unchecked to build from broader class context.";
+  quizSessionMeta.textContent =
+    "Pick any saved sessions from this view, or leave them unchecked to build from broader class context.";
   renderQuizSessionPicker(getCurrentClassSessions());
   quizBackdrop.hidden = false;
 }
@@ -810,6 +1114,9 @@ function updateExplainButtons() {
 }
 
 function openSavedQuiz(quizItem) {
+  if (!requireSignedIn("open saved quizzes")) {
+    return;
+  }
   activeQuizClassFolder = getCurrentClassFolder();
   resetQuizModalState();
   quizModalTitle.textContent = quizItem.name || "Saved Quiz";
@@ -822,6 +1129,9 @@ function openSavedQuiz(quizItem) {
 }
 
 async function saveActiveQuizToExplorer() {
+  if (!requireSignedIn("save quizzes")) {
+    return;
+  }
   if (!activeQuiz || !activeQuizClassFolder) {
     return;
   }
@@ -904,6 +1214,9 @@ function renderQuizQuestions(quiz) {
 }
 
 async function generateQuizForActiveSession() {
+  if (!requireSignedIn("generate quizzes")) {
+    return;
+  }
   if (!activeQuizClassFolder) {
     return;
   }
@@ -914,7 +1227,9 @@ async function generateQuizForActiveSession() {
     .join("\n\n");
   const selectedSessionIds = Array.from(
     quizSessionPicker.querySelectorAll('input[type="checkbox"]:checked'),
-  ).map((input) => Number(input.value)).filter((value) => Number.isFinite(value));
+  )
+    .map((input) => Number(input.value))
+    .filter((value) => Number.isFinite(value));
 
   const payload = {
     classId: activeQuizClassFolder.dbClassId,
@@ -952,45 +1267,60 @@ function gradeQuiz() {
   const gapTopics = [];
   const unansweredTopics = [];
 
-  quizQuestions.querySelectorAll(".quiz-question-card").forEach((card, index) => {
-    const question = activeQuiz.questions[index];
-    const selected = card.querySelector(`input[name="quiz-question-${index}"]:checked`);
-    const feedback = card.querySelector(".quiz-feedback");
-    const statusDot = card.querySelector(".quiz-question-status");
-    const selectedIndex = selected ? Number(selected.value) : -1;
-    const topic = summarizeQuestionTopic(question);
-
-    card.querySelectorAll(".quiz-option").forEach((optionNode, optionIndex) => {
-      optionNode.classList.toggle("correct", optionIndex === question.correctIndex);
-      optionNode.classList.toggle(
-        "incorrect",
-        selectedIndex === optionIndex && optionIndex !== question.correctIndex,
+  quizQuestions
+    .querySelectorAll(".quiz-question-card")
+    .forEach((card, index) => {
+      const question = activeQuiz.questions[index];
+      const selected = card.querySelector(
+        `input[name="quiz-question-${index}"]:checked`,
       );
+      const feedback = card.querySelector(".quiz-feedback");
+      const statusDot = card.querySelector(".quiz-question-status");
+      const selectedIndex = selected ? Number(selected.value) : -1;
+      const topic = summarizeQuestionTopic(question);
+
+      card
+        .querySelectorAll(".quiz-option")
+        .forEach((optionNode, optionIndex) => {
+          optionNode.classList.toggle(
+            "correct",
+            optionIndex === question.correctIndex,
+          );
+          optionNode.classList.toggle(
+            "incorrect",
+            selectedIndex === optionIndex &&
+              optionIndex !== question.correctIndex,
+          );
+        });
+
+      if (selectedIndex === question.correctIndex) {
+        correctCount += 1;
+        correctTopics.push(topic);
+        card.dataset.result = "correct";
+      } else if (selectedIndex === -1) {
+        unansweredTopics.push(topic);
+        card.dataset.result = "unanswered";
+      } else {
+        gapTopics.push(topic);
+        card.dataset.result = "incorrect";
+      }
+
+      feedback.hidden = false;
+      feedback.textContent =
+        selectedIndex === question.correctIndex
+          ? "Correct."
+          : `Correct answer: ${question.options[question.correctIndex]}`;
+      if (statusDot) {
+        statusDot.dataset.result = card.dataset.result;
+        statusDot.title = card.dataset.result;
+      }
     });
 
-    if (selectedIndex === question.correctIndex) {
-      correctCount += 1;
-      correctTopics.push(topic);
-      card.dataset.result = "correct";
-    } else if (selectedIndex === -1) {
-      unansweredTopics.push(topic);
-      card.dataset.result = "unanswered";
-    } else {
-      gapTopics.push(topic);
-      card.dataset.result = "incorrect";
-    }
-
-    feedback.hidden = false;
-    feedback.textContent = selectedIndex === question.correctIndex
-      ? "Correct."
-      : `Correct answer: ${question.options[question.correctIndex]}`;
-    if (statusDot) {
-      statusDot.dataset.result = card.dataset.result;
-      statusDot.title = card.dataset.result;
-    }
-  });
-
-  const insights = buildQuizInsights(correctTopics, gapTopics, unansweredTopics);
+  const insights = buildQuizInsights(
+    correctTopics,
+    gapTopics,
+    unansweredTopics,
+  );
   quizHasBeenChecked = true;
   updateExplainButtons();
   quizSubtitle.textContent = `${activeQuiz.subtitle} • Score: ${correctCount}/${activeQuiz.questions.length}`;
@@ -999,7 +1329,8 @@ function gradeQuiz() {
   quizGaps.textContent = insights.gaps;
   quizSubmitButton.disabled = true;
   if (quizExplainHint) {
-    quizExplainHint.textContent = "Pick any question to open the full answer explanation.";
+    quizExplainHint.textContent =
+      "Pick any question to open the full answer explanation.";
   }
 }
 
@@ -1017,7 +1348,7 @@ function renderBreadcrumbs() {
     runningPath.push(segment);
     trail.push({
       label: node.name,
-      path: [...runningPath]
+      path: [...runningPath],
     });
     currentChildren = node.children || [];
   }
@@ -1049,7 +1380,9 @@ function renderFolders() {
   const currentChildren = getCurrentChildren();
   const filteredChildren = currentChildren;
   const visibleChildren = searchQuery
-    ? filteredChildren.filter((item) => item.name.toLowerCase().includes(searchQuery))
+    ? filteredChildren.filter((item) =>
+        item.name.toLowerCase().includes(searchQuery),
+      )
     : filteredChildren;
   folderGrid.replaceChildren();
   renderBreadcrumbs();
@@ -1059,7 +1392,8 @@ function renderFolders() {
   if (currentPath.length === 0) {
     folderNameInput.placeholder = "Search classes";
     emptyTitle.textContent = "No classes here yet.";
-    emptyCopy.textContent = "Create a class folder to start organizing courses, notes, and study context.";
+    emptyCopy.textContent =
+      "Create a class folder to start organizing courses, notes, and study context.";
   } else {
     const currentType = getCurrentContainerType();
     folderNameInput.placeholder =
@@ -1097,27 +1431,31 @@ function renderFolders() {
     const sessionSummaryText = isSessionItem
       ? buildSessionCardSentence(folder)
       : isQuizItem
-        ? (typeof folder.summary === "string" && folder.summary.trim()
-            ? folder.summary.trim()
-            : "Saved quiz")
+        ? typeof folder.summary === "string" && folder.summary.trim()
+          ? folder.summary.trim()
+          : "Saved quiz"
         : "";
     const sessionStatsText = isSessionItem ? buildSessionCardStats(folder) : "";
 
     openButton.innerHTML = `
       <span class="folder-card-icon" aria-hidden="true">
         <svg class="icon-svg" viewBox="0 0 24 24">
-          ${isSessionItem
-            ? '<path d="M7 2h8l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1.5V8h4.5"></path>'
-            : isQuizItem
-              ? '<path d="M9 2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v10a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2zm0 6H7v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8h-2v2h-2V8h-4v2H9V8zm2-4v2h4V4h-4z"></path>'
-              : '<path d="M10 4 12 6h8c1.1 0 2 .9 2 2v8.5c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h6z"></path>'}
+          ${
+            isSessionItem
+              ? '<path d="M7 2h8l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1.5V8h4.5"></path>'
+              : isQuizItem
+                ? '<path d="M9 2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v10a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2zm0 6H7v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8h-2v2h-2V8h-4v2H9V8zm2-4v2h4V4h-4z"></path>'
+                : '<path d="M10 4 12 6h8c1.1 0 2 .9 2 2v8.5c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h6z"></path>'
+          }
         </svg>
       </span>
       <span class="folder-card-title">${folder.name}</span>
-      ${(isSessionItem || isQuizItem)
-        ? `<span class="folder-card-summary">${sessionSummaryText}</span>
+      ${
+        isSessionItem || isQuizItem
+          ? `<span class="folder-card-summary">${sessionSummaryText}</span>
       <span class="folder-card-session-stats">${isSessionItem ? sessionStatsText : metaText}</span>`
-        : `<span class="folder-card-meta">${metaText}</span>`}
+          : `<span class="folder-card-meta">${metaText}</span>`
+      }
     `;
     const titleNode = openButton.querySelector(".folder-card-title");
     const metaNode = openButton.querySelector(".folder-card-meta");
@@ -1147,6 +1485,9 @@ function renderFolders() {
       });
     } else {
       openButton.addEventListener("click", () => {
+        if (!requireSignedIn("open folders")) {
+          return;
+        }
         currentPath = [...currentPath, folder.id];
         renderFolders();
       });
@@ -1162,7 +1503,12 @@ function renderFolders() {
       </svg>
     `;
     deleteButton.addEventListener("click", async () => {
-      const nextChildren = getCurrentChildren().filter((item) => item.id !== folder.id);
+      if (!requireSignedIn("delete content")) {
+        return;
+      }
+      const nextChildren = getCurrentChildren().filter(
+        (item) => item.id !== folder.id,
+      );
       const nextFolders = replaceChildrenAtPath(currentPath, nextChildren);
       await persistFolders(nextFolders);
     });
@@ -1175,17 +1521,35 @@ function renderFolders() {
 }
 
 function openModal(mode) {
+  if (!requireSignedIn("create content")) {
+    return;
+  }
   currentModalMode = mode;
   classModalBackdrop.hidden = false;
   classFields.hidden = mode === "session";
   sessionFields.hidden = mode !== "session";
   teacherNameField.hidden = mode !== "class";
   teacherNotesField.hidden = mode !== "class";
-  nameFieldLabel.textContent = mode === "class" ? "Course" : mode === "unit" ? "Unit Name" : "Lesson Name";
-  additionalNotesLabel.textContent = mode === "class" ? "Additional Notes" : "Notes";
-  classCourseInput.placeholder = mode === "class" ? "AP Biology" : mode === "unit" ? "Unit 3" : "Cell Respiration";
-  classDescriptionInput.placeholder = mode === "class" ? "What this class is about" : mode === "unit" ? "What this unit covers" : "What this lesson focuses on";
-  classAdditionalNotesInput.placeholder = mode === "class" ? "Anything else you want saved" : "Extra notes for this folder";
+  nameFieldLabel.textContent =
+    mode === "class" ? "Course" : mode === "unit" ? "Unit Name" : "Lesson Name";
+  additionalNotesLabel.textContent =
+    mode === "class" ? "Additional Notes" : "Notes";
+  classCourseInput.placeholder =
+    mode === "class"
+      ? "AP Biology"
+      : mode === "unit"
+        ? "Unit 3"
+        : "Cell Respiration";
+  classDescriptionInput.placeholder =
+    mode === "class"
+      ? "What this class is about"
+      : mode === "unit"
+        ? "What this unit covers"
+        : "What this lesson focuses on";
+  classAdditionalNotesInput.placeholder =
+    mode === "class"
+      ? "Anything else you want saved"
+      : "Extra notes for this folder";
   classModalKicker.textContent =
     mode === "class"
       ? "New class"
@@ -1229,7 +1593,14 @@ function closeModal() {
 }
 
 async function saveModal() {
-  if (currentModalMode === "class" || currentModalMode === "unit" || currentModalMode === "lesson") {
+  if (!requireSignedIn("save changes")) {
+    return;
+  }
+  if (
+    currentModalMode === "class" ||
+    currentModalMode === "unit" ||
+    currentModalMode === "lesson"
+  ) {
     const course = classCourseInput.value.trim();
     if (!course) {
       classCourseInput.focus();
@@ -1249,8 +1620,8 @@ async function saveModal() {
           teacherName,
           description,
           teacherNotes,
-          additionalNotes
-        })
+          additionalNotes,
+        }),
       );
 
       nextFolder = {
@@ -1262,7 +1633,7 @@ async function saveModal() {
         description,
         teacherNotes,
         additionalNotes,
-        children: []
+        children: [],
       };
     } else {
       nextFolder = {
@@ -1271,7 +1642,7 @@ async function saveModal() {
         name: course,
         description,
         additionalNotes,
-        children: []
+        children: [],
       };
     }
 
@@ -1304,7 +1675,9 @@ async function saveModal() {
     explorerPath: [...currentPath],
     sessionId: null,
     sessionName,
-    sessionNotes: [sessionNotesInput.value.trim(), hierarchyNotes].filter(Boolean).join("\n\n"),
+    sessionNotes: [sessionNotesInput.value.trim(), hierarchyNotes]
+      .filter(Boolean)
+      .join("\n\n"),
   });
   await window.overlayApi.minimizeNative();
 }
@@ -1322,8 +1695,11 @@ function applyThemePreference({ themeSource, shouldUseDarkColors }) {
       button.dataset.homeTheme === themeSource ? "true" : "false";
   }
 
-  settingsThemeStatus.textContent =
-    `Current preference: ${humanLabel(themeSource, shouldUseDarkColors)}`;
+  settingsThemeStatus.textContent = `Current preference: ${humanLabel(themeSource, shouldUseDarkColors)}`;
+  if (settingsThemeSelect) {
+    settingsThemeSelect.value = themeSource;
+    syncCustomSettingsDropdown(settingsThemeSelect);
+  }
 }
 
 function setMode(mode) {
@@ -1359,12 +1735,44 @@ function attachResizeHandle(handle) {
   });
 }
 
+[
+  settingsThemeSelect,
+  settingsSourceSelect,
+  settingsProfileSelect,
+  privacyScreenshotSelect,
+  privacySyncSelect,
+  privacyLocalOnlySelect,
+].forEach((select) => {
+  initCustomSettingsDropdown(select);
+});
+
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+  if (event.target.closest(".settings-select-wrap")) {
+    return;
+  }
+  for (const controller of customSettingsDropdowns.values()) {
+    controller.close();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") {
+    return;
+  }
+  for (const controller of customSettingsDropdowns.values()) {
+    controller.close();
+  }
+});
+
 shrinkWindow.addEventListener("click", async () => {
   await window.overlayApi.minimizeToDock();
 });
 
 openSettingsButton.addEventListener("click", () => {
-  setHomeView("settings");
+  setHomeView(activeHomeView === "settings" ? "dashboard" : "settings");
 });
 
 settingsHomeButton.addEventListener("click", () => {
@@ -1372,6 +1780,9 @@ settingsHomeButton.addEventListener("click", () => {
 });
 
 quizThemeToggle.addEventListener("click", async () => {
+  if (!requireSignedIn("change appearance")) {
+    return;
+  }
   const nextSource = currentTone === "dark" ? "light" : "dark";
   const result = await window.overlayApi.setThemeSource(nextSource);
   applyThemePreference(result);
@@ -1397,12 +1808,19 @@ restoreWindow.addEventListener("click", async () => {
   await window.overlayApi.expandWindow();
 });
 
+compactStarButton.addEventListener("click", () => {
+  setHomeView(activeHomeView === "settings" ? "dashboard" : "settings");
+});
+
 backFolderButton.addEventListener("click", () => {
   currentPath = currentPath.slice(0, -1);
   renderFolders();
 });
 
 newFolderButton.addEventListener("click", () => {
+  if (!requireSignedIn("create content")) {
+    return;
+  }
   if (isFolderActionMenuOpen) {
     closeFolderActionMenu();
   } else {
@@ -1470,7 +1888,22 @@ quizMaterialFile.addEventListener("change", async () => {
 
 for (const button of settingsThemeButtons) {
   button.addEventListener("click", async () => {
-    const result = await window.overlayApi.setThemeSource(button.dataset.homeTheme);
+    if (!requireSignedIn("change appearance")) {
+      return;
+    }
+    const result = await window.overlayApi.setThemeSource(
+      button.dataset.homeTheme,
+    );
+    applyThemePreference(result);
+  });
+}
+
+if (settingsThemeSelect) {
+  settingsThemeSelect.addEventListener("change", async () => {
+    if (!requireSignedIn("change appearance")) {
+      return;
+    }
+    const result = await window.overlayApi.setThemeSource(settingsThemeSelect.value);
     applyThemePreference(result);
   });
 }
@@ -1492,7 +1925,14 @@ function openFolderActionMenu() {
     button.type = "button";
     button.className = "folder-action-menu-item";
     button.setAttribute("role", "menuitem");
-    button.textContent = action.label;
+    button.innerHTML = `
+      <span class="folder-action-menu-item-icon" aria-hidden="true">
+          <svg class="icon-svg" viewBox="0 0 24 24">
+          <path d="${action.icon || MUI_CREATE_ACTION_ICON_PATHS.session}"></path>
+        </svg>
+      </span>
+      <span class="folder-action-menu-item-label">${action.label}</span>
+    `;
     button.addEventListener("click", () => {
       closeFolderActionMenu();
       if (action.key === "quiz") {
@@ -1512,6 +1952,9 @@ function openFolderActionMenu() {
 
 for (const button of settingsSourceButtons) {
   button.addEventListener("click", async () => {
+    if (!requireSignedIn("update preferences")) {
+      return;
+    }
     const preferences = await window.overlayApi.updatePreferences({
       discoverySource: button.dataset.homeSource,
     });
@@ -1519,8 +1962,26 @@ for (const button of settingsSourceButtons) {
   });
 }
 
+if (settingsSourceSelect) {
+  settingsSourceSelect.addEventListener("change", async () => {
+    if (!requireSignedIn("update preferences")) {
+      return;
+    }
+    if (!settingsSourceSelect.value) {
+      return;
+    }
+    const preferences = await window.overlayApi.updatePreferences({
+      discoverySource: settingsSourceSelect.value,
+    });
+    applyPreferenceSelections(preferences);
+  });
+}
+
 for (const button of settingsProfileButtons) {
   button.addEventListener("click", async () => {
+    if (!requireSignedIn("update preferences")) {
+      return;
+    }
     const preferences = await window.overlayApi.updatePreferences({
       customerProfile: button.dataset.homeProfile,
     });
@@ -1528,8 +1989,26 @@ for (const button of settingsProfileButtons) {
   });
 }
 
+if (settingsProfileSelect) {
+  settingsProfileSelect.addEventListener("change", async () => {
+    if (!requireSignedIn("update preferences")) {
+      return;
+    }
+    if (!settingsProfileSelect.value) {
+      return;
+    }
+    const preferences = await window.overlayApi.updatePreferences({
+      customerProfile: settingsProfileSelect.value,
+    });
+    applyPreferenceSelections(preferences);
+  });
+}
+
 for (const button of privacyScreenshotButtons) {
   button.addEventListener("click", async () => {
+    if (!requireSignedIn("update privacy settings")) {
+      return;
+    }
     const settings = await window.overlayApi.updatePrivacySettings({
       screenshotPolicy: button.dataset.screenshotPolicy,
     });
@@ -1537,26 +2016,77 @@ for (const button of privacyScreenshotButtons) {
   });
 }
 
+if (privacyScreenshotSelect) {
+  privacyScreenshotSelect.addEventListener("change", async () => {
+    if (!requireSignedIn("update privacy settings")) {
+      return;
+    }
+    const settings = await window.overlayApi.updatePrivacySettings({
+      screenshotPolicy: privacyScreenshotSelect.value,
+    });
+    applyPrivacySettings(settings);
+  });
+}
+
 for (const button of privacySyncButtons) {
   button.addEventListener("click", async () => {
+    if (!requireSignedIn("update privacy settings")) {
+      return;
+    }
     const settings = await window.overlayApi.updatePrivacySettings({
       syncConsent: button.dataset.syncConsent,
     });
     applyPrivacySettings(settings);
   });
 }
-accountLoginButton.addEventListener("click", async () => {
-  await submitAuthRequest("login");
+
+if (privacySyncSelect) {
+  privacySyncSelect.addEventListener("change", async () => {
+    if (!requireSignedIn("update privacy settings")) {
+      return;
+    }
+    const settings = await window.overlayApi.updatePrivacySettings({
+      syncConsent: privacySyncSelect.value,
+    });
+    applyPrivacySettings(settings);
+  });
+}
+
+if (privacyLocalOnlySelect) {
+  privacyLocalOnlySelect.addEventListener("change", async () => {
+    if (!requireSignedIn("update privacy settings")) {
+      return;
+    }
+    const settings = await window.overlayApi.updatePrivacySettings({
+      localOnly: privacyLocalOnlySelect.value === "true",
+    });
+    applyPrivacySettings(settings);
+  });
+}
+accountOpenAuthGateButton.addEventListener("click", () => {
+  postAuthHomeView = "settings";
+  setHomeView("auth");
+  setAuthGateStatus("Sign in to continue.", "neutral");
+  authGateEmailInput.focus();
 });
-accountRegisterButton.addEventListener("click", async () => {
-  await submitAuthRequest("register");
+authGateLoginButton.addEventListener("click", async () => {
+  await submitAuthGateRequest("login");
+});
+authGateRegisterButton.addEventListener("click", async () => {
+  await submitAuthGateRequest("register");
 });
 accountLogoutButton.addEventListener("click", async () => {
+  if (!requireSignedIn("log out")) {
+    return;
+  }
   await window.overlayApi.logoutAccount();
   applyAuthSession(null);
   setPrivacyAccountStatus("Signed out.", "neutral");
 });
 privacyExportButton.addEventListener("click", async () => {
+  if (!requireSignedIn("export account data")) {
+    return;
+  }
   privacyExportButton.disabled = true;
   setPrivacyAccountStatus("Preparing export...", "neutral");
 
@@ -1577,6 +2107,9 @@ privacyExportButton.addEventListener("click", async () => {
   }
 });
 privacyDeleteAccountButton.addEventListener("click", async () => {
+  if (!requireSignedIn("delete account data")) {
+    return;
+  }
   const confirmed = window.confirm(
     "Delete managed backend account data? This cannot be undone.",
   );
@@ -1631,7 +2164,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   const normalizedFolders = normalizeFolders(storedFolders);
   const shouldPersistNormalized =
     normalizedFolders.length !== storedFolders.length ||
-    storedFolders.some((item) => Array.isArray(item.children) && item.children.length > 0);
+    storedFolders.some(
+      (item) => Array.isArray(item.children) && item.children.length > 0,
+    );
 
   if (shouldPersistNormalized) {
     folders = await window.overlayApi.updateClassFolders(normalizedFolders);
@@ -1640,12 +2175,16 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
   applyThemePreference({
     themeSource: preferences.themeSource || "system",
-    shouldUseDarkColors: resolveShouldUseDarkColors(preferences.themeSource || "system"),
+    shouldUseDarkColors: resolveShouldUseDarkColors(
+      preferences.themeSource || "system",
+    ),
   });
   applyPreferenceSelections(preferences);
   applyPrivacySettings(settings);
   applyAuthSession(session);
-  setPrivacyAccountStatus("Theme changes apply across Home, Chat, and quiz views.");
+  setPrivacyAccountStatus(
+    "Theme changes apply across Home, Chat, and quiz views.",
+  );
   setHomeView("dashboard");
   renderFolders();
   attachResizeHandle(resizeHandle);

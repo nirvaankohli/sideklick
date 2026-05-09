@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld("overlayApi", {
   setPrivacySettings: (settings) => ipcRenderer.invoke("privacy-settings:set", settings),
   updatePrivacySettings: (patch) => ipcRenderer.invoke("privacy-settings:update", patch),
   resetPrivacySettings: () => ipcRenderer.invoke("privacy-settings:reset"),
+  captureScreenshotAttachment: () => ipcRenderer.invoke("capture:screenshot"),
+  readClipboardAttachment: () => ipcRenderer.invoke("clipboard:readAttachment"),
   saveClassProfile: (classProfile) => ipcRenderer.invoke("backend:saveClassProfile", classProfile),
   assist: (payload) => ipcRenderer.invoke("backend:assist", payload),
   submitFeedback: (payload) => ipcRenderer.invoke("backend:feedback", payload),

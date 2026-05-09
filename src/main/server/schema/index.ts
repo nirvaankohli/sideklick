@@ -37,9 +37,23 @@ export const gapSchema = z.object({
   classId: z.number().int().positive().nullable().optional(),
   topic: z.string().trim().min(1),
   description: nullableTrimmedString,
+  scope: z.enum(["session", "class"]).default("class"),
   status: z.enum(["open", "improving", "closed"]),
   weight: z.number().int().min(0),
   evidenceCount: z.number().int().min(0),
+  supportSignals: z.array(z.string().trim().min(1)).default([]),
+  lastConfidence: z.number().min(0).max(1).nullable().optional(),
+  lastEvidenceType: z
+    .enum([
+      "self_doubt",
+      "review_request",
+      "direct_question",
+      "note_capture",
+      "general",
+    ])
+    .nullable()
+    .optional(),
+  lastInteractionType: nullableTrimmedString,
   lastSeenAt: timestampString.nullable().optional(),
   createdAt: timestampString.optional(),
   updatedAt: timestampString.optional(),
@@ -93,6 +107,55 @@ export const builtContextSchema = z.object({
     requestPriority: z.array(z.string().trim().min(1)),
     screenshotUsefulness: z.string().trim().min(1),
     backgroundUsefulness: z.string().trim().min(1),
+  }),
+  workingMemory: z.object({
+    currentRequest: z.array(z.string().trim().min(1)),
+    sessionWindow: z.array(z.string().trim().min(1)),
+    recentInteractions: z.array(
+      z.object({
+        id: z.number().int().positive(),
+        question: z.string().trim().min(1),
+        response: nullableTrimmedString,
+        interactionType: nullableTrimmedString,
+        createdAt: timestampString,
+      }),
+    ),
+    summary: z.string().trim().min(1),
+  }),
+  episodicMemory: z.object({
+    recentSessions: z.array(
+      z.object({
+        title: nullableTrimmedString,
+        notes: nullableTrimmedString,
+        summary: nullableTrimmedString,
+        keyTopics: z.array(z.string().trim().min(1)),
+        carryForward: nullableTrimmedString,
+        requestCount: z.number().int().min(0),
+        detailedContext: z.string().trim().min(1),
+        startedAt: timestampString,
+        endedAt: timestampString.nullable(),
+      }),
+    ),
+    carryForwardItems: z.array(z.string().trim().min(1)),
+    summary: z.string().trim().min(1),
+  }),
+  semanticMemory: z.object({
+    activeGaps: z.array(gapSchema),
+    recurringTopics: z.array(z.string().trim().min(1)),
+    preferredHelpModes: z.array(z.string().trim().min(1)),
+    knownStrengths: z.array(z.string().trim().min(1)),
+    summary: z.string().trim().min(1),
+  }),
+  contextTiers: z.object({
+    immediate: z.array(z.string().trim().min(1)),
+    session: z.array(z.string().trim().min(1)),
+    class: z.array(z.string().trim().min(1)),
+    historical: z.array(z.string().trim().min(1)),
+  }),
+  contextPacket: z.object({
+    answering: z.array(z.string().trim().min(1)),
+    coaching: z.array(z.string().trim().min(1)),
+    avoid: z.array(z.string().trim().min(1)),
   }),
   sessionGoal: nullableTrimmedString,
   summary: z.string().trim().min(1),
@@ -149,6 +212,36 @@ export const quizResponseSchema = z.object({
   questions: z.array(quizQuestionSchema).min(3).max(8),
 }).strict();
 
+export const privacySettingsSchema = z.object({
+  screenshotPolicy: z.enum(["automatic", "manual", "disabled"]),
+  syncConsent: z.enum(["unknown", "granted", "denied"]),
+  updatedAt: timestampString.optional(),
+}).strict();
+
+export const privacySettingsPatchSchema = privacySettingsSchema
+  .omit({ updatedAt: true })
+  .partial()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "Privacy settings patch cannot be empty.",
+  });
+
+export const deleteAccountRequestSchema = z.object({
+  confirm: z.literal(true),
+}).strict();
+
+export const exportRequestQuerySchema = z.object({
+  includeContent: z
+    .union([z.literal("true"), z.literal("false")])
+    .optional()
+    .transform((value) => value !== "false"),
+}).strict();
+
+export const authCredentialsSchema = z.object({
+  email: z.string().trim().email(),
+  password: z.string().min(8).max(200),
+  displayName: z.string().trim().min(1).max(120).optional(),
+}).strict();
+
 export type ClassProfileInput = z.infer<typeof classProfileSchema>;
 export type GapInput = z.infer<typeof gapSchema>;
 export type ModelAssistOutputInput = z.infer<typeof modelAssistOutputSchema>;
@@ -160,3 +253,7 @@ export type FeedbackRequestInput = z.infer<typeof feedbackRequestSchema>;
 export type QuizQuestionInput = z.infer<typeof quizQuestionSchema>;
 export type QuizRequestInput = z.infer<typeof quizRequestSchema>;
 export type QuizResponseInput = z.infer<typeof quizResponseSchema>;
+export type PrivacySettingsInput = z.infer<typeof privacySettingsSchema>;
+export type PrivacySettingsPatchInput = z.infer<typeof privacySettingsPatchSchema>;
+export type DeleteAccountRequestInput = z.infer<typeof deleteAccountRequestSchema>;
+export type ExportRequestQueryInput = z.infer<typeof exportRequestQuerySchema>;

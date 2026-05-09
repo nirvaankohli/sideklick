@@ -27,9 +27,20 @@ export type Gap = {
   classId?: number | null;
   topic: string;
   description?: string | null;
+  scope: "session" | "class";
   status: "open" | "improving" | "closed";
   weight: number;
   evidenceCount: number;
+  supportSignals: string[];
+  lastConfidence?: number | null;
+  lastEvidenceType?:
+    | "self_doubt"
+    | "review_request"
+    | "direct_question"
+    | "note_capture"
+    | "general"
+    | null;
+  lastInteractionType?: string | null;
   lastSeenAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -80,6 +91,51 @@ export type BuiltContext = {
     screenshotUsefulness: string;
     backgroundUsefulness: string;
   };
+  workingMemory: {
+    currentRequest: string[];
+    sessionWindow: string[];
+    recentInteractions: Array<{
+      id: number;
+      question: string;
+      response?: string | null;
+      interactionType?: string | null;
+      createdAt: string;
+    }>;
+    summary: string;
+  };
+  episodicMemory: {
+    recentSessions: Array<{
+      title: string | null;
+      notes: string | null;
+      summary: string | null;
+      keyTopics: string[];
+      carryForward: string | null;
+      requestCount: number;
+      detailedContext: string;
+      startedAt: string;
+      endedAt: string | null;
+    }>;
+    carryForwardItems: string[];
+    summary: string;
+  };
+  semanticMemory: {
+    activeGaps: Gap[];
+    recurringTopics: string[];
+    preferredHelpModes: string[];
+    knownStrengths: string[];
+    summary: string;
+  };
+  contextTiers: {
+    immediate: string[];
+    session: string[];
+    class: string[];
+    historical: string[];
+  };
+  contextPacket: {
+    answering: string[];
+    coaching: string[];
+    avoid: string[];
+  };
   sessionGoal?: string | null;
   summary: string;
 };
@@ -119,4 +175,48 @@ export type QuizResponse = {
   title: string;
   subtitle: string;
   questions: QuizQuestion[];
+};
+
+export type PrivacySettings = {
+  screenshotPolicy: "automatic" | "manual" | "disabled";
+  syncConsent: "unknown" | "granted" | "denied";
+  updatedAt?: string;
+};
+
+export type PrivacySettingsPatch = Partial<
+  Pick<PrivacySettings, "screenshotPolicy" | "syncConsent">
+>;
+
+export type AuthUser = {
+  id: string;
+  email: string;
+  displayName: string | null;
+};
+
+export type AuthSession = {
+  token: string;
+  user: AuthUser;
+};
+
+export type RetentionJobType =
+  | "retention_cleanup"
+  | "account_deletion"
+  | "export_user_data"
+  | "summary_compaction";
+
+export type RetentionJobStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed";
+
+export type RetentionJob = {
+  id: number;
+  userId: string | null;
+  jobType: RetentionJobType;
+  status: RetentionJobStatus;
+  runAfter: string;
+  payload: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
 };

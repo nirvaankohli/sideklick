@@ -5,11 +5,16 @@ const stopSessionButton = document.querySelector("#stop-session");
 const closeWindow = document.querySelector("#close-window");
 const compactCloseWindow = document.querySelector("#compact-close-window");
 const restoreWindow = document.querySelector("#restore-window");
+const compactStarButton = document.querySelector("#compact-star-button");
 const sessionClassLabel = document.querySelector("#session-class-label");
 const sessionNameLabel = document.querySelector("#session-name-label");
 const chatThread = document.querySelector("#chat-thread");
 const chatForm = document.querySelector("#chat-form");
 const chatInput = document.querySelector("#chat-input");
+const chatAttachTrigger = document.querySelector("#chat-attach-trigger");
+const chatAttachMenu = document.querySelector("#chat-attach-menu");
+const attachScreenshotButton = document.querySelector("#attach-screenshot-button");
+const attachClipboardButton = document.querySelector("#attach-clipboard-button");
 const resizeHandle = document.querySelector("#resize-handle");
 
 const ACTION_LABELS = {
@@ -31,7 +36,8 @@ const THUMBS_DOWN = "\uD83D\uDC4E";
 let currentTone = "light";
 let currentSession = null;
 let screenshotDataUrl = null;
-let screenshotStatusRow = null;
+let clipboardAttachmentText = null;
+let attachmentStatusRow = null;
 let fitTextFrame = null;
 
 function fitTextToBox(element, minimumFontSize = 11) {
@@ -346,12 +352,25 @@ function addMessage(role, copy, options = {}) {
 }
 
 function addIncomingPayloadMessage(text) {
+  return addAttachmentTextMessage(text, {
+    badge: "PASTED",
+    className: "incoming-payload",
+  });
+}
+
+function addAttachmentTextMessage(
+  text,
+  {
+    badge = "ATTACHED",
+    className = "incoming-payload",
+  } = {},
+) {
   if (!text) {
     return null;
   }
 
   const article = document.createElement("article");
-  article.className = "chat-message user incoming-payload";
+  article.className = `chat-message user ${className}`;
 
   const codeCopy = document.createElement("div");
   codeCopy.className = "chat-message-copy incoming-payload-text";
@@ -361,12 +380,36 @@ function addIncomingPayloadMessage(text) {
 
   const pastedBadge = document.createElement("span");
   pastedBadge.className = "incoming-pasted-badge";
-  pastedBadge.textContent = "PASTED";
+  pastedBadge.textContent = badge;
   article.appendChild(pastedBadge);
 
   chatThread.appendChild(article);
   chatThread.scrollTop = chatThread.scrollHeight;
   scheduleFitText();
+  return article;
+}
+
+function addAttachmentImageMessage(dataUrl, badge = "SCREENSHOT") {
+  if (!dataUrl) {
+    return null;
+  }
+
+  const article = document.createElement("article");
+  article.className = "chat-message user incoming-payload incoming-payload-image-card";
+
+  const preview = document.createElement("img");
+  preview.className = "incoming-payload-image";
+  preview.src = dataUrl;
+  preview.alt = `${badge.toLowerCase()} attachment`;
+  article.appendChild(preview);
+
+  const pastedBadge = document.createElement("span");
+  pastedBadge.className = "incoming-pasted-badge";
+  pastedBadge.textContent = badge;
+  article.appendChild(pastedBadge);
+
+  chatThread.appendChild(article);
+  chatThread.scrollTop = chatThread.scrollHeight;
   return article;
 }
 
@@ -434,42 +477,64 @@ function failPendingAssistantMessage(pendingMessage, errorMessage) {
   pendingMessage.meta.textContent = "Request failed";
 }
 
-function ensureScreenshotStatusRow() {
-  if (screenshotStatusRow) {
-    return screenshotStatusRow;
+function ensureAttachmentStatusRow() {
+  if (attachmentStatusRow) {
+    return attachmentStatusRow;
   }
 
-  screenshotStatusRow = document.createElement("div");
-  screenshotStatusRow.className = "chat-feedback-row";
-  screenshotStatusRow.hidden = true;
-  chatForm.before(screenshotStatusRow);
-  return screenshotStatusRow;
+  attachmentStatusRow = document.createElement("div");
+  attachmentStatusRow.className = "chat-attachment-status-row";
+  attachmentStatusRow.hidden = true;
+  chatForm.before(attachmentStatusRow);
+  return attachmentStatusRow;
 }
 
-function renderScreenshotStatus() {
-  const row = ensureScreenshotStatusRow();
+function createAttachmentChip(label, onRemove) {
+  const chip = document.createElement("div");
+  chip.className = "chat-attachment-chip";
+
+  const text = document.createElement("span");
+  text.className = "chat-attachment-chip-label";
+  text.textContent = label;
+
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.className = "ghost-button chat-attachment-chip-remove";
+  removeButton.textContent = "Remove";
+  removeButton.addEventListener("click", onRemove);
+
+  chip.append(text, removeButton);
+  return chip;
+}
+
+function renderAttachmentStatus() {
+  const row = ensureAttachmentStatusRow();
   row.replaceChildren();
 
-  if (!screenshotDataUrl) {
+  if (!screenshotDataUrl && !clipboardAttachmentText) {
     row.hidden = true;
     return;
   }
 
   row.hidden = false;
 
-  const status = document.createElement("span");
-  status.textContent = "Screenshot attached";
+  if (screenshotDataUrl) {
+    row.append(
+      createAttachmentChip("Screenshot attached", () => {
+        screenshotDataUrl = null;
+        renderAttachmentStatus();
+      }),
+    );
+  }
 
-  const clearButton = document.createElement("button");
-  clearButton.type = "button";
-  clearButton.className = "ghost-button";
-  clearButton.textContent = "Remove";
-  clearButton.addEventListener("click", () => {
-    screenshotDataUrl = null;
-    renderScreenshotStatus();
-  });
-
-  row.append(status, clearButton);
+  if (clipboardAttachmentText) {
+    row.append(
+      createAttachmentChip("Clipboard attached", () => {
+        clipboardAttachmentText = null;
+        renderAttachmentStatus();
+      }),
+    );
+  }
 }
 
 function readFileAsDataUrl(file) {
@@ -479,6 +544,74 @@ function readFileAsDataUrl(file) {
     reader.onerror = () => reject(reader.error || new Error("Failed to read image."));
     reader.readAsDataURL(file);
   });
+}
+
+function combineUserNotes(...parts) {
+  const filteredParts = parts
+    .filter((part) => typeof part === "string" && part.trim())
+    .map((part) => part.trim());
+  return filteredParts.length > 0 ? filteredParts.join("\n\n") : null;
+}
+
+async function maybeCaptureAutomaticScreenshot(normalizedPayload) {
+  if (normalizedPayload.screenshotDataUrl || screenshotDataUrl) {
+    return normalizedPayload.screenshotDataUrl || screenshotDataUrl;
+  }
+
+  if (
+    typeof window.overlayApi?.getPrivacySettings !== "function" ||
+    typeof window.overlayApi?.captureScreenshotAttachment !== "function"
+  ) {
+    return null;
+  }
+
+  const privacySettings = await window.overlayApi.getPrivacySettings();
+  if (privacySettings?.screenshotPolicy !== "automatic") {
+    return null;
+  }
+
+  try {
+    return await window.overlayApi.captureScreenshotAttachment();
+  } catch (error) {
+    addMessage(
+      "assistant",
+      error instanceof Error
+        ? error.message
+        : "Could not capture the automatic screenshot.",
+    );
+    return null;
+  }
+}
+
+function closeAttachmentMenu() {
+  if (!chatAttachMenu || !chatAttachTrigger) {
+    return;
+  }
+
+  chatAttachMenu.hidden = true;
+  chatAttachTrigger.setAttribute("aria-expanded", "false");
+}
+
+function openAttachmentMenu() {
+  if (!chatAttachMenu || !chatAttachTrigger) {
+    return;
+  }
+
+  chatAttachMenu.hidden = false;
+  chatAttachTrigger.setAttribute("aria-expanded", "true");
+}
+
+function toggleAttachmentMenu() {
+  if (!chatAttachMenu) {
+    return;
+  }
+
+  if (chatAttachMenu.hidden) {
+    openAttachmentMenu();
+    return;
+  }
+
+  closeAttachmentMenu();
 }
 
 function runClickFunction(clickFunctionName) {
@@ -568,9 +701,10 @@ function normalizeIncomingPayload(payload) {
   };
 }
 
-function buildAssistPayload(normalizedPayload) {
+function buildAssistPayload(normalizedPayload, options = {}) {
   const fallbackSelection =
     normalizedPayload.selectedText ||
+    options.clipboardAttachmentText ||
     normalizedPayload.pageTitle ||
     normalizedPayload.actionLabel;
 
@@ -582,12 +716,15 @@ function buildAssistPayload(normalizedPayload) {
     surroundingText: normalizedPayload.surroundingText,
     pageTitle: normalizedPayload.pageTitle || currentSession.className || null,
     pageUrl: normalizedPayload.pageUrl || null,
-    userNote:
-      normalizedPayload.userNote ||
-      currentSession.sessionNotes ||
-      null,
+    userNote: combineUserNotes(
+      normalizedPayload.userNote,
+      currentSession.sessionNotes,
+      options.clipboardAttachmentText
+        ? `Clipboard attachment:\n${options.clipboardAttachmentText}`
+        : null,
+    ),
     screenshotDataUrl:
-      normalizedPayload.screenshotDataUrl || screenshotDataUrl || null,
+      options.screenshotDataUrl || null,
   };
 }
 
@@ -600,8 +737,15 @@ async function executeAssistRequest(normalizedPayload) {
     return;
   }
 
+  const effectiveScreenshotDataUrl =
+    (await maybeCaptureAutomaticScreenshot(normalizedPayload)) || null;
+  const effectiveClipboardAttachmentText = clipboardAttachmentText;
+
   if (normalizedPayload.actionType === "chat") {
-    addMessage("user", normalizedPayload.selectedText.trim());
+    addMessage(
+      "user",
+      normalizedPayload.selectedText.trim() || "Attached context",
+    );
   } else {
     addMessage("user", normalizedPayload.actionLabel);
   }
@@ -610,17 +754,32 @@ async function executeAssistRequest(normalizedPayload) {
     addIncomingPayloadMessage(normalizedPayload.selectedText);
   }
 
+  if (effectiveClipboardAttachmentText) {
+    addAttachmentTextMessage(effectiveClipboardAttachmentText, {
+      badge: "CLIPBOARD",
+      className: "incoming-payload",
+    });
+  }
+
+  if (effectiveScreenshotDataUrl) {
+    addAttachmentImageMessage(effectiveScreenshotDataUrl);
+  }
+
   const pendingMessage = createPendingAssistantMessage(
     `${normalizedPayload.actionLabel}...`,
   );
 
   try {
     const result = await window.overlayApi.assist(
-      buildAssistPayload(normalizedPayload),
+      buildAssistPayload(normalizedPayload, {
+        screenshotDataUrl: effectiveScreenshotDataUrl,
+        clipboardAttachmentText: effectiveClipboardAttachmentText,
+      }),
     );
 
     screenshotDataUrl = null;
-    renderScreenshotStatus();
+    clipboardAttachmentText = null;
+    renderAttachmentStatus();
     await resolvePendingAssistantMessage(pendingMessage, result);
   } catch (error) {
     failPendingAssistantMessage(
@@ -716,6 +875,12 @@ restoreWindow.addEventListener("click", async () => {
   await window.overlayApi.expandWindow();
 });
 
+compactStarButton.addEventListener("click", async () => {
+  const nextSource = currentTone === "dark" ? "light" : "dark";
+  const result = await window.overlayApi.setThemeSource(nextSource);
+  applyThemeState(result);
+});
+
 chatInput.addEventListener("paste", async (event) => {
   const items = Array.from(event.clipboardData?.items || []);
   const imageItem = items.find((item) => item.type.startsWith("image/"));
@@ -733,7 +898,7 @@ chatInput.addEventListener("paste", async (event) => {
 
   try {
     screenshotDataUrl = await readFileAsDataUrl(file);
-    renderScreenshotStatus();
+    renderAttachmentStatus();
     addMessage(
       "assistant",
       "Screenshot attached. Send your message when you're ready.",
@@ -751,7 +916,7 @@ chatInput.addEventListener("paste", async (event) => {
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const value = chatInput.value.trim();
-  if (!value) {
+  if (!value && !screenshotDataUrl && !clipboardAttachmentText) {
     return;
   }
 
@@ -774,11 +939,94 @@ window.overlayApi.onWindowMode(({ mode }) => setMode(mode));
 window.overlayApi.onSessionChanged(applySession);
 window.overlayApi.onIncomingPayload(handleIncomingPayload);
 
+if (chatAttachTrigger) {
+  chatAttachTrigger.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleAttachmentMenu();
+  });
+}
+
+if (attachScreenshotButton) {
+  attachScreenshotButton.addEventListener("click", async () => {
+    closeAttachmentMenu();
+
+    try {
+      screenshotDataUrl = await window.overlayApi.captureScreenshotAttachment();
+      renderAttachmentStatus();
+      addMessage(
+        "assistant",
+        "Screenshot attached. Send your message when you're ready.",
+      );
+    } catch (error) {
+      addMessage(
+        "assistant",
+        error instanceof Error
+          ? error.message
+          : "Could not attach the screenshot.",
+      );
+    }
+  });
+}
+
+if (attachClipboardButton) {
+  attachClipboardButton.addEventListener("click", async () => {
+    closeAttachmentMenu();
+
+    try {
+      const attachment = await window.overlayApi.readClipboardAttachment();
+      if (!attachment) {
+        addMessage("assistant", "Clipboard is empty.");
+        return;
+      }
+
+      if (attachment.type === "image" && attachment.dataUrl) {
+        screenshotDataUrl = attachment.dataUrl;
+        renderAttachmentStatus();
+        addMessage(
+          "assistant",
+          "Clipboard image attached. Send your message when you're ready.",
+        );
+        return;
+      }
+
+      if (attachment.type === "text" && attachment.text) {
+        clipboardAttachmentText = attachment.text;
+        renderAttachmentStatus();
+        addMessage(
+          "assistant",
+          "Clipboard text attached. Send your message when you're ready.",
+        );
+        return;
+      }
+
+      addMessage("assistant", "Clipboard does not contain a supported attachment.");
+    } catch (error) {
+      addMessage(
+        "assistant",
+        error instanceof Error
+          ? error.message
+          : "Could not attach the clipboard content.",
+      );
+    }
+  });
+}
+
+document.addEventListener("click", (event) => {
+  if (
+    chatAttachMenu &&
+    !chatAttachMenu.hidden &&
+    (!(event.target instanceof Element) ||
+      !event.target.closest(".chat-attach-shell"))
+  ) {
+    closeAttachmentMenu();
+  }
+});
+
 window.addEventListener("DOMContentLoaded", async () => {
   const session = await window.overlayApi.getCurrentSession();
   applySession(session);
   attachResizeHandle(resizeHandle);
-  renderScreenshotStatus();
+  renderAttachmentStatus();
 });
 
 window.addEventListener("resize", scheduleFitText);

@@ -18,11 +18,13 @@ export type SyncConsent = "unknown" | "granted" | "denied";
 
 export type PrivacySettings = {
   screenshotPolicy: ScreenshotPolicy;
+  localOnly: boolean;
   syncConsent: SyncConsent;
 };
 
 export const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
   screenshotPolicy: "disabled",
+  localOnly: true,
   syncConsent: "unknown",
 };
 
@@ -93,6 +95,10 @@ export function normalizePrivacySettings(value: unknown): PrivacySettings {
     )
       ? (candidate.screenshotPolicy as ScreenshotPolicy)
       : DEFAULT_PRIVACY_SETTINGS.screenshotPolicy,
+    localOnly:
+      typeof candidate.localOnly === "boolean"
+        ? candidate.localOnly
+        : DEFAULT_PRIVACY_SETTINGS.localOnly,
     syncConsent: ALLOWED_SYNC_CONSENTS.has(
       candidate.syncConsent as SyncConsent,
     )

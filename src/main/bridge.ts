@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { z } from "zod";
 
 const DEFAULT_PORT = 4353;
-const DEFAULT_HOST = "localhost";
+const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_ALLOWED_REQUEST_TTL_MS = 30 * 1000;
 const BRIDGE_EXPIRES_HEADER = "x-sideclick-expires";
 const BRIDGE_NONCE_HEADER = "x-sideclick-nonce";

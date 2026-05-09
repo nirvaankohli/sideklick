@@ -162,7 +162,7 @@ test("capturePrimaryDisplayScreenshot throws when no usable thumbnail exists", a
   );
 });
 
-test("shouldCaptureAutomaticScreenshot only auto-captures non-chat actions without an existing screenshot", () => {
+test("shouldCaptureAutomaticScreenshot auto-captures any action when policy is automatic and no screenshot is attached yet", () => {
   return loadCaptureModule().then(({ shouldCaptureAutomaticScreenshot }) => {
     const automaticPolicy = {
       screenshotPolicy: "automatic",
@@ -185,7 +185,7 @@ test("shouldCaptureAutomaticScreenshot only auto-captures non-chat actions witho
         { actionType: " chat " },
         automaticPolicy,
       ),
-      false,
+      true,
     );
     assert.equal(
       shouldCaptureAutomaticScreenshot(

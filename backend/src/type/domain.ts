@@ -27,9 +27,20 @@ export type Gap = {
   classId?: number | null;
   topic: string;
   description?: string | null;
+  scope: "session" | "class";
   status: "open" | "improving" | "closed";
   weight: number;
   evidenceCount: number;
+  supportSignals: string[];
+  lastConfidence?: number | null;
+  lastEvidenceType?:
+    | "self_doubt"
+    | "review_request"
+    | "direct_question"
+    | "note_capture"
+    | "general"
+    | null;
+  lastInteractionType?: string | null;
   lastSeenAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -79,6 +90,51 @@ export type BuiltContext = {
     requestPriority: string[];
     screenshotUsefulness: string;
     backgroundUsefulness: string;
+  };
+  workingMemory: {
+    currentRequest: string[];
+    sessionWindow: string[];
+    recentInteractions: Array<{
+      id: number;
+      question: string;
+      response?: string | null;
+      interactionType?: string | null;
+      createdAt: string;
+    }>;
+    summary: string;
+  };
+  episodicMemory: {
+    recentSessions: Array<{
+      title: string | null;
+      notes: string | null;
+      summary: string | null;
+      keyTopics: string[];
+      carryForward: string | null;
+      requestCount: number;
+      detailedContext: string;
+      startedAt: string;
+      endedAt: string | null;
+    }>;
+    carryForwardItems: string[];
+    summary: string;
+  };
+  semanticMemory: {
+    activeGaps: Gap[];
+    recurringTopics: string[];
+    preferredHelpModes: string[];
+    knownStrengths: string[];
+    summary: string;
+  };
+  contextTiers: {
+    immediate: string[];
+    session: string[];
+    class: string[];
+    historical: string[];
+  };
+  contextPacket: {
+    answering: string[];
+    coaching: string[];
+    avoid: string[];
   };
   sessionGoal?: string | null;
   summary: string;

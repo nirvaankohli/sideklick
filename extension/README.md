@@ -2,7 +2,7 @@
 
 This Chrome extension sends SideKlick context-menu actions directly to the local Electron app bridge at `http://localhost:4353`.
 
-The extension uses signed local requests instead of raw unauthenticated POSTs. Each request includes a per-request nonce, a short expiry, and an HMAC signature over the method, path, expiry, nonce, and JSON body. If you change the app's `SIDECLICK_BRIDGE_SECRET`, update `BRIDGE_AUTH_SECRET` in `extension/background.js` to match.
+The extension uses signed local requests instead of raw unauthenticated POSTs. Each request includes a per-request nonce, a short expiry, and an HMAC signature over the method, path, expiry, nonce, and JSON body. The desktop app now requires `SIDECLICK_BRIDGE_SECRET` to be configured before the bridge starts; set it in your local `.env`, then update `BRIDGE_AUTH_SECRET` in `extension/background.js` to match.
 
 ## Load In Chrome
 
