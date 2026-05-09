@@ -1,10 +1,12 @@
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
+const https = require("https");
 require("tsx/cjs");
-const http = require("http");
 const {
   app,
   BrowserWindow,
+  clipboard,
   desktopCapturer,
   ipcMain,
   nativeTheme,
@@ -13,30 +15,61 @@ const {
 const {
   startServer,
   stopServer,
-} = require("./main/server/index.ts");
+} = require("../backend/src/server.ts");
 const {
   createSession,
   endSession,
-} = require("./main/server/services/sessions.ts");
+} = require("../backend/src/services/sessions.ts");
+const {
+  clearCurrentSessionState,
+  getCurrentSessionState,
+  getStoredClassFolders,
+  hasStoredClassFolders,
+  hasStoredCurrentSession,
+  setCurrentSessionState,
+  setStoredClassFolders,
+} = require("../backend/src/services/app-state.ts");
 const {
   getClassProfileById,
   saveClassProfile,
-} = require("./main/server/services/classes.ts");
+} = require("../backend/src/services/classes.ts");
 const {
   getFirstRunStartupWindowConfigs,
   getStartupWindowConfigs,
   resolveWindowTemplate,
 } = require("./config/windows");
+const {
+  canAttachManualScreenshot,
+  capturePrimaryDisplayScreenshot,
+  enforceScreenshotPolicy,
+  getScreenshotPolicyErrorMessage,
+  shouldCaptureAutomaticScreenshot,
+} = require("./main/capture.ts");
+const {
+  createIncomingMessageBridge,
+} = require("./main/bridge.ts");
+const {
+  getPrivacySettings,
+  resetPrivacySettings,
+  setPrivacySettings,
+  updatePrivacySettings,
+} = require("./main/privacy/settings.ts");
+const {
+  createSessionLifecycle,
+} = require("./main/session.ts");
+const {
+  enqueueOfflineRequest,
+} = require("./main/cache/local.ts");
 
 const windowsByKey = new Map();
 const windowState = new Map();
 const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
-const LOCAL_API_BASE_URL = "http://127.0.0.1:3001";
-const INCOMING_HTTP_PORT = 4353;
-const INCOMING_HTTP_HOST = "localhost";
-const MAX_SCREENSHOT_EDGE = 1280;
-const SCREENSHOT_JPEG_QUALITY = 72;
-let incomingMessageServer = null;
+const LOCAL_API_BASE_URL =
+  process.env.LOCAL_API_BASE_URL || "http://127.0.0.1:3001";
+const DEFAULT_MANAGED_BACKEND_URL = "";
+const DEFAULT_MANAGED_BACKEND_JWT = "";
+const DEFAULT_BACKEND_JWT_SECRET = "sideclick-managed-backend-dev-secret";
+const MANAGED_AUTH_KEY = "managedAuth";
 
 function getAppLogoPath() {
   return path.join(process.cwd(), "assets", "images", "logo", "logo.png");
@@ -79,15 +112,49 @@ function getPreferenceSnapshot() {
     hasLaunchedBefore: Boolean(preferences.hasLaunchedBefore),
     discoverySource: preferences.discoverySource || "",
     customerProfile: preferences.customerProfile || "",
-    classFolders: Array.isArray(preferences.classFolders)
-      ? preferences.classFolders
-      : [],
-    currentSession:
-      preferences.currentSession &&
-      typeof preferences.currentSession === "object"
-        ? preferences.currentSession
-        : null,
+    classFolders: getStoredClassFolders(),
+    currentSession: getCurrentSessionState(),
   };
+}
+
+function getStoredManagedAuth() {
+  const preferences = readPreferences();
+  const candidate = preferences[MANAGED_AUTH_KEY];
+  if (!candidate || typeof candidate !== "object") {
+    return null;
+  }
+
+  const token =
+    typeof candidate.token === "string" && candidate.token.trim()
+      ? candidate.token.trim()
+      : "";
+  const user =
+    candidate.user && typeof candidate.user === "object" ? candidate.user : null;
+
+  if (!token || !user) {
+    return null;
+  }
+
+  return {
+    token,
+    user,
+  };
+}
+
+function setStoredManagedAuth(authSession) {
+  const nextPreferences = {
+    ...readPreferences(),
+    [MANAGED_AUTH_KEY]: authSession,
+  };
+  writePreferences(nextPreferences);
+  return authSession;
+}
+
+function clearStoredManagedAuth() {
+  const nextPreferences = { ...readPreferences() };
+  delete nextPreferences[MANAGED_AUTH_KEY];
+  writePreferences(nextPreferences);
+  return null;
 }
 
 function readStoredThemeSource() {
@@ -151,14 +218,47 @@ function getAnchorBounds(config) {
 function getDefaultBounds(config) {
   const display = screen.getPrimaryDisplay();
   const { workArea } = display;
-  const { width, height } = config.layout.expanded;
-  const { padding, topOffset } = config.layout.anchor;
-
-  return {
+  const {
     width,
     height,
-    x: workArea.x + workArea.width - width - padding,
-    y: workArea.y + topOffset,
+    minWidth,
+    minHeight,
+    viewportWidthRatio,
+    viewportHeightRatio,
+  } = config.layout.expanded;
+  const {
+    padding,
+    topOffset,
+    horizontal = "right",
+    vertical = "top",
+  } = config.layout.anchor;
+  const resolvedWidth = viewportWidthRatio
+    ? Math.max(
+        minWidth || width,
+        Math.min(width, Math.round(workArea.width * viewportWidthRatio)),
+      )
+    : width;
+  const resolvedHeight = viewportHeightRatio
+    ? Math.max(
+        minHeight || height,
+        Math.min(height, Math.round(workArea.height * viewportHeightRatio)),
+      )
+    : height;
+
+  const x =
+    horizontal === "center"
+      ? workArea.x + Math.round((workArea.width - resolvedWidth) / 2)
+      : workArea.x + workArea.width - resolvedWidth - padding;
+  const y =
+    vertical === "middle"
+      ? workArea.y + Math.round((workArea.height - resolvedHeight) / 2)
+      : workArea.y + topOffset;
+
+  return {
+    width: resolvedWidth,
+    height: resolvedHeight,
+    x,
+    y,
   };
 }
 
@@ -261,6 +361,7 @@ function createManagedWindow(
     show: false,
     skipTaskbar: browserWindow.skipTaskbar,
     title: config.title,
+    backgroundColor: browserWindow.backgroundColor || "#00000000",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -298,6 +399,10 @@ function createStartupWindows(isFirstRun) {
 }
 
 async function startLocalBackend() {
+  if (shouldUseManagedBackend()) {
+    return;
+  }
+
   try {
     await startServer({
       host: "127.0.0.1",
@@ -308,15 +413,133 @@ async function startLocalBackend() {
   }
 }
 
-async function callLocalApi(endpoint, options = {}) {
-  const response = await fetch(`${LOCAL_API_BASE_URL}${endpoint}`, {
+function shouldUseManagedBackend() {
+  return Boolean(getManagedBackendBaseUrl());
+}
+
+function getManagedBackendBaseUrl() {
+  const configuredUrl =
+    typeof process.env.MANAGED_BACKEND_URL === "string"
+      ? process.env.MANAGED_BACKEND_URL.trim()
+      : "";
+
+  return configuredUrl || DEFAULT_MANAGED_BACKEND_URL;
+}
+
+function getManagedBackendJwt() {
+  const configuredJwt =
+    typeof process.env.MANAGED_BACKEND_JWT === "string"
+      ? process.env.MANAGED_BACKEND_JWT.trim()
+      : "";
+
+  if (configuredJwt) {
+    return configuredJwt;
+  }
+
+  const storedAuth = getStoredManagedAuth();
+  if (storedAuth?.token) {
+    return storedAuth.token;
+  }
+  return null;
+}
+
+function getBackendJwtSecret() {
+  const configuredSecret =
+    typeof process.env.BACKEND_JWT_SECRET === "string"
+      ? process.env.BACKEND_JWT_SECRET.trim()
+      : "";
+
+  return configuredSecret || DEFAULT_BACKEND_JWT_SECRET;
+}
+
+function base64UrlEncode(value) {
+  return Buffer.from(value, "utf8").toString("base64url");
+}
+
+function createLocalBackendJwt() {
+  const header = base64UrlEncode(JSON.stringify({
+    alg: "HS256",
+    typ: "JWT",
+  }));
+  const payload = base64UrlEncode(JSON.stringify({
+    sub: "local-electron-client",
+    exp: Math.floor(Date.now() / 1000) + 60 * 60,
+  }));
+  const signature = crypto
+    .createHmac("sha256", getBackendJwtSecret())
+    .update(`${header}.${payload}`)
+    .digest("base64url");
+
+  return `${header}.${payload}.${signature}`;
+}
+
+function normalizeManagedBackendBaseUrl(baseUrl) {
+  if (!baseUrl) {
+    return LOCAL_API_BASE_URL.replace(/\/+$/, "");
+  }
+
+  const parsedUrl = new URL(baseUrl);
+  if (
+    parsedUrl.protocol !== "https:" &&
+    process.env.MANAGED_BACKEND_ALLOW_HTTP !== "true"
+  ) {
+    throw new Error("Managed backend URL must use HTTPS.");
+  }
+
+  return parsedUrl.toString().replace(/\/+$/, "");
+}
+
+function buildOfflineRequestKey(endpoint, options = {}) {
+  const method = options.method || "GET";
+  const payload = options.body === undefined ? "" : JSON.stringify(options.body);
+  return crypto
+    .createHash("sha256")
+    .update(`${method}:${endpoint}:${payload}`)
+    .digest("hex");
+}
+
+async function callManagedBackend(endpoint, options = {}) {
+  const baseUrl = normalizeManagedBackendBaseUrl(getManagedBackendBaseUrl());
+  const requestUrl = `${baseUrl}${endpoint}`;
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  const managedBackendJwt = options.skipAuth ? null : getManagedBackendJwt();
+  if (managedBackendJwt) {
+    headers.Authorization = `Bearer ${managedBackendJwt}`;
+  }
+
+  const fetchOptions = {
     method: options.method || "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body:
       options.body === undefined ? undefined : JSON.stringify(options.body),
-  });
+  };
+
+  if (
+    requestUrl.startsWith("https://") &&
+    process.env.MANAGED_BACKEND_ALLOW_SELF_SIGNED === "true"
+  ) {
+    fetchOptions.agent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+  }
+
+  let response;
+  try {
+    response = await fetch(requestUrl, fetchOptions);
+  } catch (error) {
+    if ((options.method || "GET") !== "GET") {
+      enqueueOfflineRequest({
+        requestKey: buildOfflineRequestKey(endpoint, options),
+        endpoint,
+        method: options.method || "GET",
+        payload: options.body ?? null,
+      });
+    }
+    throw error;
+  }
 
   const rawText = await response.text();
   let payload = null;
@@ -327,81 +550,23 @@ async function callLocalApi(endpoint, options = {}) {
   }
 
   if (!response.ok) {
+    if ((options.method || "GET") !== "GET") {
+      enqueueOfflineRequest({
+        requestKey: buildOfflineRequestKey(endpoint, options),
+        endpoint,
+        method: options.method || "GET",
+        payload: options.body ?? null,
+        retryAfter: response.headers.get("retry-after"),
+      });
+    }
     throw new Error(
       payload && typeof payload.error === "string"
         ? payload.error
-        : rawText || `Local API request failed for ${endpoint}`,
+        : rawText || `Managed backend request failed for ${endpoint}`,
     );
   }
 
   return payload;
-}
-
-async function capturePrimaryDisplayScreenshot() {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.size;
-  const maxDimension = Math.max(width, height, 1);
-  const scale = Math.min(1, MAX_SCREENSHOT_EDGE / maxDimension);
-  const captureWidth = Math.max(Math.round(width * scale), 1);
-  const captureHeight = Math.max(Math.round(height * scale), 1);
-  const sources = await desktopCapturer.getSources({
-    types: ["screen"],
-    thumbnailSize: {
-      width: captureWidth,
-      height: captureHeight,
-    },
-  });
-
-  const matchingSource =
-    sources.find((source) => source.display_id === String(primaryDisplay.id)) ||
-    sources[0];
-  if (!matchingSource || matchingSource.thumbnail.isEmpty()) {
-    throw new Error("Could not capture a screen screenshot.");
-  }
-
-  const resizedThumbnail =
-    matchingSource.thumbnail.getSize().width > captureWidth ||
-    matchingSource.thumbnail.getSize().height > captureHeight
-      ? matchingSource.thumbnail.resize({
-          width: captureWidth,
-          height: captureHeight,
-          quality: "good",
-        })
-      : matchingSource.thumbnail;
-
-  return `data:image/jpeg;base64,${resizedThumbnail
-    .toJPEG(SCREENSHOT_JPEG_QUALITY)
-    .toString("base64")}`;
-}
-
-function shouldCaptureAutomaticScreenshot(payload) {
-  if (payload?.screenshotDataUrl) {
-    return false;
-  }
-
-  const actionType =
-    typeof payload?.actionType === "string" ? payload.actionType.trim() : "";
-
-  return actionType && actionType !== "chat";
-}
-
-function readRequestBody(req) {
-  return new Promise((resolve, reject) => {
-    let raw = "";
-    req.setEncoding("utf8");
-    req.on("data", (chunk) => {
-      raw += chunk;
-    });
-    req.on("end", () => resolve(raw));
-    req.on("error", reject);
-  });
-}
-
-function notifyChatWindowIncomingPayload(payload) {
-  const chatWindow = windowsByKey.get("chat");
-  if (chatWindow && !chatWindow.isDestroyed()) {
-    chatWindow.webContents.send("incoming:payload", payload);
-  }
 }
 
 function focusOrCreateChatWindow() {
@@ -423,87 +588,38 @@ function notifyHomeWindowFoldersChanged(classFolders) {
   }
 }
 
-function appendStoppedSessionToFolders(classFolders, session, persistedSession) {
-  if (!Array.isArray(classFolders)) {
-    return [];
+function migrateLegacyStoredState() {
+  const preferences = readPreferences();
+  let shouldRewritePreferences = false;
+
+  if (!hasStoredClassFolders() && Array.isArray(preferences.classFolders)) {
+    setStoredClassFolders(preferences.classFolders);
+    shouldRewritePreferences = true;
   }
 
-  return classFolders.map((folder) => {
-    if (
-      folder?.type !== "class" ||
-      (folder.dbClassId !== session.classId &&
-        String(folder.name || "").trim() !== String(session.className || "").trim())
-    ) {
-      return folder;
-    }
+  if (
+    !hasStoredCurrentSession() &&
+    preferences.currentSession &&
+    typeof preferences.currentSession === "object"
+  ) {
+    setCurrentSessionState(preferences.currentSession);
+    shouldRewritePreferences = true;
+  }
 
-    const existingChildren = Array.isArray(folder.children) ? folder.children : [];
-    const sessionEntry = {
-      id: `session-${persistedSession.id}`,
-      type: "session",
-      name: session.sessionName || persistedSession.title || "Session",
-      classId: session.classId,
-      dbSessionId: persistedSession.id,
-      startedAt: persistedSession.startedAt,
-      endedAt: persistedSession.endedAt,
-      notes: persistedSession.notes,
-      summary: persistedSession.summary,
-      carryForward: persistedSession.carryForward,
-      requestCount: persistedSession.requestCount,
-      screenshotPreview: persistedSession.screenshotPreview,
-      keyTopics: persistedSession.keyTopics,
-    };
-    const dedupedChildren = existingChildren.filter(
-      (child) => child?.type !== "session" || child.dbSessionId !== persistedSession.id,
-    );
+  if (!shouldRewritePreferences) {
+    return;
+  }
 
-    return {
-      ...folder,
-      children: [sessionEntry, ...dedupedChildren],
-    };
-  });
+  const {
+    classFolders: _legacyClassFolders,
+    currentSession: _legacyCurrentSession,
+    ...nextPreferences
+  } = preferences;
+  writePreferences(nextPreferences);
 }
 
-function buildBackendClassPayloadFromSession(session) {
-  const noteParts = [
-    session?.description ? `Description: ${session.description}` : null,
-    session?.additionalNotes
-      ? `Additional notes: ${session.additionalNotes}`
-      : null,
-  ].filter(Boolean);
-  const teacherFocusParts = [
-    session?.teacherName ? `Teacher: ${session.teacherName}` : null,
-    session?.teacherNotes ? `Focus: ${session.teacherNotes}` : null,
-  ].filter(Boolean);
-
-  return {
-    className: typeof session?.className === "string" ? session.className : "",
-    subject: typeof session?.className === "string" ? session.className : "",
-    currentUnit: null,
-    teacherFocus:
-      teacherFocusParts.length > 0 ? teacherFocusParts.join(" | ") : null,
-    keyConcepts: [],
-    notes: noteParts.length > 0 ? noteParts.join("\n") : null,
-  };
-}
-
-function ensureSessionClassId(session) {
-  const existingClassId =
-    typeof session?.classId === "number" && session.classId > 0
-      ? session.classId
-      : null;
-
-  if (existingClassId && getClassProfileById(existingClassId)) {
-    return existingClassId;
-  }
-
-  const classPayload = buildBackendClassPayloadFromSession(session);
-  if (!classPayload.className.trim()) {
-    throw new Error("Cannot start a session without a valid class name.");
-  }
-
-  const savedClassProfile = saveClassProfile(classPayload);
-  return savedClassProfile.id;
+function shouldShowOnboardingGate() {
+  return !hasLaunchedBefore() || !getStoredManagedAuth();
 }
 
 function dispatchIncomingPayload(payload) {
@@ -522,102 +638,48 @@ function dispatchIncomingPayload(payload) {
   deliverPayload();
 }
 
-function startIncomingMessageServer() {
-  if (incomingMessageServer) {
-    return;
+function getBridgeAuthSecret() {
+  const configuredSecret =
+    typeof process.env.SIDECLICK_BRIDGE_SECRET === "string"
+      ? process.env.SIDECLICK_BRIDGE_SECRET.trim()
+      : "";
+
+  if (!configuredSecret) {
+    throw new Error(
+      "[bridge] SIDECLICK_BRIDGE_SECRET must be configured before starting the bridge.",
+    );
   }
 
-  incomingMessageServer = http.createServer(async (req, res) => {
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ ok: false, error: "Method not allowed" }));
-      return;
-    }
-
-    try {
-      const rawBody = await readRequestBody(req);
-      const parsed = rawBody ? JSON.parse(rawBody) : {};
-      const payload = {
-        action_type:
-          typeof parsed.action_type === "string"
-            ? parsed.action_type
-            : typeof parsed.actionType === "string"
-              ? parsed.actionType
-              : "chat",
-        selected_text:
-          typeof parsed.selected_text === "string"
-            ? parsed.selected_text
-            : typeof parsed.selectedText === "string"
-              ? parsed.selectedText
-              : typeof parsed.text === "string"
-                ? parsed.text
-                : "",
-        surrounding_text:
-          typeof parsed.surrounding_text === "string"
-            ? parsed.surrounding_text
-            : typeof parsed.surroundingText === "string"
-              ? parsed.surroundingText
-              : null,
-        page_title:
-          typeof parsed.page_title === "string"
-            ? parsed.page_title
-            : typeof parsed.pageTitle === "string"
-              ? parsed.pageTitle
-              : "",
-        page_url:
-          typeof parsed.page_url === "string"
-            ? parsed.page_url
-            : typeof parsed.pageUrl === "string"
-              ? parsed.pageUrl
-              : "",
-        user_note:
-          typeof parsed.user_note === "string"
-            ? parsed.user_note
-            : typeof parsed.userNote === "string"
-              ? parsed.userNote
-              : "",
-        screenshot_data_url:
-          typeof parsed.screenshot_data_url === "string"
-            ? parsed.screenshot_data_url
-            : typeof parsed.screenshotDataUrl === "string"
-              ? parsed.screenshotDataUrl
-              : null,
-        click_function:
-          typeof parsed.click_function === "string"
-            ? parsed.click_function
-            : "",
-      };
-
-      dispatchIncomingPayload(payload);
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ ok: true }));
-    } catch {
-      res.statusCode = 400;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ ok: false, error: "Invalid JSON payload" }));
-    }
-  });
-
-  incomingMessageServer.on("error", (error) => {
-    console.error("Incoming message server error:", error);
-  });
-
-  incomingMessageServer.listen(INCOMING_HTTP_PORT, INCOMING_HTTP_HOST, () => {
-    console.log(
-      `Incoming message server listening on http://${INCOMING_HTTP_HOST}:${INCOMING_HTTP_PORT}`,
-    );
-  });
+  return configuredSecret;
 }
+
+const incomingMessageServer = createIncomingMessageBridge({
+  dispatchIncomingPayload,
+  authSecret: getBridgeAuthSecret(),
+});
+const sessionManager = createSessionLifecycle({
+  createSession,
+  endSession,
+  getClassProfileById,
+  saveClassProfile,
+  getCurrentSessionState,
+  setCurrentSessionState,
+  clearCurrentSessionState,
+  getStoredClassFolders,
+  setStoredClassFolders,
+  windowsByKey,
+  createManagedWindow,
+  notifyHomeWindowFoldersChanged,
+});
 
 app.whenReady().then(async () => {
   await startLocalBackend();
-  const isFirstRun = !hasLaunchedBefore();
+  migrateLegacyStoredState();
+  const shouldOpenOnboarding = shouldShowOnboardingGate();
   applyThemeSource(readStoredThemeSource());
-  createStartupWindows(isFirstRun);
-  startIncomingMessageServer();
-  if (isFirstRun) {
+  createStartupWindows(shouldOpenOnboarding);
+  incomingMessageServer.start();
+  if (!hasLaunchedBefore()) {
     markAppLaunched();
   }
 
@@ -625,16 +687,13 @@ app.whenReady().then(async () => {
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createStartupWindows(false);
+      createStartupWindows(shouldShowOnboardingGate());
     }
   });
 });
 
 app.on("window-all-closed", () => {
-  if (incomingMessageServer) {
-    incomingMessageServer.close();
-    incomingMessageServer = null;
-  }
+  incomingMessageServer.stop();
 
   if (process.platform !== "darwin") {
     app.quit();
@@ -730,47 +789,106 @@ ipcMain.handle("preferences:get", () => {
 });
 
 ipcMain.handle("preferences:update", (_event, patch) => {
+  const safePatch =
+    patch && typeof patch === "object"
+      ? Object.fromEntries(
+          Object.entries(patch).filter(
+            ([key]) => key !== "classFolders" && key !== "currentSession",
+          ),
+        )
+      : {};
   const nextPreferences = {
     ...readPreferences(),
-    ...patch,
+    ...safePatch,
   };
   writePreferences(nextPreferences);
   return getPreferenceSnapshot();
 });
 
 ipcMain.handle("class-folders:get", () => {
-  return getPreferenceSnapshot().classFolders;
+  return getStoredClassFolders();
 });
 
 ipcMain.handle("class-folders:update", (_event, classFolders) => {
-  const nextPreferences = {
-    ...readPreferences(),
-    classFolders: Array.isArray(classFolders) ? classFolders : [],
+  const nextClassFolders = setStoredClassFolders(classFolders);
+  notifyHomeWindowFoldersChanged(nextClassFolders);
+  return nextClassFolders;
+});
+
+ipcMain.handle("privacy-settings:get", () => {
+  return getPrivacySettings();
+});
+
+ipcMain.handle("privacy-settings:set", (_event, nextSettings) => {
+  return setPrivacySettings(nextSettings);
+});
+
+ipcMain.handle("privacy-settings:update", (_event, patch) => {
+  return updatePrivacySettings(patch);
+});
+
+ipcMain.handle("privacy-settings:reset", () => {
+  return resetPrivacySettings();
+});
+
+ipcMain.handle("capture:screenshot", async () => {
+  const privacySettings = getPrivacySettings();
+  if (!canAttachManualScreenshot(privacySettings)) {
+    throw new Error(getScreenshotPolicyErrorMessage(privacySettings));
+  }
+
+  return capturePrimaryDisplayScreenshot({
+    desktopCapturer,
+    screen,
+  });
+});
+
+ipcMain.handle("clipboard:readAttachment", () => {
+  const image = clipboard.readImage();
+  if (!image.isEmpty()) {
+    const privacySettings = getPrivacySettings();
+    if (!canAttachManualScreenshot(privacySettings)) {
+      throw new Error(getScreenshotPolicyErrorMessage(privacySettings));
+    }
+
+    return {
+      type: "image",
+      dataUrl: `data:image/png;base64,${image.toPNG().toString("base64")}`,
+    };
+  }
+
+  const text = clipboard.readText().trim();
+  if (!text) {
+    return null;
+  }
+
+  return {
+    type: "text",
+    text,
   };
-  writePreferences(nextPreferences);
-  notifyHomeWindowFoldersChanged(nextPreferences.classFolders);
-  return nextPreferences.classFolders;
 });
 
 ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {
-  return callLocalApi("/api/classes", {
+  return callManagedBackend("/api/classes", {
     method: "POST",
     body: classProfile,
   });
 });
 
 ipcMain.handle("backend:assist", async (_event, payload) => {
-  let screenshotDataUrl = payload?.screenshotDataUrl ?? null;
-  if (shouldCaptureAutomaticScreenshot(payload)) {
-    screenshotDataUrl = await capturePrimaryDisplayScreenshot().catch(
-      (error) => {
-        console.error("[screen-capture] failed to capture screenshot", error);
-        return screenshotDataUrl;
-      },
-    );
+  const privacySettings = getPrivacySettings();
+  let screenshotDataUrl = enforceScreenshotPolicy(payload, privacySettings);
+  if (shouldCaptureAutomaticScreenshot(payload, privacySettings)) {
+    screenshotDataUrl = await capturePrimaryDisplayScreenshot({
+      desktopCapturer,
+      screen,
+    }).catch((error) => {
+      console.error("[screen-capture] failed to capture screenshot", error);
+      return screenshotDataUrl;
+    });
   }
 
-  return callLocalApi("/api/assist", {
+  return callManagedBackend("/api/assist", {
     method: "POST",
     body: {
       ...payload,
@@ -780,20 +898,83 @@ ipcMain.handle("backend:assist", async (_event, payload) => {
 });
 
 ipcMain.handle("backend:feedback", async (_event, payload) => {
-  return callLocalApi("/api/feedback", {
+  return callManagedBackend("/api/feedback", {
     method: "POST",
     body: payload,
   });
 });
 
 ipcMain.handle("backend:quiz", async (_event, payload) => {
-  return callLocalApi("/api/quiz", {
+  return callManagedBackend("/api/quiz", {
     method: "POST",
     body: payload,
   });
 });
 
+ipcMain.handle("backend:authRegister", async (_event, payload) => {
+  const session = await callManagedBackend("/api/auth/register", {
+    method: "POST",
+    body: payload,
+    skipAuth: true,
+  });
+  return setStoredManagedAuth(session);
+});
+
+ipcMain.handle("backend:authLogin", async (_event, payload) => {
+  const session = await callManagedBackend("/api/auth/login", {
+    method: "POST",
+    body: payload,
+    skipAuth: true,
+  });
+  return setStoredManagedAuth(session);
+});
+
+ipcMain.handle("backend:authLogout", () => {
+  return clearStoredManagedAuth();
+});
+
+ipcMain.handle("backend:authSession", async () => {
+  const storedAuth = getStoredManagedAuth();
+  if (!storedAuth?.token) {
+    return null;
+  }
+
+  try {
+    const result = await callManagedBackend("/api/auth/me", {
+      method: "GET",
+    });
+    return setStoredManagedAuth({
+      token: storedAuth.token,
+      user: result.user,
+    });
+  } catch {
+    clearStoredManagedAuth();
+    return null;
+  }
+});
+
+ipcMain.handle("backend:exportAccount", async (_event, options) => {
+  const includeContent =
+    !options || typeof options !== "object" || options.includeContent !== false;
+  const query = includeContent ? "" : "?includeContent=false";
+  return callManagedBackend(`/api/export${query}`, {
+    method: "GET",
+  });
+});
+
+ipcMain.handle("backend:deleteAccount", async () => {
+  return callManagedBackend("/api/account", {
+    method: "DELETE",
+    body: {
+      confirm: true,
+    },
+  });
+});
+
 ipcMain.handle("onboarding:complete", (event) => {
+  if (!getStoredManagedAuth()) {
+    throw new Error("Sign in or create an account before continuing.");
+  }
   const win = BrowserWindow.fromWebContents(event.sender);
   createStartupWindows(false);
   if (win && !win.isDestroyed()) {
@@ -803,79 +984,13 @@ ipcMain.handle("onboarding:complete", (event) => {
 });
 
 ipcMain.handle("session:getCurrent", () => {
-  return getPreferenceSnapshot().currentSession;
+  return sessionManager.getCurrentSession();
 });
 
 ipcMain.handle("session:start", (_event, session) => {
-  const resolvedClassId = ensureSessionClassId(session);
-  const persistedSession = createSession(
-    resolvedClassId,
-    session.sessionName || "Study Session",
-    session.sessionNotes || null,
-  );
-  const nextPreferences = {
-    ...readPreferences(),
-    currentSession: {
-      ...session,
-      classId: resolvedClassId,
-      sessionId: persistedSession.id,
-      sessionStartedAt: persistedSession.startedAt,
-    },
-  };
-  writePreferences(nextPreferences);
-
-  if (!windowsByKey.has("chat")) {
-    createManagedWindow("chat", "chat");
-  } else {
-    const existingChat = windowsByKey.get("chat");
-    if (existingChat && !existingChat.isDestroyed()) {
-      existingChat.show();
-      existingChat.focus();
-      existingChat.webContents.send("session:changed", nextPreferences.currentSession);
-    }
-  }
-
-  return { ok: true, currentSession: nextPreferences.currentSession };
+  return sessionManager.startSession(session);
 });
 
 ipcMain.handle("session:stop", () => {
-  const currentSession = getPreferenceSnapshot().currentSession;
-  let persistedSession = null;
-  if (currentSession?.sessionId) {
-    persistedSession = endSession(currentSession.sessionId);
-  }
-
-  const currentPreferences = readPreferences();
-  const nextClassFolders =
-    currentSession && persistedSession
-      ? appendStoppedSessionToFolders(
-          Array.isArray(currentPreferences.classFolders)
-            ? currentPreferences.classFolders
-            : [],
-          currentSession,
-          persistedSession,
-        )
-      : Array.isArray(currentPreferences.classFolders)
-        ? currentPreferences.classFolders
-        : [];
-  const nextPreferences = {
-    ...currentPreferences,
-    classFolders: nextClassFolders,
-    currentSession: null,
-  };
-  writePreferences(nextPreferences);
-  notifyHomeWindowFoldersChanged(nextPreferences.classFolders);
-
-  const chatWindow = windowsByKey.get("chat");
-  if (chatWindow && !chatWindow.isDestroyed()) {
-    chatWindow.close();
-  }
-
-  const homeWindow = windowsByKey.get("home");
-  if (homeWindow && !homeWindow.isDestroyed()) {
-    homeWindow.show();
-    homeWindow.focus();
-  }
-
-  return { ok: true };
+  return sessionManager.stopSession();
 });

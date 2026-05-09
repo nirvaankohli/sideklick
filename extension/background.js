@@ -1,10 +1,15 @@
-const INBOX_URL = "http://localhost:4353";
+const INBOX_URL = "http://127.0.0.1:4353/";
 const RESTORE_CLICK_FUNCTION = "restore-window";
+const BRIDGE_AUTH_SECRET = "sideclick-local-dev-secret";
+const BRIDGE_REQUEST_TTL_MS = 30 * 1000;
+const BRIDGE_EXPIRES_HEADER = "x-sideclick-expires";
+const BRIDGE_NONCE_HEADER = "x-sideclick-nonce";
+const BRIDGE_SIGNATURE_HEADER = "x-sideclick-signature";
 
 const MENU_ITEMS = [
   {
     id: "sideclick-open-chat",
-    title: "Open SideClick",
+    title: "Open SideKlick",
     contexts: ["page", "selection"],
     actionType: "chat",
     buildSelectedText: () => "",
@@ -79,34 +84,71 @@ function createContextMenus() {
   });
 }
 
+function encodeUtf8(value) {
+  return new TextEncoder().encode(value);
+}
+
+function bytesToHex(bytes) {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function buildSignatureInput({ method, pathname, expires, nonce, body }) {
+  return [method.toUpperCase(), pathname, expires, nonce, body].join("\n");
+}
+
+async function createBridgeSignature(secret, signatureInput) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encodeUtf8(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encodeUtf8(signatureInput),
+  );
+  return bytesToHex(new Uint8Array(signature));
+}
+
 async function sendIncomingPayload(payload) {
-  const response = await fetch(INBOX_URL, {
+  const inboxUrl = new URL(INBOX_URL);
+  const nonce =
+    typeof crypto?.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const rawBody = JSON.stringify(payload);
+  const expires = String(Date.now() + BRIDGE_REQUEST_TTL_MS);
+  const signature = await createBridgeSignature(
+    BRIDGE_AUTH_SECRET,
+    buildSignatureInput({
+      method: "POST",
+      pathname: inboxUrl.pathname || "/",
+      expires,
+      nonce,
+      body: rawBody,
+    }),
+  );
+  const response = await fetch(inboxUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      [BRIDGE_NONCE_HEADER]: nonce,
+      [BRIDGE_EXPIRES_HEADER]: expires,
+      [BRIDGE_SIGNATURE_HEADER]: signature,
     },
-    body: JSON.stringify(payload),
+    body: rawBody,
   });
 
   if (!response.ok) {
     const message = await response.text().catch(() => "");
-    throw new Error(message || `SideClick local inbox returned ${response.status}.`);
+    throw new Error(message || `SideKlick local inbox returned ${response.status}.`);
   }
 }
 
 function getMenuItemById(menuItemId) {
   return MENU_ITEMS.find((item) => item.id === menuItemId) || null;
-}
-
-async function captureVisibleTabScreenshot(windowId) {
-  try {
-    return await chrome.tabs.captureVisibleTab(windowId, {
-      format: "png",
-    });
-  } catch (error) {
-    console.error("Failed to capture visible tab screenshot:", error);
-    return null;
-  }
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -117,7 +159,11 @@ chrome.runtime.onStartup.addListener(() => {
   createContextMenus();
 });
 
-chrome.action.onClicked.addListener(async () => {
+chrome.action.onClicked.addListener(() => {
+  void openSideKlick();
+});
+
+async function openSideKlick() {
   try {
     await sendIncomingPayload({
       action_type: "chat",
@@ -125,11 +171,15 @@ chrome.action.onClicked.addListener(async () => {
       click_function: RESTORE_CLICK_FUNCTION,
     });
   } catch (error) {
-    console.error("Failed to open SideClick:", error);
+    console.error("Failed to open SideKlick:", error);
   }
+}
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  void handleContextMenuClick(info, tab);
 });
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+async function handleContextMenuClick(info, tab) {
   const menuItem = getMenuItemById(info.menuItemId);
   if (!menuItem) {
     return;
@@ -139,7 +189,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     typeof info.selectionText === "string" ? info.selectionText.trim() : "";
   const pageTitle = typeof tab?.title === "string" ? tab.title : "";
   const pageUrl = typeof tab?.url === "string" ? tab.url : "";
-  const screenshotDataUrl = await captureVisibleTabScreenshot(tab?.windowId);
 
   try {
     await sendIncomingPayload({
@@ -151,10 +200,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       }),
       page_title: pageTitle,
       page_url: pageUrl,
-      screenshot_data_url: screenshotDataUrl,
+      screenshot_data_url: null,
       click_function: RESTORE_CLICK_FUNCTION,
     });
   } catch (error) {
     console.error(`Failed to send ${menuItem.id}:`, error);
   }
-});
+}

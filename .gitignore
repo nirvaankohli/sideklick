@@ -5,7 +5,8 @@ __pycache__/
 
 # Dependency directories
 node_modules/
-
+convo-summaries/
+agent-docs/
 # Build and Packaging
 dist/
 build/

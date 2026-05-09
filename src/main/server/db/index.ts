@@ -13,6 +13,12 @@ function getDatabaseFilePath(): string {
 
 function createTables(db: Database.Database): void {
   db.exec(`
+    CREATE TABLE IF NOT EXISTS app_state (
+      state_key TEXT PRIMARY KEY,
+      state_value TEXT NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS classes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       class_name TEXT NOT NULL DEFAULT '',
@@ -60,9 +66,14 @@ function createTables(db: Database.Database): void {
       class_id INTEGER,
       topic TEXT NOT NULL,
       description TEXT,
+      scope TEXT NOT NULL DEFAULT 'class',
       status TEXT NOT NULL DEFAULT 'open',
       weight INTEGER NOT NULL DEFAULT 0,
       evidence_count INTEGER NOT NULL DEFAULT 0,
+      support_signals TEXT NOT NULL DEFAULT '[]',
+      last_confidence REAL,
+      last_evidence_type TEXT,
+      last_interaction_type TEXT,
       last_seen_at TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -76,6 +87,9 @@ function createTables(db: Database.Database): void {
       session_id INTEGER,
       evidence TEXT NOT NULL,
       confidence REAL,
+      evidence_type TEXT,
+      support_signals TEXT NOT NULL DEFAULT '[]',
+      request_excerpt TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (gap_id) REFERENCES gaps (id),
       FOREIGN KEY (interaction_id) REFERENCES interactions (id),
@@ -154,6 +168,30 @@ function ensureGapColumns(db: Database.Database): void {
     );
   }
 
+  if (!columnNames.has("scope")) {
+    db.exec(
+      "ALTER TABLE gaps ADD COLUMN scope TEXT NOT NULL DEFAULT 'class';",
+    );
+  }
+
+  if (!columnNames.has("support_signals")) {
+    db.exec(
+      "ALTER TABLE gaps ADD COLUMN support_signals TEXT NOT NULL DEFAULT '[]';",
+    );
+  }
+
+  if (!columnNames.has("last_confidence")) {
+    db.exec("ALTER TABLE gaps ADD COLUMN last_confidence REAL;");
+  }
+
+  if (!columnNames.has("last_evidence_type")) {
+    db.exec("ALTER TABLE gaps ADD COLUMN last_evidence_type TEXT;");
+  }
+
+  if (!columnNames.has("last_interaction_type")) {
+    db.exec("ALTER TABLE gaps ADD COLUMN last_interaction_type TEXT;");
+  }
+
   if (columnNames.has("occurrence_count")) {
     db.exec(`
       UPDATE gaps
@@ -164,6 +202,27 @@ function ensureGapColumns(db: Database.Database): void {
           ELSE evidence_count
         END
     `);
+  }
+}
+
+function ensureGapEventColumns(db: Database.Database): void {
+  const columns = db
+    .prepare("PRAGMA table_info(gap_events)")
+    .all() as Array<{ name: string }>;
+  const columnNames = new Set(columns.map((column) => column.name));
+
+  if (!columnNames.has("evidence_type")) {
+    db.exec("ALTER TABLE gap_events ADD COLUMN evidence_type TEXT;");
+  }
+
+  if (!columnNames.has("support_signals")) {
+    db.exec(
+      "ALTER TABLE gap_events ADD COLUMN support_signals TEXT NOT NULL DEFAULT '[]';",
+    );
+  }
+
+  if (!columnNames.has("request_excerpt")) {
+    db.exec("ALTER TABLE gap_events ADD COLUMN request_excerpt TEXT;");
   }
 }
 
@@ -210,6 +269,7 @@ export function getDatabase(): Database.Database {
   ensureClassColumns(database);
   ensureInteractionColumns(database);
   ensureGapColumns(database);
+  ensureGapEventColumns(database);
   ensureSessionColumns(database);
 
   return database;
@@ -232,6 +292,7 @@ export function getDatabaseCounts(): DatabaseCounts {
   };
 
   return {
+    appState: countRows("app_state"),
     classes: countRows("classes"),
     sessions: countRows("sessions"),
     interactions: countRows("interactions"),

@@ -1,148 +1,405 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SideClick Onboarding</title>
+    <title>SideKlick Onboarding</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="window-shell onboarding-shell" data-mode="expanded" data-tone="light">
-      <section class="overlay-card onboarding-card">
-        <div class="glow glow-one" aria-hidden="true"></div>
-        <div class="glow glow-two" aria-hidden="true"></div>
-        <div class="glow glow-three" aria-hidden="true"></div>
-
-        <header class="topbar">
-          <div class="title-group">
-            <div class="session-title-row">
-              <span class="home-title-icon session-logo-icon" aria-hidden="true">
-                <img class="app-logo-image" src="../assets/images/logo/logo.png" alt="" />
-              </span>
-              <div>
-                <p class="eyebrow">First Launch</p>
-                <h1>Set Up</h1>
-              </div>
-            </div>
-          </div>
-          <div class="window-actions no-drag onboarding-window-actions">
-            <button id="close-window" class="icon-button danger" type="button" aria-label="Close window">
-              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
-              </svg>
-            </button>
-          </div>
+    <main
+      class="window-shell onboarding-shell"
+      data-mode="expanded"
+      data-tone="light"
+      data-onboarding-stage="intro"
+    >
+      <section class="overlay-card onboarding-card onboarding-card-solid">
+        <header class="onboarding-topbar">
+          <div class="onboarding-topbar-spacer" aria-hidden="true"></div>
+          <button
+            id="close-window"
+            class="icon-button danger no-drag"
+            type="button"
+            aria-label="Close window"
+          >
+            <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
+              ></path>
+            </svg>
+          </button>
         </header>
 
-        <nav class="setup-nav no-drag" aria-label="Setup steps">
-          <div class="stepper-line" aria-hidden="true"></div>
-          <button class="step-node" data-step-target="1" type="button">
-            <span class="step-index">1</span>
-            <span class="step-label">Appearance</span>
-          </button>
-          <button class="step-node" data-step-target="2" type="button">
-            <span class="step-index">2</span>
-            <span class="step-label">Discovery</span>
-          </button>
-          <button class="step-node" data-step-target="3" type="button">
-            <span class="step-index">3</span>
-            <span class="step-label">Profile</span>
-          </button>
-        </nav>
-
-        <section class="content">
-          <div class="scroll-area no-drag onboarding-flow">
-            <section class="onboarding-intro">
-              <div class="hero-chip">
-                <span class="chip-dot"></span>
-                Personalized start
-              </div>
-              <p class="lead onboarding-lead">
-                Make SideClick feel right from the first session. These preferences shape the overlay tone,
-                onboarding context, and the kind of student flow it should optimize for.
-              </p>
-            </section>
-
-            <section class="setup-section" data-step-panel="1">
-              <div class="setup-section-header">
-                <p class="panel-label">1. Light, Dark, or System</p>
-                <p id="theme-status" class="panel-help">Current preference: System</p>
-              </div>
-              <div class="theme-choice-grid">
-                <button id="choose-light" class="theme-choice-button" type="button">
-                  <span class="theme-choice-icon">Light</span>
-                  <span class="theme-choice-title">Light</span>
-                  <span class="theme-choice-copy">Bright glass for daylight study and low-contrast pages.</span>
-                </button>
-                <button id="choose-dark" class="theme-choice-button" type="button">
-                  <span class="theme-choice-icon">Dark</span>
-                  <span class="theme-choice-title">Dark</span>
-                  <span class="theme-choice-copy">Low-glare shell that stays calm over busy class tabs.</span>
-                </button>
-                <button id="choose-system" class="theme-choice-button" type="button">
-                  <span class="theme-choice-icon">System</span>
-                  <span class="theme-choice-title">System</span>
-                  <span class="theme-choice-copy">Follow your device automatically and keep every window in sync.</span>
-                </button>
-              </div>
-            </section>
-
-            <section class="setup-section" data-step-panel="2">
-              <div class="setup-section-header">
-                <p class="panel-label">2. Where Did You Hear About This?</p>
-                <p id="source-status" class="panel-help">No source selected yet.</p>
-              </div>
-              <div class="choice-grid source-grid">
-                <button data-source="teacher" class="info-choice-button" type="button">
-                  <span class="choice-kicker">Teacher</span>
-                  <span class="choice-title">A teacher or class recommended it</span>
-                </button>
-                <button data-source="friend" class="info-choice-button" type="button">
-                  <span class="choice-kicker">Friend</span>
-                  <span class="choice-title">A friend showed me SideClick</span>
-                </button>
-                <button data-source="hackathon" class="info-choice-button" type="button">
-                  <span class="choice-kicker">Hackathon</span>
-                  <span class="choice-title">I found it through Big Red Hacks or a demo</span>
-                </button>
-                <button data-source="search" class="info-choice-button" type="button">
-                  <span class="choice-kicker">Search</span>
-                  <span class="choice-title">I found it online while looking for study help</span>
-                </button>
-              </div>
-            </section>
-
-            <section class="setup-section" data-step-panel="3">
-              <div class="setup-section-header">
-                <p class="panel-label">3. Which Customer Profile Are You?</p>
-                <p id="profile-status" class="panel-help">Pick the closest fit.</p>
-              </div>
-              <div class="choice-grid profile-grid">
-                <button data-profile="advanced" class="info-choice-button profile-choice" type="button">
-                  <span class="choice-kicker">AP / Honors</span>
-                  <span class="choice-title">I juggle advanced classes and want fast, in-context support.</span>
-                  <span class="choice-copy">Best for high workload, concept linking, and tight study sessions.</span>
-                </button>
-                <button data-profile="catch-up" class="info-choice-button profile-choice" type="button">
-                  <span class="choice-kicker">Catch-Up</span>
-                  <span class="choice-title">I am rebuilding foundations and need help spotting recurring gaps.</span>
-                  <span class="choice-copy">Best for confidence, reinforcement, and repeated confusion tracking.</span>
-                </button>
-                <button data-profile="exam" class="info-choice-button profile-choice" type="button">
-                  <span class="choice-kicker">Exam Focused</span>
-                  <span class="choice-title">I need to prioritize what matters most before quizzes and tests.</span>
-                  <span class="choice-copy">Best for focus guidance, recap, and last-mile review decisions.</span>
-                </button>
-              </div>
-            </section>
+        <section
+          id="onboarding-intro-view"
+          class="onboarding-intro-view no-drag"
+        >
+          <div class="onboarding-intro-center">
+            <div class="onboarding-intro-mark">
+              <span
+                class="home-title-icon session-logo-icon onboarding-intro-logo"
+                aria-hidden="true"
+              >
+                <img
+                  class="app-logo-image"
+                  src="../assets/images/logo/logo.png"
+                  alt=""
+                />
+              </span>
+              <span class="onboarding-brand-text">SideKlick</span>
+            </div>
+            <h1 class="onboarding-intro-title">Welcome to SideKlick</h1>
+            <button
+              id="onboarding-get-started"
+              class="continue-button onboarding-intro-button"
+              type="button"
+            >
+              Get Started
+            </button>
           </div>
         </section>
 
-        <footer class="onboarding-footer no-drag">
-          <p id="step-caption" class="panel-help onboarding-caption">Step 1 of 3</p>
-          <button id="continue-button" class="continue-button" type="button">Continue</button>
-        </footer>
-        <button id="resize-handle" class="resize-handle no-drag" type="button" aria-label="Resize window"></button>
+        <section
+          id="onboarding-setup-view"
+          class="onboarding-setup-view no-drag"
+          hidden
+        >
+          <section
+            class="onboarding-progress-shell"
+            aria-label="Setup progress"
+          >
+            <div class="onboarding-progress-track" aria-hidden="true">
+              <div
+                id="onboarding-progress-fill"
+                class="onboarding-progress-fill"
+              ></div>
+            </div>
+            <div class="onboarding-progress-labels">
+              <div class="onboarding-progress-item" data-step-label="1">
+                <span class="onboarding-progress-caption">Account</span>
+              </div>
+              <div class="onboarding-progress-item" data-step-label="2">
+                <span class="onboarding-progress-caption">Theme</span>
+              </div>
+              <div class="onboarding-progress-item" data-step-label="3">
+                <span class="onboarding-progress-caption">Profile</span>
+              </div>
+              <div class="onboarding-progress-item" data-step-label="4">
+                <span class="onboarding-progress-caption">Privacy</span>
+              </div>
+            </div>
+          </section>
+
+          <div class="onboarding-flow">
+            <section
+              class="setup-section onboarding-step-section"
+              data-step-panel="1"
+            >
+              <div class="onboarding-question-shell">
+                <div class="onboarding-question-copy">
+                  <p class="panel-label">Account</p>
+                  <h2 class="onboarding-question-title">
+                    Let&apos;s get you signed in.
+                  </h2>
+                  <p class="onboarding-question-subtitle">
+                    One account keeps your classes, feedback, and history in
+                    sync.
+                  </p>
+                </div>
+                <p id="auth-status" class="panel-help onboarding-inline-status">
+                  Create an account or sign in to continue.
+                </p>
+              </div>
+              <div
+                class="auth-panel-card auth-panel-card-compact auth-panel-card-primary"
+              >
+                <div class="auth-field-stack">
+                  <input
+                    id="auth-display-name-input"
+                    class="auth-text-input"
+                    type="text"
+                    placeholder="Name"
+                  />
+                  <input
+                    id="auth-email-input"
+                    class="auth-text-input"
+                    type="email"
+                    placeholder="Email"
+                  />
+                  <input
+                    id="auth-password-input"
+                    class="auth-text-input"
+                    type="password"
+                    placeholder="Password"
+                  />
+                </div>
+                <div class="auth-button-row auth-button-row-centered">
+                  <button
+                    id="auth-login-button"
+                    class="continue-button"
+                    type="button"
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    id="auth-register-button"
+                    class="ghost-button"
+                    type="button"
+                  >
+                    Create Account
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section
+              class="setup-section onboarding-step-section"
+              data-step-panel="2"
+              hidden
+            >
+              <div class="onboarding-question-shell">
+                <div class="onboarding-question-copy">
+                  <p class="panel-label">Appearance</p>
+                  <h2 class="onboarding-question-title">Set the look once.</h2>
+                  <p class="onboarding-question-subtitle">
+                    Choose the appearance that feels right when SideKlick opens.
+                  </p>
+                </div>
+                <p
+                  id="theme-status"
+                  class="panel-help onboarding-inline-status"
+                >
+                  Current preference: System
+                </p>
+              </div>
+              <div class="theme-choice-grid">
+                <button
+                  id="choose-light"
+                  class="theme-choice-button"
+                  type="button"
+                >
+                  <span class="theme-choice-icon">Light</span>
+                  <span class="theme-choice-title">Light</span>
+                  <span class="theme-choice-copy"
+                    >Bright and calm for daytime work.</span
+                  >
+                </button>
+                <button
+                  id="choose-dark"
+                  class="theme-choice-button"
+                  type="button"
+                >
+                  <span class="theme-choice-icon">Dark</span>
+                  <span class="theme-choice-title">Dark</span>
+                  <span class="theme-choice-copy"
+                    >Low-glare and focused for dense sessions.</span
+                  >
+                </button>
+                <button
+                  id="choose-system"
+                  class="theme-choice-button"
+                  type="button"
+                >
+                  <span class="theme-choice-icon">System</span>
+                  <span class="theme-choice-title">System</span>
+                  <span class="theme-choice-copy"
+                    >Follow your device automatically.</span
+                  >
+                </button>
+              </div>
+            </section>
+
+            <section
+              class="setup-section onboarding-step-section"
+              data-step-panel="3"
+              hidden
+            >
+              <div class="onboarding-question-shell">
+                <div class="onboarding-question-copy">
+                  <p class="panel-label">Profile</p>
+                  <h2 class="onboarding-question-title">
+                    Shape the way SideKlick helps.
+                  </h2>
+                  <p class="onboarding-question-subtitle">
+                    A couple quick choices help the app tune responses from the
+                    start.
+                  </p>
+                </div>
+              </div>
+              <div class="setup-combined-grid">
+                <div class="setup-stack-block">
+                  <div
+                    class="setup-section-header onboarding-subsection-header"
+                  >
+                    <p class="panel-label">Discovery</p>
+                    <p
+                      id="source-status"
+                      class="panel-help setup-current-status"
+                    >
+                      No source selected yet.
+                    </p>
+                  </div>
+                  <label
+                    class="setup-select-field setup-select-shell"
+                    for="discovery-source-select"
+                  >
+                    <span class="setup-select-label"
+                      >How did you find SideKlick?</span
+                    >
+                    <select
+                      id="discovery-source-select"
+                      class="setup-select-input"
+                    >
+                      <option value="">Select a source</option>
+                      <option value="teacher">
+                        Teacher or class recommendation
+                      </option>
+                      <option value="friend">Friend recommendation</option>
+                      <option value="hackathon">Big Red Hacks or demo</option>
+                      <option value="search">Online search</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="setup-stack-block">
+                  <div
+                    class="setup-section-header onboarding-subsection-header"
+                  >
+                    <p class="panel-label">Profile</p>
+                    <p
+                      id="profile-status"
+                      class="panel-help setup-current-status"
+                    >
+                      Pick the closest fit.
+                    </p>
+                  </div>
+                  <label
+                    class="setup-select-field setup-select-shell"
+                    for="customer-profile-select"
+                  >
+                    <span class="setup-select-label"
+                      >What kind of support fits best?</span
+                    >
+                    <select
+                      id="customer-profile-select"
+                      class="setup-select-input"
+                    >
+                      <option value="">Select a profile</option>
+                      <option value="advanced">AP / Honors</option>
+                      <option value="catch-up">Catch-Up</option>
+                      <option value="exam">Exam Focused</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            </section>
+
+            <section
+              class="setup-section onboarding-step-section"
+              data-step-panel="4"
+              hidden
+            >
+              <div class="onboarding-question-shell">
+                <div class="onboarding-question-copy">
+                  <p class="panel-label">Privacy</p>
+                  <h2 class="onboarding-question-title">Secure your data.</h2>
+                  <p class="onboarding-question-subtitle">
+                    Keep control over what visual context SideKlick can use and
+                    whether future sync is okay.
+                  </p>
+                </div>
+                <p
+                  id="privacy-onboarding-status"
+                  class="panel-help onboarding-inline-status"
+                >
+                  Screenshots are off until you opt in.
+                </p>
+              </div>
+              <div class="privacy-stack">
+                <div class="privacy-toggle-card">
+                  <div class="privacy-toggle-copy">
+                    <p class="privacy-toggle-label">Screenshots</p>
+                    <p class="privacy-toggle-help">
+                      Allow screenshots for extra visual context when needed.
+                    </p>
+                  </div>
+                  <label
+                    class="setup-select-field setup-select-shell privacy-select-field"
+                    for="privacy-screenshot-policy-select"
+                  >
+                    <span class="setup-select-label">Screenshot policy</span>
+                    <select
+                      id="privacy-screenshot-policy-select"
+                      class="setup-select-input"
+                    >
+                      <option value="disabled">Never</option>
+                      <option value="manual">Manual</option>
+                      <option value="automatic">Auto</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="privacy-toggle-card">
+                  <div class="privacy-toggle-copy">
+                    <p class="privacy-toggle-label">Sync</p>
+                    <p class="privacy-toggle-help">
+                      Choose whether SideKlick can ask about syncing your data
+                      later.
+                    </p>
+                  </div>
+                  <label
+                    class="setup-select-field setup-select-shell privacy-select-field"
+                    for="privacy-sync-consent-select"
+                  >
+                    <span class="setup-select-label">Sync preference</span>
+                    <select
+                      id="privacy-sync-consent-select"
+                      class="setup-select-input"
+                    >
+                      <option value="denied">Off</option>
+                      <option value="unknown">Later</option>
+                      <option value="granted">On</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="privacy-toggle-card">
+                  <div class="privacy-toggle-copy">
+                    <p class="privacy-toggle-label">Local only</p>
+                    <p class="privacy-toggle-help">
+                      Keep study data on this device unless you turn this off.
+                    </p>
+                  </div>
+                  <label
+                    class="setup-select-field setup-select-shell privacy-select-field"
+                    for="privacy-local-only-select"
+                  >
+                    <span class="setup-select-label">Local-only mode</span>
+                    <select
+                      id="privacy-local-only-select"
+                      class="setup-select-input"
+                    >
+                      <option value="true">On</option>
+                      <option value="false">Off</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <footer class="onboarding-footer">
+            <button
+              id="back-button"
+              class="ghost-button onboarding-nav-button"
+              type="button"
+            >
+              Back
+            </button>
+            <p id="step-caption" class="panel-help onboarding-caption">1 / 4</p>
+            <button id="continue-button" class="continue-button" type="button">
+              Continue
+            </button>
+          </footer>
+        </section>
       </section>
     </main>
 

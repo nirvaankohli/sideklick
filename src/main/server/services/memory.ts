@@ -1,4 +1,5 @@
 import { getDatabase } from "../db";
+import { redactCapturePayload } from "../../capture";
 import { saveSessionScreenshotPreview } from "./sessions";
 import type {
   AssistRequest,
@@ -10,6 +11,7 @@ import type {
 
 type GapRecordRow = {
   id: number;
+  support_signals?: string | null;
 };
 
 type RelatedGapRow = {
@@ -19,38 +21,56 @@ type RelatedGapRow = {
 type PersistedAssistPayload = Omit<AssistResponse, "interactionId">;
 
 const MAX_PERSISTED_TEXT_LENGTH = 8000;
+const SELF_DOUBT_PATTERNS = [
+  "i don't know",
+  "i dont know",
+  "not sure",
+  "unsure",
+  "confused",
+  "don't remember",
+  "dont remember",
+  "forget",
+  "might not know",
+  "do i know",
+];
+const REVIEW_PATTERNS = [
+  "review",
+  "revise",
+  "study",
+  "focus on",
+  "what should i focus on",
+  "what should i review",
+];
 
 function truncateText(value: string, maxLength = MAX_PERSISTED_TEXT_LENGTH): string {
   if (value.length <= maxLength) {
     return value;
   }
 
-  return `${value.slice(0, maxLength)}…`;
+  return `${value.slice(0, maxLength)}...`;
 }
 
 function sanitizeValueForStorage(value: unknown): unknown {
-  if (typeof value === "string") {
-    if (value.startsWith("data:image/")) {
-      return "[omitted image payload]";
-    }
+  const redactedValue = redactCapturePayload(value);
 
-    return truncateText(value);
+  if (typeof redactedValue === "string") {
+    return truncateText(redactedValue);
   }
 
-  if (Array.isArray(value)) {
-    return value.map((entry) => sanitizeValueForStorage(entry));
+  if (Array.isArray(redactedValue)) {
+    return redactedValue.map((entry) => sanitizeValueForStorage(entry));
   }
 
-  if (value && typeof value === "object") {
+  if (redactedValue && typeof redactedValue === "object") {
     return Object.fromEntries(
-      Object.entries(value).map(([key, entry]) => [
+      Object.entries(redactedValue).map(([key, entry]) => [
         key,
         sanitizeValueForStorage(entry),
       ]),
     );
   }
 
-  return value;
+  return redactedValue;
 }
 
 function buildInteractionPrompt(requestInput: AssistRequest): string {
@@ -72,6 +92,105 @@ function buildInteractionPrompt(requestInput: AssistRequest): string {
   ]
     .filter((part): part is string => Boolean(part))
     .join("\n");
+}
+
+function compactText(value: string | null | undefined, maxLength = 240): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized.length <= maxLength
+    ? normalized
+    : `${normalized.slice(0, maxLength - 3)}...`;
+}
+
+function inferGapScope(
+  requestInput: AssistRequest,
+): "session" | "class" {
+  return requestInput.sessionId ? "session" : "class";
+}
+
+function inferGapEvidenceType(
+  requestInput: AssistRequest,
+): "self_doubt" | "review_request" | "direct_question" | "note_capture" | "general" {
+  const combinedRequestText = [
+    requestInput.selectedText,
+    requestInput.surroundingText,
+    requestInput.userNote,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(" ")
+    .toLowerCase();
+
+  if (SELF_DOUBT_PATTERNS.some((pattern) => combinedRequestText.includes(pattern))) {
+    return "self_doubt";
+  }
+
+  if (
+    requestInput.actionType === "focus_page" ||
+    REVIEW_PATTERNS.some((pattern) => combinedRequestText.includes(pattern))
+  ) {
+    return "review_request";
+  }
+
+  if (requestInput.actionType === "add_notes") {
+    return "note_capture";
+  }
+
+  if (requestInput.selectedText.trim().length > 0) {
+    return "direct_question";
+  }
+
+  return "general";
+}
+
+function inferSupportSignals(
+  requestInput: AssistRequest,
+  builtContext: BuiltContext,
+): string[] {
+  const combinedRequestText = [
+    requestInput.selectedText,
+    requestInput.surroundingText,
+    requestInput.userNote,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(" ")
+    .toLowerCase();
+  const signals = [
+    requestInput.sessionId ? "session_scope" : "class_scope",
+    requestInput.userNote ? "user_note_present" : null,
+    requestInput.screenshotDataUrl ? "screenshot_present" : null,
+    SELF_DOUBT_PATTERNS.some((pattern) => combinedRequestText.includes(pattern))
+      ? "self_doubt_signal"
+      : null,
+    REVIEW_PATTERNS.some((pattern) => combinedRequestText.includes(pattern))
+      ? "review_request"
+      : null,
+    builtContext.contextTiers.session.length > 0 ? "session_memory_available" : null,
+    builtContext.contextTiers.historical.length > 0 ? "historical_memory_available" : null,
+  ].filter((value): value is string => Boolean(value));
+
+  return [...new Set(signals)];
+}
+
+function safeParseStringArray(value: string | null | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((entry): entry is string => typeof entry === "string")
+      : [];
+  } catch {
+    return [];
+  }
 }
 
 function getGapWeightIncrement(confidence: number): number {
@@ -131,13 +250,13 @@ function saveInteraction(
 function findExistingGapId(
   classId: number | null,
   topic: string,
-): number | null {
+): GapRecordRow | null {
   const db = getDatabase();
 
   const row = classId === null
     ? db.prepare(
         `
-          SELECT id
+          SELECT id, support_signals
           FROM gaps
           WHERE class_id IS NULL AND lower(topic) = lower(?)
           LIMIT 1
@@ -145,44 +264,65 @@ function findExistingGapId(
       ).get(topic)
     : db.prepare(
         `
-          SELECT id
+          SELECT id, support_signals
           FROM gaps
           WHERE class_id = ? AND lower(topic) = lower(?)
           LIMIT 1
         `,
       ).get(classId, topic);
 
-  return (row as GapRecordRow | undefined)?.id ?? null;
+  return (row as GapRecordRow | undefined) ?? null;
 }
 
 function upsertGap(
   classId: number | null,
   gapCandidate: ModelGapCandidate,
+  requestInput: AssistRequest,
+  builtContext: BuiltContext,
 ): number {
   const db = getDatabase();
-  const existingGapId = findExistingGapId(classId, gapCandidate.topic);
+  const existingGap = findExistingGapId(classId, gapCandidate.topic);
   const weightIncrement = getGapWeightIncrement(gapCandidate.confidence);
+  const supportSignals = inferSupportSignals(requestInput, builtContext);
+  const mergedSupportSignals = existingGap
+    ? [...new Set([
+        ...safeParseStringArray(existingGap.support_signals),
+        ...supportSignals,
+      ])]
+    : supportSignals;
+  const scope = inferGapScope(requestInput);
+  const evidenceType = inferGapEvidenceType(requestInput);
 
-  if (existingGapId) {
+  if (existingGap) {
     db.prepare(
       `
         UPDATE gaps
         SET
           description = COALESCE(description, @description),
+          scope = @scope,
           status = 'open',
           weight = weight + @weightIncrement,
           evidence_count = evidence_count + 1,
+          support_signals = @supportSignals,
+          last_confidence = @lastConfidence,
+          last_evidence_type = @lastEvidenceType,
+          last_interaction_type = @lastInteractionType,
           last_seen_at = CURRENT_TIMESTAMP,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = @id
       `,
     ).run({
-      id: existingGapId,
+      id: existingGap.id,
       description: gapCandidate.description,
+      scope,
       weightIncrement,
+      supportSignals: JSON.stringify(mergedSupportSignals),
+      lastConfidence: gapCandidate.confidence,
+      lastEvidenceType: evidenceType,
+      lastInteractionType: requestInput.actionType,
     });
 
-    return existingGapId;
+    return existingGap.id;
   }
 
   const result = db.prepare(
@@ -191,17 +331,27 @@ function upsertGap(
         class_id,
         topic,
         description,
+        scope,
         status,
         weight,
         evidence_count,
+        support_signals,
+        last_confidence,
+        last_evidence_type,
+        last_interaction_type,
         last_seen_at
       ) VALUES (
         @classId,
         @topic,
         @description,
+        @scope,
         'open',
         @weight,
         1,
+        @supportSignals,
+        @lastConfidence,
+        @lastEvidenceType,
+        @lastInteractionType,
         CURRENT_TIMESTAMP
       )
     `,
@@ -209,7 +359,12 @@ function upsertGap(
     classId,
     topic: gapCandidate.topic,
     description: gapCandidate.description,
+    scope,
     weight: weightIncrement,
+    supportSignals: JSON.stringify(mergedSupportSignals),
+    lastConfidence: gapCandidate.confidence,
+    lastEvidenceType: evidenceType,
+    lastInteractionType: requestInput.actionType,
   });
 
   return Number(result.lastInsertRowid);
@@ -220,8 +375,18 @@ function createGapEvent(
   interactionId: number,
   sessionId: number | undefined,
   gapCandidate: ModelGapCandidate,
+  requestInput: AssistRequest,
+  builtContext: BuiltContext,
 ): void {
   const db = getDatabase();
+  const evidenceType = inferGapEvidenceType(requestInput);
+  const supportSignals = inferSupportSignals(requestInput, builtContext);
+  const requestExcerpt = compactText(
+    [requestInput.selectedText, requestInput.userNote ?? null]
+      .filter((value): value is string => Boolean(value))
+      .join(" | "),
+    240,
+  );
 
   db.prepare(
     `
@@ -230,13 +395,19 @@ function createGapEvent(
         interaction_id,
         session_id,
         evidence,
-        confidence
+        confidence,
+        evidence_type,
+        support_signals,
+        request_excerpt
       ) VALUES (
         @gapId,
         @interactionId,
         @sessionId,
         @evidence,
-        @confidence
+        @confidence,
+        @evidenceType,
+        @supportSignals,
+        @requestExcerpt
       )
     `,
   ).run({
@@ -245,6 +416,9 @@ function createGapEvent(
     sessionId: sessionId ?? null,
     evidence: gapCandidate.evidence,
     confidence: gapCandidate.confidence,
+    evidenceType,
+    supportSignals: JSON.stringify(supportSignals),
+    requestExcerpt,
   });
 }
 
@@ -273,12 +447,19 @@ export function persistAssistMemory(
     const classId = requestInput.classId;
 
     for (const gapCandidate of assistResponse.gapCandidates) {
-      const gapId = upsertGap(classId, gapCandidate);
+      const gapId = upsertGap(
+        classId,
+        gapCandidate,
+        requestInput,
+        builtContext,
+      );
       createGapEvent(
         gapId,
         interactionId,
         requestInput.sessionId,
         gapCandidate,
+        requestInput,
+        builtContext,
       );
     }
 
