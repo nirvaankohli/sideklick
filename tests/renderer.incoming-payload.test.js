@@ -10,15 +10,49 @@ function createDom() {
   <body>
     <main class="window-shell" data-mode="expanded" data-tone="light">
       <button id="theme-icon-toggle"></button>
+      <button id="open-cram-mode"></button>
       <button id="shrink-window"></button>
       <button id="stop-session"></button>
       <button id="close-window"></button>
       <button id="compact-close-window"></button>
       <button id="restore-window"></button>
+      <button id="compact-star-button"></button>
       <p id="session-class-label"></p>
       <h1 id="session-name-label"></h1>
-      <div id="chat-thread"></div>
-      <form id="chat-form"><textarea id="chat-input"></textarea></form>
+      <section id="home-session-view">
+        <div id="chat-thread"></div>
+        <form id="chat-form">
+          <div class="chat-attach-shell">
+            <button id="chat-attach-trigger" type="button"></button>
+            <div id="chat-attach-menu" hidden>
+              <button id="attach-screenshot-button" type="button"></button>
+              <button id="attach-clipboard-button" type="button"></button>
+            </div>
+          </div>
+          <textarea id="chat-input"></textarea>
+        </form>
+      </section>
+      <section id="cram-intake-view" hidden>
+        <form id="cram-form">
+          <input id="cram-exam-name" name="examName" />
+          <select id="cram-time-left" name="timeLeft">
+            <option value="">Select time</option>
+            <option value="Tonight">Tonight</option>
+          </select>
+          <textarea id="cram-material" name="material"></textarea>
+          <textarea id="cram-notes" name="notes"></textarea>
+          <p id="cram-intake-empty-state" hidden></p>
+          <button id="cram-cancel" type="button"></button>
+          <button id="cram-submit" type="submit"></button>
+        </form>
+      </section>
+      <section id="cram-results-view" hidden>
+        <h2 id="cram-results-title"></h2>
+        <p id="cram-results-loading" hidden></p>
+        <p id="cram-results-empty-state" hidden></p>
+        <button id="cram-start-over" type="button"></button>
+        <div id="cram-results-sections"></div>
+      </section>
       <button id="resize-handle"></button>
     </main>
   </body>
@@ -214,6 +248,83 @@ test("manual chat submit shows the typed message instead of the action label", a
     ".chat-message.user:not(.incoming-payload) .chat-message-copy",
   );
   assert.equal(userMessages[userMessages.length - 1]?.textContent, "What is meiosis?");
+
+  dom.window.close();
+});
+
+test("cram mode intake submits and renders all mocked result sections", async () => {
+  const dom = createDom();
+  installAnimationFrameStub(dom);
+
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.HTMLElement = dom.window.HTMLElement;
+  global.Event = dom.window.Event;
+  global.FileReader = class FakeFileReader {};
+
+  window.overlayApi = {
+    getWindowBounds: async () => ({ width: 100, height: 100 }),
+    resizeWindow: async () => ({}),
+    setThemeSource: async () => ({ shouldUseDarkColors: false }),
+    minimizeToDock: async () => ({}),
+    stopSession: async () => ({}),
+    closeWindow: async () => ({}),
+    expandWindow: async () => ({}),
+    assist: async () => ({ interactionId: 1, answer: "ok", nextStep: "ok" }),
+    submitFeedback: async () => ({}),
+    onThemeChanged: () => {},
+    onWindowMode: () => {},
+    onSessionChanged: () => {},
+    onIncomingPayload: () => {},
+    captureScreenshotAttachment: async () => null,
+    readClipboardAttachment: async () => null,
+    getCurrentSession: async () => ({
+      classId: 7,
+      className: "AP Biology",
+      sessionName: "Meiosis Review",
+      sessionNotes: "Need help with vocab",
+    }),
+  };
+
+  const rendererPath = path.join(__dirname, "..", "src", "renderer.js");
+  delete require.cache[require.resolve(rendererPath)];
+  require(rendererPath);
+
+  await new Promise((resolve) => {
+    window.dispatchEvent(new dom.window.Event("DOMContentLoaded"));
+    setTimeout(resolve, 0);
+  });
+
+  document.querySelector("#open-cram-mode").click();
+  document.querySelector("#cram-exam-name").value = "Calculus Final";
+  document.querySelector("#cram-time-left").value = "Tonight";
+  document.querySelector("#cram-material").value =
+    "Derivatives\nIntegrals\nOptimization";
+  document.querySelector("#cram-notes").value = "I always miss sign mistakes";
+  document
+    .querySelector("#cram-form")
+    .dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+
+  await waitFor(() => {
+    const headings = [
+      ...document.querySelectorAll("#cram-results-sections .cram-result-section h3"),
+    ].map((node) => node.textContent);
+    assert.deepEqual(headings, [
+      "Study First",
+      "Study Next",
+      "Skip If Needed",
+      "Likely Questions",
+      "Quick Self-Test",
+      "Tonight's Plan",
+    ]);
+  }, 2500);
+
+  assert.equal(document.querySelector("#cram-results-view").hidden, false);
+  assert.equal(document.querySelector("#home-session-view").hidden, true);
+  assert.equal(
+    document.querySelector("#cram-results-title").textContent,
+    "Calculus Final • Tonight",
+  );
 
   dom.window.close();
 });
