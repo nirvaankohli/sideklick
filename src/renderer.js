@@ -47,6 +47,8 @@ const ACTION_LABELS = {
 };
 const STREAM_CHUNK_SIZE = 3;
 const STREAM_INTERVAL_MS = 22;
+const CRAM_MATERIAL_PREVIEW_LINES = 3;
+const CRAM_LOADING_DELAY_MS = 700;
 const THUMBS_UP = "\uD83D\uDC4D";
 const THUMBS_DOWN = "\uD83D\uDC4E";
 
@@ -356,7 +358,7 @@ function createCramMockPlan({ examName, timeLeft, material, notes }) {
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean)
-    .slice(0, 3);
+    .slice(0, CRAM_MATERIAL_PREVIEW_LINES);
   const firstMaterialLine = materialLines[0] || "high-yield exam topics";
 
   return {
@@ -1120,7 +1122,7 @@ if (cramForm) {
     }
 
     await new Promise((resolve) => {
-      window.setTimeout(resolve, 700);
+      window.setTimeout(resolve, CRAM_LOADING_DELAY_MS);
     });
 
     const plan = createCramMockPlan({
