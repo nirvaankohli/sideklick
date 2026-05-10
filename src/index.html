@@ -24,6 +24,7 @@
             </div>
           </div>
           <div class="window-actions no-drag">
+            <button id="open-cram-mode" class="ghost-button" type="button">Cram Mode</button>
             <button id="shrink-window" class="icon-button" type="button" aria-label="Pin overlay">
               <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M7 6h10v2H7zM7 11h10v2H7zM7 16h10v2H7z"></path>
@@ -44,7 +45,7 @@
         </header>
 
         <section class="content">
-          <section class="session-layout no-drag">
+          <section id="home-session-view" class="session-layout no-drag">
             <section class="chat-shell session-chat-shell">
               <div id="chat-thread" class="chat-thread">
                 <article class="chat-message assistant">
@@ -74,6 +75,59 @@
                 <button id="send-message" class="continue-button send-message-button" type="submit">Send</button>
               </form>
             </section>
+          </section>
+          <section id="cram-intake-view" class="chat-shell cram-flow-card no-drag" hidden>
+            <div class="cram-flow-header">
+              <p class="eyebrow">Cram Mode</p>
+              <h2 class="cram-flow-title">Build your exam game plan</h2>
+            </div>
+            <form id="cram-form" class="cram-form">
+              <label class="cram-field">
+                <span>Exam name</span>
+                <input id="cram-exam-name" name="examName" type="text" placeholder="e.g. Organic Chemistry Midterm" required />
+              </label>
+              <label class="cram-field">
+                <span>Time left</span>
+                <select id="cram-time-left" name="timeLeft" required>
+                  <option value="">Select time</option>
+                  <option value="Tonight">Tonight</option>
+                  <option value="2 days">2 days</option>
+                  <option value="3 days">3 days</option>
+                  <option value="1 week">1 week</option>
+                </select>
+              </label>
+              <label class="cram-field">
+                <span>Exam material</span>
+                <textarea
+                  id="cram-material"
+                  name="material"
+                  rows="6"
+                  placeholder="Paste slides, topics, formulas, or a rough study guide..."
+                  required
+                ></textarea>
+              </label>
+              <label class="cram-field">
+                <span>Notes (optional)</span>
+                <textarea id="cram-notes" name="notes" rows="3" placeholder="Anything to prioritize or avoid?"></textarea>
+              </label>
+              <p id="cram-intake-empty-state" class="cram-empty-state" hidden>Please fill exam name, time left, and exam material.</p>
+              <div class="cram-form-actions">
+                <button id="cram-cancel" class="ghost-button" type="button">Back</button>
+                <button id="cram-submit" class="continue-button" type="submit">Generate Cram Plan</button>
+              </div>
+            </form>
+          </section>
+          <section id="cram-results-view" class="chat-shell cram-flow-card no-drag" hidden>
+            <div class="cram-flow-header cram-results-header">
+              <div>
+                <p class="eyebrow">Cram Mode Results</p>
+                <h2 id="cram-results-title" class="cram-flow-title">Your plan</h2>
+              </div>
+              <button id="cram-start-over" class="ghost-button" type="button">Start Over</button>
+            </div>
+            <p id="cram-results-loading" class="cram-loading-copy" hidden>Building your cram plan...</p>
+            <p id="cram-results-empty-state" class="cram-empty-state" hidden>No cram plan yet. Submit your intake to get started.</p>
+            <div id="cram-results-sections" class="cram-results-sections"></div>
           </section>
         </section>
 

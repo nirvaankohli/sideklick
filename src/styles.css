@@ -2994,6 +2994,129 @@ button {
   min-width: 104px;
 }
 
+.cram-flow-card {
+  height: 100%;
+  min-height: 0;
+  padding: 14px;
+  overflow: auto;
+}
+
+.cram-flow-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cram-flow-title {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+.cram-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.cram-field {
+  display: grid;
+  gap: 6px;
+  font-size: 0.88rem;
+}
+
+.cram-field > span {
+  color: var(--dark-muted);
+}
+
+.window-shell[data-tone="light"] .cram-field > span {
+  color: var(--light-muted);
+}
+
+.cram-field input,
+.cram-field select,
+.cram-field textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font: inherit;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.window-shell[data-tone="light"] .cram-field input,
+.window-shell[data-tone="light"] .cram-field select,
+.window-shell[data-tone="light"] .cram-field textarea {
+  border-color: rgba(36, 72, 122, 0.14);
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.cram-field textarea {
+  resize: vertical;
+}
+
+.cram-field input:focus,
+.cram-field select:focus,
+.cram-field textarea:focus {
+  border-color: rgba(143, 211, 255, 0.42);
+  box-shadow: 0 0 0 3px rgba(143, 211, 255, 0.12);
+}
+
+.cram-empty-state,
+.cram-loading-copy {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--dark-muted);
+}
+
+.window-shell[data-tone="light"] .cram-empty-state,
+.window-shell[data-tone="light"] .cram-loading-copy {
+  color: var(--light-muted);
+}
+
+.cram-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cram-results-header {
+  margin-bottom: 8px;
+}
+
+.cram-results-sections {
+  display: grid;
+  gap: 10px;
+}
+
+.cram-result-section {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.window-shell[data-tone="light"] .cram-result-section {
+  border-color: rgba(36, 72, 122, 0.14);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.cram-result-section h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.cram-result-section ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
 .chat-attachment-status-row {
   display: flex;
   flex-wrap: wrap;
