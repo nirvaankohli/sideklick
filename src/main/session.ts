@@ -90,6 +90,15 @@ function buildBackendClassPayloadFromSession(session: Record<string, any>) {
         : null,
     teacherFocus:
       teacherFocusParts.length > 0 ? teacherFocusParts.join(" | ") : null,
+    testFormat:
+      typeof session?.testFormat === "string" && session.testFormat.trim()
+        ? session.testFormat.trim()
+        : null,
+    testExamples: Array.isArray(session?.testExamples)
+      ? session.testExamples
+          .map((example) => String(example || "").trim())
+          .filter(Boolean)
+      : [],
     keyConcepts: [],
     notes: noteParts.length > 0 ? noteParts.join("\n") : null,
   };

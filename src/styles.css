@@ -1777,6 +1777,10 @@ button {
   gap: 16px;
 }
 
+.home-browser-action {
+  margin-top: 4px;
+}
+
 .home-browser-actions {
   display: flex;
   align-items: center;
@@ -2138,6 +2142,20 @@ button {
   border-radius: 50%;
   background: rgba(255, 107, 114, 0.08);
   color: inherit;
+}
+
+.folder-edit-button {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(143, 211, 255, 0.1);
+  color: inherit;
+  cursor: pointer;
 }
 
 .folder-card-actions {
@@ -4015,6 +4033,46 @@ button {
   gap: 14px;
 }
 
+.cram-upload-meta {
+  display: grid;
+  gap: 10px;
+  padding: 2px 2px 0;
+}
+
+.cram-upload-hint {
+  margin: 0;
+}
+
+.cram-upload-chip-row,
+.cram-upload-rollup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cram-upload-chip,
+.cram-upload-rollup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.82rem;
+  line-height: 1;
+  color: inherit;
+}
+
+.cram-upload-rollup-chip {
+  background: rgba(112, 203, 255, 0.08);
+  border-color: rgba(112, 203, 255, 0.16);
+}
+
+.cram-upload-rollup-chip-muted {
+  opacity: 0.8;
+}
+
 .cram-select {
   width: 100%;
   padding: 12px 14px;
@@ -4041,6 +4099,163 @@ button {
 .cram-results-copy {
   display: grid;
   gap: 6px;
+}
+
+.cram-now-focus {
+  margin: 4px 0 0;
+  font-size: 1.34rem;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+
+.cram-results-sidecar {
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+  max-width: 320px;
+}
+
+.cram-coach-card,
+.cram-runway-card,
+.cram-guide-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+    rgba(10, 14, 22, 0.28);
+  border-radius: 22px;
+}
+
+.cram-coach-card {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 16px;
+}
+
+.cram-runway-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px 16px;
+}
+
+.cram-runway-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.cram-runway-summary {
+  margin: 0;
+  max-width: 24ch;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--dark-muted);
+  text-align: right;
+}
+
+.cram-timeline-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.72fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.cram-timeline {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  padding-left: 18px;
+}
+
+.cram-timeline::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(114, 211, 255, 0.78),
+    rgba(114, 211, 255, 0.1)
+  );
+}
+
+.cram-timeline-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.cram-step-marker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(137, 210, 255, 0.4);
+  background: linear-gradient(180deg, rgba(124, 206, 255, 0.24), rgba(124, 206, 255, 0.08));
+  color: #dff5ff;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.cram-step-body {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(126, 206, 255, 0.12), transparent 42%),
+    rgba(255, 255, 255, 0.02);
+}
+
+.cram-timeline-step-primary .cram-step-body {
+  border-color: rgba(124, 206, 255, 0.24);
+  background:
+    radial-gradient(circle at top right, rgba(126, 206, 255, 0.18), transparent 46%),
+    rgba(255, 255, 255, 0.035);
+  box-shadow: 0 18px 40px rgba(7, 16, 28, 0.22);
+}
+
+.cram-step-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cram-step-title {
+  margin: 4px 0 0;
+  font-size: 1.08rem;
+}
+
+.cram-step-kicker {
+  margin: 0;
+  max-width: 28ch;
+  color: var(--dark-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.cram-guide-rail {
+  display: grid;
+  gap: 14px;
+}
+
+.cram-guide-card {
+  display: grid;
+  gap: 8px;
+  padding: 15px 16px;
 }
 
 .cram-results-grid {
@@ -4106,6 +4321,40 @@ button {
   line-height: 1.55;
 }
 
+.cram-action-dock {
+  display: grid;
+  gap: 18px;
+  padding: 30px 26px 34px;
+}
+
+.cram-action-copy {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  text-align: center;
+}
+
+.cram-action-copy .panel-help {
+  max-width: 52ch;
+  margin: 0;
+}
+
+.cram-action-well {
+  display: grid;
+  justify-items: center;
+  padding: 20px 18px;
+  border-radius: 26px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  background:
+    radial-gradient(circle at top, rgba(112, 203, 255, 0.12), transparent 56%),
+    rgba(255, 255, 255, 0.02);
+}
+
+#generate-cram-button {
+  min-width: 280px;
+  padding: 18px 32px;
+}
+
 .window-shell[data-tone="light"] .cram-hero,
 .window-shell[data-tone="light"] .cram-panel,
 .window-shell[data-tone="light"] .cram-results-bar,
@@ -4138,6 +4387,56 @@ button {
 
 .window-shell[data-tone="light"] .cram-results-hint {
   color: inherit;
+}
+
+.window-shell[data-tone="light"] .cram-coach-card,
+.window-shell[data-tone="light"] .cram-runway-card,
+.window-shell[data-tone="light"] .cram-guide-card,
+.window-shell[data-tone="light"] .cram-step-body {
+  border-color: rgba(70, 104, 150, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(247, 250, 255, 0.94)),
+    rgba(255, 255, 255, 0.86);
+  box-shadow: 0 14px 28px rgba(18, 40, 71, 0.06);
+}
+
+.window-shell[data-tone="light"] .cram-timeline::before {
+  background: linear-gradient(
+    180deg,
+    rgba(74, 140, 215, 0.82),
+    rgba(74, 140, 215, 0.14)
+  );
+}
+
+.window-shell[data-tone="light"] .cram-step-marker {
+  border-color: rgba(74, 140, 215, 0.24);
+  background: linear-gradient(180deg, rgba(74, 140, 215, 0.16), rgba(74, 140, 215, 0.06));
+  color: #2d5d97;
+}
+
+.window-shell[data-tone="light"] .cram-timeline-step-primary .cram-step-body {
+  border-color: rgba(74, 140, 215, 0.18);
+  background:
+    radial-gradient(circle at top right, rgba(74, 140, 215, 0.12), transparent 44%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(243, 248, 255, 0.96));
+}
+
+.window-shell[data-tone="light"] .cram-upload-chip,
+.window-shell[data-tone="light"] .cram-upload-rollup-chip {
+  border-color: rgba(70, 104, 150, 0.12);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.window-shell[data-tone="light"] .cram-upload-rollup-chip {
+  background: rgba(228, 239, 255, 0.92);
+  border-color: rgba(90, 126, 176, 0.16);
+}
+
+.window-shell[data-tone="light"] .cram-action-well {
+  border-color: rgba(74, 140, 215, 0.18);
+  background:
+    radial-gradient(circle at top, rgba(74, 140, 215, 0.1), transparent 58%),
+    rgba(255, 255, 255, 0.62);
 }
 
 .window-shell[data-tone="light"] .cram-results-grid .cram-results-card:nth-child(odd) {
@@ -4306,6 +4605,40 @@ button {
 
   .window-actions {
     justify-content: flex-start;
+  }
+
+  .cram-results-sidecar,
+  .cram-step-kicker {
+    justify-items: start;
+    text-align: left;
+    max-width: none;
+  }
+
+  .cram-runway-header,
+  .cram-step-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cram-timeline-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .cram-guide-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .cram-action-dock {
+    padding: 24px 20px 28px;
+  }
+
+  .cram-action-well {
+    padding: 18px 14px;
+  }
+
+  #generate-cram-button {
+    width: 100%;
+    min-width: 0;
   }
 
   .cram-results-grid .cram-results-card:nth-child(odd) {

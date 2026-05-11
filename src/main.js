@@ -61,6 +61,9 @@ const {
 const {
   enqueueOfflineRequest,
 } = require("./main/cache/local.ts");
+const {
+  extractStudyMaterialFiles,
+} = require("./main/study-material.js");
 
 const windowsByKey = new Map();
 const windowState = new Map();
@@ -892,6 +895,17 @@ ipcMain.handle("clipboard:readAttachment", () => {
     type: "text",
     text,
   };
+});
+
+ipcMain.handle("study-material:extract", async (_event, payload) => {
+  const files = Array.isArray(payload?.files) ? payload.files : [];
+  if (files.length === 0) {
+    return [];
+  }
+
+  return extractStudyMaterialFiles(files, {
+    mode: payload?.mode === "quiz" ? "quiz" : "cram",
+  });
 });
 
 ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {

@@ -1,13 +1,13 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 
-import { getDatabase } from "../db";
+import { getDatabase } from "../db/index.ts";
 import {
   quizRequestSchema,
   quizResponseSchema,
-} from "../schema";
-import type { QuizRequest, QuizResponse } from "../type";
-import { getClassProfileById } from "./classes";
+} from "../schema/index.ts";
+import type { ClassProfile, QuizRequest, QuizResponse } from "../type/index.ts";
+import { getClassProfileById } from "./classes.ts";
 
 type SessionRow = {
   id: number;
@@ -90,15 +90,49 @@ function getTopGaps(classId: number): GapRow[] {
   ).all(classId) as GapRow[];
 }
 
-function buildQuizPrompt(input: QuizRequest): string {
-  const sessions = getSessionRows(input.sessionIds);
-  const classProfile = getClassProfileById(input.classId);
-  const keyTopics = [
-    ...new Set(
-      sessions.flatMap((session) => JSON.parse(session.key_topics) as string[]),
-    ),
+export function buildQuizSystemInstructions(
+  classProfile: ClassProfile | null,
+): string[] {
+  const instructions = [
+    "You are generating a study quiz for a desktop learning product.",
+    "Return clean structured JSON only.",
+    "Make the quiz concise, useful, and grounded in the provided material.",
+    "Use the gap focus slider as a weighting signal: higher values should target weak spots more aggressively.",
+    "Every question must have four plausible options, exactly one correct answer, and a short explanation.",
+    "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
   ];
-  const gapRows = getTopGaps(input.classId);
+
+  if (classProfile?.testFormat?.trim()) {
+    instructions.push(
+      `Mirror the teacher's assessment feel from this format: ${classProfile.testFormat.trim()}.`,
+    );
+    instructions.push(
+      "If that format is not naturally multiple choice, adapt its reasoning style, stem shape, and difficulty into multiple-choice practice without breaking the response schema.",
+    );
+  }
+
+  if (Array.isArray(classProfile?.testExamples) && classProfile.testExamples.length > 0) {
+    instructions.push(
+      "Use the teacher examples as style anchors for pacing, vocabulary, distractor style, and what the teacher tends to ask, but do not copy them verbatim.",
+    );
+  }
+
+  return instructions;
+}
+
+export function buildQuizPromptPacket({
+  input,
+  classProfile,
+  sessions,
+  keyTopics,
+  gapRows,
+}: {
+  input: QuizRequest;
+  classProfile: ClassProfile | null;
+  sessions: SessionRow[];
+  keyTopics: string[];
+  gapRows: GapRow[];
+}) {
   const includedSources = [
     input.includeSessionSummary && sessions.length > 0
       ? `Session summaries:\n${sessions
@@ -124,29 +158,54 @@ function buildQuizPrompt(input: QuizRequest): string {
     throw new Error("Select at least one quiz material source.");
   }
 
-  return JSON.stringify(
-    {
-      class_profile: classProfile,
-      selected_sessions: sessions.map((session) => ({
-        title: session.title,
-        notes: session.notes,
-        summary: session.summary,
-        key_topics: JSON.parse(session.key_topics) as string[],
-        started_at: session.started_at,
-        ended_at: session.ended_at,
-      })),
-      quiz_constraints: {
-        question_count: 5,
-        question_type: "multiple choice",
-        options_per_question: 4,
-        focus_on_gaps_percent: input.gapFocus,
-        require_clear_single_correct_answer: true,
-        difficulty: "moderate",
-        selected_session_count: sessions.length,
-      },
-      high_priority_gaps: gapRows,
-      included_sources: includedSources,
+  return {
+    class_profile: classProfile,
+    teacher_assessment_profile: classProfile
+      ? {
+          test_format: classProfile.testFormat ?? null,
+          example_questions: classProfile.testExamples ?? [],
+        }
+      : null,
+    selected_sessions: sessions.map((session) => ({
+      title: session.title,
+      notes: session.notes,
+      summary: session.summary,
+      key_topics: JSON.parse(session.key_topics) as string[],
+      started_at: session.started_at,
+      ended_at: session.ended_at,
+    })),
+    quiz_constraints: {
+      question_count: 5,
+      question_type: "multiple choice",
+      options_per_question: 4,
+      focus_on_gaps_percent: input.gapFocus,
+      require_clear_single_correct_answer: true,
+      difficulty: "moderate",
+      selected_session_count: sessions.length,
     },
+    high_priority_gaps: gapRows,
+    included_sources: includedSources,
+  };
+}
+
+function buildQuizPrompt(input: QuizRequest): string {
+  const sessions = getSessionRows(input.sessionIds);
+  const classProfile = getClassProfileById(input.classId);
+  const keyTopics = [
+    ...new Set(
+      sessions.flatMap((session) => JSON.parse(session.key_topics) as string[]),
+    ),
+  ];
+  const gapRows = getTopGaps(input.classId);
+
+  return JSON.stringify(
+    buildQuizPromptPacket({
+      input,
+      classProfile,
+      sessions,
+      keyTopics,
+      gapRows,
+    }),
     null,
     2,
   );
@@ -162,12 +221,7 @@ export async function generateQuiz(input: unknown): Promise<QuizResponse> {
       {
         role: "system",
         content: [
-          "You are generating a study quiz for a desktop learning product.",
-          "Return clean structured JSON only.",
-          "Make the quiz concise, useful, and grounded in the provided material.",
-          "Use the gap focus slider as a weighting signal: higher values should target weak spots more aggressively.",
-          "Every question must have four plausible options, exactly one correct answer, and a short explanation.",
-          "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
+          ...buildQuizSystemInstructions(getClassProfileById(parsedInput.classId)),
         ].join(" "),
       },
       {

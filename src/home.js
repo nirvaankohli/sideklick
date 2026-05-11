@@ -19,6 +19,7 @@ const breadcrumbs = document.querySelector("#breadcrumbs");
 const emptyState = document.querySelector("#empty-state");
 const emptyTitle = document.querySelector("#empty-title");
 const emptyCopy = document.querySelector("#empty-copy");
+const editCurrentClassButton = document.querySelector("#edit-current-class-button");
 const classModalBackdrop = document.querySelector("#class-modal-backdrop");
 const classModalKicker = document.querySelector("#class-modal-kicker");
 const classModalTitle = document.querySelector("#class-modal-title");
@@ -30,14 +31,20 @@ const sessionFields = document.querySelector("#session-fields");
 const nameFieldLabel = document.querySelector("#name-field-label");
 const teacherNameField = document.querySelector("#teacher-name-field");
 const teacherNotesField = document.querySelector("#teacher-notes-field");
+const testFormatField = document.querySelector("#test-format-field");
+const testExamplesField = document.querySelector("#test-examples-field");
 const additionalNotesLabel = document.querySelector("#additional-notes-label");
 const classCourseInput = document.querySelector("#class-course-input");
 const classTeacherInput = document.querySelector("#class-teacher-input");
+const classTestFormatInput = document.querySelector("#class-test-format-input");
 const classDescriptionInput = document.querySelector(
   "#class-description-input",
 );
 const classTeacherNotesInput = document.querySelector(
   "#class-teacher-notes-input",
+);
+const classTestExamplesInput = document.querySelector(
+  "#class-test-examples-input",
 );
 const classAdditionalNotesInput = document.querySelector(
   "#class-additional-notes-input",
@@ -97,27 +104,38 @@ const cramExamNameInput = document.querySelector("#cram-exam-name");
 const cramTimeAvailableSelect = document.querySelector("#cram-time-available");
 const cramMaterialFile = document.querySelector("#cram-material-file");
 const cramFileName = document.querySelector("#cram-file-name");
+const cramUploadRollup = document.querySelector("#cram-upload-rollup");
 const cramMaterialText = document.querySelector("#cram-material-text");
 const cramAdditionalNotes = document.querySelector("#cram-additional-notes");
 const cramMaterialCount = document.querySelector("#cram-material-count");
 const cramMaterialStatus = document.querySelector("#cram-material-status");
 const generateCramButton = document.querySelector("#generate-cram-button");
 const cramSubtitle = document.querySelector("#cram-subtitle");
+const cramNowFocus = document.querySelector("#cram-now-focus");
+const cramSideklickTip = document.querySelector("#cram-sideklick-tip");
 const cramStudyFirst = document.querySelector("#cram-study-first");
 const cramStudyNext = document.querySelector("#cram-study-next");
 const cramSkipList = document.querySelector("#cram-skip-list");
 const cramTimePlan = document.querySelector("#cram-time-plan");
 const cramLikelyQuestions = document.querySelector("#cram-likely-questions");
 const cramQuickSelfTest = document.querySelector("#cram-quick-self-test");
+const cramRunwaySummary = document.querySelector("#cram-runway-summary");
+const cramStepNow = document.querySelector("#cram-step-now");
+const cramStepNext = document.querySelector("#cram-step-next");
+const cramStepSkip = document.querySelector("#cram-step-skip");
+const cramStepQuestions = document.querySelector("#cram-step-questions");
+const cramStepTest = document.querySelector("#cram-step-test");
+const cramGuideGuardrail = document.querySelector("#cram-guide-guardrail");
+const cramGuideRecovery = document.querySelector("#cram-guide-recovery");
 const backToCramSetupButton = document.querySelector(
   "#back-to-cram-setup-button",
 );
 const regenerateCramButton = document.querySelector("#regenerate-cram-button");
 const cramShared = window.CRAM_SHARED || {};
-const cramInputConstraints = cramShared.cramInputConstraints || {
+const cramConstraintsConfig = cramShared.cramInputConstraints || {
   maxMaterialCharacters: 24000,
 };
-const validateCramMaterialInput =
+const validateCramMaterialPayload =
   cramShared.validateCramMaterialInput ||
   ((value) => ({
     ok: Boolean(String(value ?? "").trim()),
@@ -191,15 +209,19 @@ let currentTone = "light";
 let folders = [];
 let currentPath = [];
 let currentModalMode = "class";
+let currentModalAction = "create";
+let currentModalTargetPath = null;
 let isFolderActionMenuOpen = false;
 let fitTextFrame = null;
 let activeQuizClassFolder = null;
 let uploadedQuizMaterial = "";
+let uploadedQuizMaterialSummary = "";
 let activeQuiz = null;
 let quizHasBeenChecked = false;
 let activeCramPlan = null;
 let uploadedCramMaterials = [];
 let cramMaterialUploadError = "";
+let cramMaterialUploadSummary = "";
 let isGeneratingCramPlan = false;
 let activeHomeView = "dashboard";
 let privacySettings = null;
@@ -280,6 +302,10 @@ function getCurrentClassFolder() {
   }
 
   return getFolderAtPath([currentPath[0]]);
+}
+
+function getCurrentClassPath() {
+  return currentPath.length > 0 ? [currentPath[0]] : null;
 }
 
 function getCurrentContainerType() {
@@ -783,6 +809,9 @@ function normalizeFolders(source) {
         .filter((item) => item?.type === "class")
         .map((item) => ({
           ...item,
+          testFormat:
+            typeof item.testFormat === "string" ? item.testFormat.trim() : "",
+          testExamples: normalizeTestExamples(item.testExamples),
           children: normalizeChildren(item.children, 1),
         }))
     : [];
@@ -844,9 +873,50 @@ function replaceChildrenAtPath(path, nextChildren, source = folders) {
   });
 }
 
+function updateFolderAtPath(path, transform, source = folders) {
+  if (!Array.isArray(path) || path.length === 0) {
+    return source;
+  }
+
+  const [head, ...rest] = path;
+  return source.map((item) => {
+    if (item.id !== head) {
+      return item;
+    }
+
+    if (rest.length === 0) {
+      return transform(item);
+    }
+
+    return {
+      ...item,
+      children: updateFolderAtPath(rest, transform, item.children || []),
+    };
+  });
+}
+
 async function persistFolders(nextFolders) {
   folders = await window.overlayApi.updateClassFolders(nextFolders);
   renderFolders();
+}
+
+function normalizeTestExamples(value) {
+  const source = Array.isArray(value)
+    ? value
+    : String(value || "").split(/\r?\n+/);
+
+  return source
+    .map((entry) =>
+      String(entry || "")
+        .trim()
+        .replace(/^[-*•\d.)\s]+/, ""),
+    )
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+function formatTestExamplesForField(value) {
+  return normalizeTestExamples(value).join("\n");
 }
 
 function buildBackendClassPayload(values) {
@@ -863,11 +933,17 @@ function buildBackendClassPayload(values) {
   ].filter(Boolean);
 
   return {
+    id:
+      Number.isFinite(values.dbClassId) && values.dbClassId > 0
+        ? values.dbClassId
+        : undefined,
     className: values.course,
     subject: values.course,
     currentUnit: values.currentUnit || null,
     teacherFocus:
       teacherFocusParts.length > 0 ? teacherFocusParts.join(" | ") : null,
+    testFormat: values.testFormat || null,
+    testExamples: normalizeTestExamples(values.testExamples),
     keyConcepts: [],
     notes: noteParts.length > 0 ? noteParts.join("\n") : null,
   };
@@ -885,9 +961,12 @@ async function ensureBackendClassId(classFolder) {
   const result = await window.overlayApi.saveClassProfile(
     buildBackendClassPayload({
       course: classFolder.name,
+      dbClassId: classFolder.dbClassId,
       teacherName: classFolder.teacherName || "",
       description: classFolder.description || "",
       teacherNotes: classFolder.teacherNotes || "",
+      testFormat: classFolder.testFormat || "",
+      testExamples: classFolder.testExamples || [],
       additionalNotes: classFolder.additionalNotes || "",
       currentUnit: buildCurrentUnitPathLabel(),
       hierarchyNotes: buildHierarchyContextNotes(),
@@ -895,18 +974,10 @@ async function ensureBackendClassId(classFolder) {
   );
 
   const classPath = [classFolder.id];
-  const parentPath = classPath.slice(0, -1);
-  const parentNode = getFolderAtPath(parentPath);
-  const siblingFolders = parentNode ? parentNode.children || [] : folders;
-  const nextChildren = siblingFolders.map((item) =>
-    item.id === classFolder.id
-      ? {
-          ...item,
-          dbClassId: result.classProfile.id,
-        }
-      : item,
-  );
-  const nextFolders = replaceChildrenAtPath(parentPath, nextChildren);
+  const nextFolders = updateFolderAtPath(classPath, (item) => ({
+    ...item,
+    dbClassId: result.classProfile.id,
+  }));
   await persistFolders(nextFolders);
 
   return result.classProfile.id;
@@ -967,21 +1038,19 @@ function extractReadableSegments(rawText) {
   return segments.slice(0, 400).join("\n");
 }
 
-async function readQuizMaterialFile(file) {
-  const buffer = await file.arrayBuffer();
-  const decodedText = new TextDecoder("utf-8", { fatal: false }).decode(buffer);
-  const normalizedText = normalizeExtractedFileText(decodedText);
+async function extractStudyMaterialFromFiles(files, mode) {
+  const payloadFiles = await Promise.all(
+    files.map(async (file) => ({
+      name: file.name,
+      type: file.type,
+      bytes: new Uint8Array(await file.arrayBuffer()),
+    })),
+  );
 
-  if (normalizedText) {
-    return normalizedText;
-  }
-
-  const extractedText = extractReadableSegments(decodedText);
-  if (extractedText) {
-    return extractedText;
-  }
-
-  throw new Error("Failed to extract readable text from file.");
+  return window.overlayApi.extractStudyMaterial({
+    mode,
+    files: payloadFiles,
+  });
 }
 
 function getCombinedUploadedCramMaterial() {
@@ -1002,10 +1071,74 @@ function getCramUploadSummaryText() {
   }
 
   if (uploadedCramMaterials.length === 1) {
-    return uploadedCramMaterials[0].name;
+    const file = uploadedCramMaterials[0];
+    return file.handler ? `${file.name} (${file.handler})` : file.name;
   }
 
   return `${uploadedCramMaterials.length} files selected`;
+}
+
+function renderCramUploadRollup() {
+  if (!cramUploadRollup) {
+    return;
+  }
+
+  if (uploadedCramMaterials.length === 0) {
+    cramUploadRollup.hidden = true;
+    cramUploadRollup.replaceChildren();
+    return;
+  }
+
+  cramUploadRollup.hidden = false;
+  cramUploadRollup.replaceChildren();
+
+  uploadedCramMaterials.slice(0, 4).forEach((file) => {
+    const chip = document.createElement("span");
+    chip.className = "cram-upload-rollup-chip";
+    chip.textContent = file.handler
+      ? `${file.name} • ${file.handler}`
+      : file.name;
+    cramUploadRollup.appendChild(chip);
+  });
+
+  if (uploadedCramMaterials.length > 4) {
+    const moreChip = document.createElement("span");
+    moreChip.className = "cram-upload-rollup-chip cram-upload-rollup-chip-muted";
+    moreChip.textContent = `+${uploadedCramMaterials.length - 4} more`;
+    cramUploadRollup.appendChild(moreChip);
+  }
+}
+
+function getFirstSentence(value) {
+  if (!value) {
+    return "";
+  }
+
+  return String(value)
+    .trim()
+    .split(/(?<=[.!?])\s+/)[0]
+    .trim();
+}
+
+function renderCramTimelineCopy(plan) {
+  const firstFocus = plan.studyFirst?.[0] || "Start with the first study move.";
+  const secondFocus = plan.studyNext?.[0] || "Move to the next supporting concept.";
+  const skipFocus = plan.skipIfNeeded?.[0] || "Trim lower-value material if time gets tight.";
+  const firstQuestion = plan.likelyQuestions?.[0] || "Rehearse a likely exam-style question.";
+  const firstSelfTest = plan.quickSelfTest?.[0] || "Check what you can answer from memory.";
+  const firstRunwayStep = plan.timePlan?.[0] || "Take the first timeline step.";
+  const secondRunwayStep = plan.timePlan?.[1] || "Then move to the next block.";
+
+  cramNowFocus.textContent = getFirstSentence(firstFocus) || "Start here.";
+  cramSideklickTip.textContent = `${getFirstSentence(firstRunwayStep)} Next: ${getFirstSentence(secondRunwayStep) || "next block."}`;
+  cramRunwaySummary.textContent = `${plan.timePlan.length} step${plan.timePlan.length === 1 ? "" : "s"} tonight.`;
+  cramStepNow.textContent = getFirstSentence(firstRunwayStep) || "First move.";
+  cramStepNext.textContent = getFirstSentence(secondFocus) || "Next priority.";
+  cramStepSkip.textContent = getFirstSentence(skipFocus) || "Drop this first.";
+  cramStepQuestions.textContent = getFirstSentence(firstQuestion) || "Rehearse these.";
+  cramStepTest.textContent = getFirstSentence(firstSelfTest) || "Answer from memory.";
+  cramGuideGuardrail.textContent = `${getFirstSentence(firstFocus)} Back here if you drift.`;
+  cramGuideRecovery.textContent = `${getFirstSentence(firstSelfTest)} Missed it? Retry that step.`;
 }
 
 function openSessionSummary(session) {
@@ -1028,6 +1161,7 @@ function closeSessionSummary() {
 function resetQuizModalState() {
   activeQuiz = null;
   uploadedQuizMaterial = "";
+  uploadedQuizMaterialSummary = "";
   quizHasBeenChecked = false;
   quizSetupView.hidden = false;
   quizView.hidden = true;
@@ -1183,16 +1317,18 @@ function updateCramMaterialCount() {
   const approxTokens = Math.ceil(combinedLength / 4);
   const hasUploadedMaterial = uploadedCramMaterials.length > 0;
   const hasUploadError = Boolean(cramMaterialUploadError);
-  const overLimit = combinedLength > cramInputConstraints.maxMaterialCharacters;
+  const overLimit = combinedLength > cramConstraintsConfig.maxMaterialCharacters;
 
   cramMaterialCount.textContent = `Approx ${approxTokens.toLocaleString()} tokens loaded`;
   cramMaterialStatus.textContent = hasUploadError
       ? cramMaterialUploadError
       : overLimit
-        ? `Too much material loaded for one pass. Keep it under ${cramInputConstraints.maxMaterialCharacters.toLocaleString()} characters by trimming to the most testable notes.`
+        ? `Too much material loaded for one pass. Keep it under ${cramConstraintsConfig.maxMaterialCharacters.toLocaleString()} characters by trimming to the most testable notes.`
+      : cramMaterialUploadSummary
+        ? cramMaterialUploadSummary
       : hasUploadedMaterial
         ? `Using ${uploadedCramMaterials.length} uploaded file${uploadedCramMaterials.length === 1 ? "" : "s"} together with any pasted material.`
-        : "Paste material first. Uploads can supplement the notes you paste here.";
+        : "Paste or upload material.";
   cramMaterialStatus.dataset.tone =
     hasUploadError || overLimit ? "danger" : "neutral";
   generateCramButton.disabled = isGeneratingCramPlan;
@@ -1206,6 +1342,8 @@ function resetCramModalState() {
   activeCramPlan = null;
   uploadedCramMaterials = [];
   cramMaterialUploadError = "";
+  cramMaterialUploadSummary = "";
+  renderCramUploadRollup();
   cramSetupView.hidden = false;
   cramView.hidden = true;
   cramExamNameInput.value = "";
@@ -1215,6 +1353,19 @@ function resetCramModalState() {
   cramMaterialText.value = "";
   cramAdditionalNotes.value = "";
   cramSubtitle.textContent = "";
+  cramNowFocus.textContent = "Start here.";
+  cramSideklickTip.textContent =
+    "Tight plan. Finishable tonight.";
+  cramRunwaySummary.textContent = "One step at a time.";
+  cramStepNow.textContent = "Lock in the highest-yield idea first.";
+  cramStepNext.textContent = "Next priority.";
+  cramStepSkip.textContent = "Drop this first.";
+  cramStepQuestions.textContent = "Rehearse these.";
+  cramStepTest.textContent = "Answer from memory.";
+  cramGuideGuardrail.textContent =
+    "Return to step one if you drift.";
+  cramGuideRecovery.textContent =
+    "Missed it? Retry the matching step.";
   cramStudyFirst.replaceChildren();
   cramStudyNext.replaceChildren();
   cramSkipList.replaceChildren();
@@ -1279,7 +1430,7 @@ async function generateCramPlan() {
     cramExamNameInput.focus();
     return;
   }
-  const materialValidation = validateCramMaterialInput(material);
+  const materialValidation = validateCramMaterialPayload(material);
   if (!materialValidation.ok) {
     cramMaterialStatus.dataset.tone = "danger";
     cramMaterialStatus.textContent = materialValidation.message;
@@ -1310,6 +1461,7 @@ async function generateCramPlan() {
     renderCramList(cramTimePlan, activeCramPlan.timePlan);
     renderCramList(cramLikelyQuestions, activeCramPlan.likelyQuestions);
     renderCramList(cramQuickSelfTest, activeCramPlan.quickSelfTest);
+    renderCramTimelineCopy(activeCramPlan);
 
     cramSetupView.hidden = true;
     cramView.hidden = false;
@@ -1472,6 +1624,7 @@ async function generateQuizForActiveSession() {
   const uploadedMaterial = [uploadedQuizMaterial, pastedMaterial]
     .filter(Boolean)
     .join("\n\n");
+  const classId = await ensureBackendClassId(activeQuizClassFolder);
   const selectedSessionIds = Array.from(
     quizSessionPicker.querySelectorAll('input[type="checkbox"]:checked'),
   )
@@ -1479,7 +1632,7 @@ async function generateQuizForActiveSession() {
     .filter((value) => Number.isFinite(value));
 
   const payload = {
-    classId: activeQuizClassFolder.dbClassId,
+    classId,
     sessionIds: selectedSessionIds,
     includeSessionSummary: quizSourceSummary.checked,
     includeSessionNotes: quizSourceNotes.checked,
@@ -1625,6 +1778,7 @@ function renderBreadcrumbs() {
 function renderFolders() {
   const searchQuery = getSearchQuery();
   const currentChildren = getCurrentChildren();
+  const currentClassFolder = getCurrentClassFolder();
   const filteredChildren = currentChildren;
   const visibleChildren = searchQuery
     ? filteredChildren.filter((item) =>
@@ -1635,6 +1789,10 @@ function renderFolders() {
   renderBreadcrumbs();
   backFolderButton.hidden = currentPath.length === 0;
   emptyState.hidden = visibleChildren.length > 0;
+  editCurrentClassButton.hidden = !currentClassFolder;
+  editCurrentClassButton.textContent = currentClassFolder
+    ? `Edit ${currentClassFolder.name || "Class"}`
+    : "Edit Class";
   closeFolderActionMenu();
   if (currentPath.length === 0) {
     folderNameInput.placeholder = "Search classes";
@@ -1670,10 +1828,16 @@ function renderFolders() {
     openButton.className = "folder-open-button";
     const isSessionItem = folder.type === "session";
     const isQuizItem = folder.type === "quiz";
+    const isClassItem = folder.type === "class";
     const metaText = !isSessionItem
       ? isQuizItem
         ? `${folder.questionCount || 0} questions • ${formatSessionDate(folder.createdAt)}`
-        : `${(folder.children || []).length} item${(folder.children || []).length === 1 ? "" : "s"}`
+        : [
+            `${(folder.children || []).length} item${(folder.children || []).length === 1 ? "" : "s"}`,
+            isClassItem && folder.testFormat ? folder.testFormat : null,
+          ]
+            .filter(Boolean)
+            .join(" • ")
       : "";
     const sessionSummaryText = isSessionItem
       ? buildSessionCardSentence(folder)
@@ -1740,6 +1904,25 @@ function renderFolders() {
       });
     }
 
+    const actionButtons = document.createElement("div");
+    actionButtons.className = "folder-card-actions";
+
+    if (isClassItem) {
+      const editButton = document.createElement("button");
+      editButton.type = "button";
+      editButton.className = "folder-edit-button";
+      editButton.setAttribute("aria-label", `Edit ${folder.name}`);
+      editButton.innerHTML = `
+        <svg class="icon-svg" viewBox="0 0 24 24">
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.13z"></path>
+        </svg>
+      `;
+      editButton.addEventListener("click", () => {
+        openClassEditModal([folder.id]);
+      });
+      actionButtons.appendChild(editButton);
+    }
+
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "folder-delete-button";
@@ -1760,23 +1943,68 @@ function renderFolders() {
       await persistFolders(nextFolders);
     });
 
-    article.append(openButton, deleteButton);
+    actionButtons.appendChild(deleteButton);
+    article.append(openButton, actionButtons);
     folderGrid.appendChild(article);
   }
 
   scheduleFitText();
 }
 
-function openModal(mode) {
+function populateClassModalFields(values = {}) {
+  classCourseInput.value = values.course || "";
+  classTeacherInput.value = values.teacherName || "";
+  classDescriptionInput.value = values.description || "";
+  classTeacherNotesInput.value = values.teacherNotes || "";
+  classTestFormatInput.value = values.testFormat || "";
+  classTestExamplesInput.value = formatTestExamplesForField(
+    values.testExamples || [],
+  );
+  classAdditionalNotesInput.value = values.additionalNotes || "";
+}
+
+function openClassEditModal(targetPath = getCurrentClassPath()) {
+  if (!requireSignedIn("edit class details")) {
+    return;
+  }
+
+  const classPath = Array.isArray(targetPath) ? targetPath : null;
+  const classFolder = classPath ? getFolderAtPath(classPath) : null;
+  if (!classFolder || classFolder.type !== "class") {
+    return;
+  }
+
+  openModal("class", {
+    action: "edit",
+    targetPath: classPath,
+    values: {
+      course: classFolder.name || "",
+      teacherName: classFolder.teacherName || "",
+      description: classFolder.description || "",
+      teacherNotes: classFolder.teacherNotes || "",
+      testFormat: classFolder.testFormat || "",
+      testExamples: classFolder.testExamples || [],
+      additionalNotes: classFolder.additionalNotes || "",
+    },
+  });
+}
+
+function openModal(mode, options = {}) {
   if (!requireSignedIn("create content")) {
     return;
   }
   currentModalMode = mode;
+  currentModalAction = options.action === "edit" ? "edit" : "create";
+  currentModalTargetPath = Array.isArray(options.targetPath)
+    ? [...options.targetPath]
+    : null;
   classModalBackdrop.hidden = false;
   classFields.hidden = mode === "session";
   sessionFields.hidden = mode !== "session";
   teacherNameField.hidden = mode !== "class";
   teacherNotesField.hidden = mode !== "class";
+  testFormatField.hidden = mode !== "class";
+  testExamplesField.hidden = mode !== "class";
   nameFieldLabel.textContent =
     mode === "class" ? "Course" : mode === "unit" ? "Unit Name" : "Lesson Name";
   additionalNotesLabel.textContent =
@@ -1798,7 +2026,9 @@ function openModal(mode) {
       ? "Anything else you want saved"
       : "Extra notes for this folder";
   classModalKicker.textContent =
-    mode === "class"
+    currentModalAction === "edit"
+      ? "Edit class"
+      : mode === "class"
       ? "New class"
       : mode === "unit"
         ? "New unit"
@@ -1806,7 +2036,9 @@ function openModal(mode) {
           ? "New lesson"
           : "Session setup";
   classModalTitle.textContent =
-    mode === "class"
+    currentModalAction === "edit"
+      ? "Edit Class"
+      : mode === "class"
       ? "Create Class"
       : mode === "unit"
         ? "Create Unit"
@@ -1816,11 +2048,18 @@ function openModal(mode) {
   saveClassModal.textContent =
     mode === "session"
       ? "Start Session"
+      : currentModalAction === "edit"
+        ? "Save Changes"
       : mode === "class"
         ? "Save Class"
         : mode === "unit"
           ? "Save Unit"
           : "Save Lesson";
+  if (mode === "class") {
+    populateClassModalFields(options.values || {});
+  } else if (mode !== "session") {
+    populateClassModalFields();
+  }
   if (mode !== "session") {
     classCourseInput.focus();
   } else {
@@ -1830,8 +2069,12 @@ function openModal(mode) {
 
 function closeModal() {
   classModalBackdrop.hidden = true;
+  currentModalAction = "create";
+  currentModalTargetPath = null;
   classCourseInput.value = "";
   classTeacherInput.value = "";
+  classTestFormatInput.value = "";
+  classTestExamplesInput.value = "";
   classDescriptionInput.value = "";
   classTeacherNotesInput.value = "";
   classAdditionalNotesInput.value = "";
@@ -1855,32 +2098,43 @@ async function saveModal() {
     }
 
     const teacherName = classTeacherInput.value.trim();
+    const testFormat = classTestFormatInput.value.trim();
+    const testExamples = normalizeTestExamples(classTestExamplesInput.value);
     const description = classDescriptionInput.value.trim();
     const teacherNotes = classTeacherNotesInput.value.trim();
     const additionalNotes = classAdditionalNotesInput.value.trim();
     let nextFolder;
 
     if (currentModalMode === "class") {
+      const existingClassFolder =
+        currentModalAction === "edit" && currentModalTargetPath
+          ? getFolderAtPath(currentModalTargetPath)
+          : null;
       const backendResult = await window.overlayApi.saveClassProfile(
         buildBackendClassPayload({
           course,
+          dbClassId: existingClassFolder?.dbClassId,
           teacherName,
           description,
           teacherNotes,
+          testFormat,
+          testExamples,
           additionalNotes,
         }),
       );
 
       nextFolder = {
-        id: makeId(),
+        id: existingClassFolder?.id || makeId(),
         type: "class",
         name: course,
         dbClassId: backendResult.classProfile.id,
         teacherName,
+        testFormat,
+        testExamples,
         description,
         teacherNotes,
         additionalNotes,
-        children: [],
+        children: existingClassFolder?.children || [],
       };
     } else {
       nextFolder = {
@@ -1893,8 +2147,12 @@ async function saveModal() {
       };
     }
 
-    const nextChildren = [...getCurrentChildren(), nextFolder];
-    const nextFolders = replaceChildrenAtPath(currentPath, nextChildren);
+    const nextFolders =
+      currentModalMode === "class" &&
+      currentModalAction === "edit" &&
+      currentModalTargetPath
+        ? updateFolderAtPath(currentModalTargetPath, () => nextFolder)
+        : replaceChildrenAtPath(currentPath, [...getCurrentChildren(), nextFolder]);
     await persistFolders(nextFolders);
     closeModal();
     return;
@@ -1914,6 +2172,8 @@ async function saveModal() {
     classId: dbClassId,
     className: classFolder?.name || "",
     teacherName: classFolder?.teacherName || "",
+    testFormat: classFolder?.testFormat || "",
+    testExamples: classFolder?.testExamples || [],
     description: classFolder?.description || "",
     teacherNotes: classFolder?.teacherNotes || "",
     additionalNotes: classFolder?.additionalNotes || "",
@@ -2126,6 +2386,10 @@ quizBackdrop.addEventListener("click", (event) => {
     closeQuizModal();
   }
 });
+
+editCurrentClassButton?.addEventListener("click", () => {
+  openClassEditModal();
+});
 closeCramModalButton.addEventListener("click", closeCramModal);
 cramBackdrop.addEventListener("click", (event) => {
   if (event.target === cramBackdrop) {
@@ -2152,46 +2416,74 @@ quizMaterialFile.addEventListener("change", async () => {
   const file = quizMaterialFile.files?.[0];
   if (!file) {
     uploadedQuizMaterial = "";
+    uploadedQuizMaterialSummary = "";
     quizFileName.textContent = "No file selected";
     return;
   }
 
-  uploadedQuizMaterial = await readQuizMaterialFile(file);
-  quizFileName.textContent = file.name;
-  quizSourceUploaded.checked = true;
+  try {
+    const [result] = await extractStudyMaterialFromFiles([file], "quiz");
+    uploadedQuizMaterial = result.content;
+    uploadedQuizMaterialSummary = `${result.handler.toUpperCase()} condensed from ${result.originalCharacters.toLocaleString()} to ${result.compressedCharacters.toLocaleString()} chars`;
+    quizFileName.textContent = `${file.name} • condensed`;
+    quizSourceUploaded.checked = true;
+  } catch (error) {
+    uploadedQuizMaterial = "";
+    uploadedQuizMaterialSummary = "";
+    quizFileName.textContent = "File couldn't be condensed";
+    console.error("Failed to process quiz material file", error);
+  }
 });
 cramMaterialFile.addEventListener("change", async () => {
   const files = Array.from(cramMaterialFile.files || []);
   if (files.length === 0) {
     uploadedCramMaterials = [];
     cramMaterialUploadError = "";
+    cramMaterialUploadSummary = "";
     cramFileName.textContent = "No files selected";
+    renderCramUploadRollup();
     updateCramMaterialCount();
     return;
   }
 
   try {
     const results = await Promise.allSettled(
-      files.map(async (file) => ({
-        name: file.name,
-        content: await readQuizMaterialFile(file),
-      })),
+      files.map((file) => extractStudyMaterialFromFiles([file], "cram")),
     );
     const successfulFiles = results
       .filter((result) => result.status === "fulfilled")
-      .map((result) => result.value);
+      .map((result) => result.value[0]);
     const failedCount = results.length - successfulFiles.length;
+    const totalOriginalCharacters = successfulFiles.reduce(
+      (total, file) => total + file.originalCharacters,
+      0,
+    );
+    const totalCompressedCharacters = successfulFiles.reduce(
+      (total, file) => total + file.compressedCharacters,
+      0,
+    );
+    const totalTokenSavings = successfulFiles.reduce(
+      (total, file) => total + file.estimatedTokenSavings,
+      0,
+    );
 
     uploadedCramMaterials = successfulFiles;
     cramMaterialUploadError = failedCount
       ? `Loaded ${successfulFiles.length} file${successfulFiles.length === 1 ? "" : "s"}, but ${failedCount} file${failedCount === 1 ? "" : "s"} couldn't be read cleanly.`
       : "";
+    cramMaterialUploadSummary =
+      successfulFiles.length > 0
+        ? `Condensed ${successfulFiles.length} upload${successfulFiles.length === 1 ? "" : "s"} from ${totalOriginalCharacters.toLocaleString()} to ${totalCompressedCharacters.toLocaleString()} characters, saving about ${totalTokenSavings.toLocaleString()} tokens.`
+        : "";
     cramFileName.textContent = getCramUploadSummaryText();
+    renderCramUploadRollup();
   } catch (error) {
     uploadedCramMaterials = [];
     cramMaterialUploadError =
       "Could not extract readable text from those files.";
+    cramMaterialUploadSummary = "";
     cramFileName.textContent = "Files couldn't be read";
+    renderCramUploadRollup();
     console.error("Failed to read Cram Mode material files", error);
   }
   updateCramMaterialCount();

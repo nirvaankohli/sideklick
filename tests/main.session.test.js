@@ -65,6 +65,8 @@ test("session lifecycle starts a session, persists state, and creates chat when 
           subject: "Chemistry",
           currentUnit: null,
           teacherFocus: null,
+          testFormat: null,
+          testExamples: [],
           keyConcepts: [],
           notes: null,
         }
@@ -114,6 +116,8 @@ test("session lifecycle starts a session, persists state, and creates chat when 
     subject: "Chemistry",
     currentUnit: null,
     teacherFocus: null,
+    testFormat: null,
+    testExamples: [],
     keyConcepts: [],
     notes: null,
   });
@@ -182,6 +186,11 @@ test("session lifecycle creates a backing class and notifies an existing chat wi
     className: "Calculus",
     teacherName: "Ms. Lin",
     teacherNotes: "Derivatives",
+    testFormat: "Short FRQ and concept checks",
+    testExamples: [
+      "Explain why the derivative is positive on this interval.",
+      "Show the chain rule step by step.",
+    ],
     description: "Limits and derivatives",
     additionalNotes: "Quiz Friday",
     sessionName: "Derivatives Help",
@@ -193,6 +202,11 @@ test("session lifecycle creates a backing class and notifies an existing chat wi
     subject: "Calculus",
     currentUnit: null,
     teacherFocus: "Teacher: Ms. Lin | Focus: Derivatives",
+    testFormat: "Short FRQ and concept checks",
+    testExamples: [
+      "Explain why the derivative is positive on this interval.",
+      "Show the chain rule step by step.",
+    ],
     keyConcepts: [],
     notes: "Description: Limits and derivatives\nAdditional notes: Quiz Friday",
   });

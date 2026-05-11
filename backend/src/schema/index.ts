@@ -26,6 +26,8 @@ export const classProfileSchema = z.object({
   subject: z.string().trim().min(1),
   currentUnit: nullableTrimmedString,
   teacherFocus: nullableTrimmedString,
+  testFormat: nullableTrimmedString,
+  testExamples: z.array(z.string().trim().min(1)).default([]),
   keyConcepts: z.array(z.string().trim().min(1)).default([]),
   notes: nullableTrimmedString,
   createdAt: timestampString.optional(),
@@ -229,6 +231,47 @@ export const cramRequestSchema = z.object({
   unitPathLabel: nullableTrimmedString,
 }).strict();
 
+export const cramTopicImportanceSchema = z.enum(["high", "medium", "low"]);
+
+export const cramChunkTopicSchema = z.object({
+  topic: z.string().trim().min(1),
+  importance: cramTopicImportanceSchema,
+  whyItMatters: z.string().trim().min(1),
+  formulas: z.array(z.string().trim().min(1)).max(4),
+  definitions: z.array(z.string().trim().min(1)).max(4),
+  likelyQuestionAngles: z.array(z.string().trim().min(1)).max(4),
+  evidenceSnippets: z.array(z.string().trim().min(1)).min(1).max(4),
+}).strict();
+
+export const cramChunkInsightSchema = z.object({
+  chunkLabel: z.string().trim().min(1),
+  topics: z.array(cramChunkTopicSchema).min(1).max(6),
+  repeatedIdeas: z.array(z.string().trim().min(1)).max(6),
+  formulas: z.array(z.string().trim().min(1)).max(6),
+  definitions: z.array(z.string().trim().min(1)).max(6),
+  likelyEmphasisSignals: z.array(z.string().trim().min(1)).max(6),
+}).strict();
+
+export const cramExamMapTopicSchema = z.object({
+  topic: z.string().trim().min(1),
+  priorityScore: z.number().int().min(1).max(10),
+  whyItMatters: z.string().trim().min(1),
+  repeatedCount: z.number().int().min(1),
+  formulas: z.array(z.string().trim().min(1)).max(5),
+  definitions: z.array(z.string().trim().min(1)).max(5),
+  likelyQuestionAngles: z.array(z.string().trim().min(1)).max(5),
+  supportingEvidence: z.array(z.string().trim().min(1)).min(1).max(5),
+}).strict();
+
+export const cramExamMapSchema = z.object({
+  overview: z.string().trim().min(1),
+  topTopics: z.array(cramExamMapTopicSchema).min(1).max(8),
+  formulasToMemorize: z.array(z.string().trim().min(1)).max(8),
+  definitionsToKnow: z.array(z.string().trim().min(1)).max(8),
+  likelyEmphasisSignals: z.array(z.string().trim().min(1)).max(8),
+  sourceChunkCount: z.number().int().min(1),
+}).strict();
+
 export const cramResponseSchema = z.object({
   title: z.string().trim().min(1),
   subtitle: z.string().trim().min(1),
@@ -283,6 +326,11 @@ export type QuizRequestInput = z.infer<typeof quizRequestSchema>;
 export type QuizResponseInput = z.infer<typeof quizResponseSchema>;
 export type CramTimeAvailableInput = z.infer<typeof cramTimeAvailableSchema>;
 export type CramRequestInput = z.infer<typeof cramRequestSchema>;
+export type CramTopicImportanceInput = z.infer<typeof cramTopicImportanceSchema>;
+export type CramChunkTopicInput = z.infer<typeof cramChunkTopicSchema>;
+export type CramChunkInsightInput = z.infer<typeof cramChunkInsightSchema>;
+export type CramExamMapTopicInput = z.infer<typeof cramExamMapTopicSchema>;
+export type CramExamMapInput = z.infer<typeof cramExamMapSchema>;
 export type CramResponseInput = z.infer<typeof cramResponseSchema>;
 export type PrivacySettingsInput = z.infer<typeof privacySettingsSchema>;
 export type PrivacySettingsPatchInput = z.infer<typeof privacySettingsPatchSchema>;

@@ -41,6 +41,8 @@ function createTables(db: DatabaseLike): void {
       subject TEXT NOT NULL,
       current_unit TEXT,
       teacher_focus TEXT,
+      test_format TEXT,
+      test_examples TEXT NOT NULL DEFAULT '[]',
       key_concepts TEXT NOT NULL DEFAULT '[]',
       notes TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -164,6 +166,18 @@ function ensureClassColumns(db: DatabaseLike): void {
   if (!columnNames.has("key_concepts")) {
     db.exec(
       "ALTER TABLE classes ADD COLUMN key_concepts TEXT NOT NULL DEFAULT '[]';",
+    );
+  }
+
+  if (!columnNames.has("test_format")) {
+    db.exec(
+      "ALTER TABLE classes ADD COLUMN test_format TEXT;",
+    );
+  }
+
+  if (!columnNames.has("test_examples")) {
+    db.exec(
+      "ALTER TABLE classes ADD COLUMN test_examples TEXT NOT NULL DEFAULT '[]';",
     );
   }
 

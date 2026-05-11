@@ -4,6 +4,8 @@ export type ClassProfile = {
   subject: string;
   currentUnit?: string | null;
   teacherFocus?: string | null;
+  testFormat?: string | null;
+  testExamples: string[];
   keyConcepts: string[];
   notes?: string | null;
   createdAt?: string;
@@ -191,6 +193,47 @@ export type CramRequest = {
   additionalNotes?: string | null;
   courseName?: string | null;
   unitPathLabel?: string | null;
+};
+
+export type CramTopicImportance = "high" | "medium" | "low";
+
+export type CramChunkTopic = {
+  topic: string;
+  importance: CramTopicImportance;
+  whyItMatters: string;
+  formulas: string[];
+  definitions: string[];
+  likelyQuestionAngles: string[];
+  evidenceSnippets: string[];
+};
+
+export type CramChunkInsight = {
+  chunkLabel: string;
+  topics: CramChunkTopic[];
+  repeatedIdeas: string[];
+  formulas: string[];
+  definitions: string[];
+  likelyEmphasisSignals: string[];
+};
+
+export type CramExamMapTopic = {
+  topic: string;
+  priorityScore: number;
+  whyItMatters: string;
+  repeatedCount: number;
+  formulas: string[];
+  definitions: string[];
+  likelyQuestionAngles: string[];
+  supportingEvidence: string[];
+};
+
+export type CramExamMap = {
+  overview: string;
+  topTopics: CramExamMapTopic[];
+  formulasToMemorize: string[];
+  definitionsToKnow: string[];
+  likelyEmphasisSignals: string[];
+  sourceChunkCount: number;
 };
 
 export type CramResponse = {
