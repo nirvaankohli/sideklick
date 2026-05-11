@@ -495,25 +495,22 @@
           <div class="compact-actions">
             <button
               id="restore-window"
-              class="restore-button compact-ask-button"
+              class="restore-button compact-ask-star-button"
               type="button"
               aria-label="Expand home and ask"
             >
-              Ask
-            </button>
-            <button
-              id="compact-star-button"
-              class="icon-button compact-star-button"
-              type="button"
-              aria-label="Open settings"
-            >
-              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 2 14.2 9.8 22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2L12 2z"></path>
-              </svg>
+              <span class="compact-ask-copy">
+                <span class="compact-ask-word">Ask</span>
+                <span class="compact-ask-ai" aria-hidden="true">
+                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 2 14.2 9.8 22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2L12 2z"></path>
+                  </svg>
+                </span>
+              </span>
             </button>
             <button
               id="compact-close-window"
-              class="icon-button danger"
+              class="icon-button danger compact-close-button"
               type="button"
               aria-label="Close window"
             >
@@ -947,9 +944,238 @@
             </div>
           </section>
         </div>
+
+        <div id="cram-backdrop" class="modal-backdrop no-drag" hidden>
+          <section
+            class="modal-card cram-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cram-modal-title"
+          >
+            <div class="modal-header cram-modal-header">
+              <div>
+                <p class="panel-label">Cram Mode</p>
+                <h2 id="cram-modal-title" class="modal-title">
+                  Build a Study Plan
+                </h2>
+              </div>
+              <div class="window-actions no-drag quiz-window-actions">
+                <button
+                  id="cram-theme-toggle"
+                  class="icon-button"
+                  type="button"
+                  aria-label="Toggle light or dark theme"
+                >
+                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M12.2 3.2c.5 0 .8.4.8.8 0 .2 0 .4-.1.5-1 1.8-1.3 4-.7 6.1 1 3.2 4 5.4 7.4 5.4.4 0 .8.3.8.8 0 .2-.1.4-.2.5-1.7 2.3-4.4 3.7-7.3 3.7-5 0-9-4-9-9 0-4 2.7-7.4 6.5-8.6.1-.1.3-.2.5-.2Z"
+                    ></path>
+                  </svg>
+                </button>
+                <button
+                  id="cram-minimize-native"
+                  class="icon-button"
+                  type="button"
+                  aria-label="Minimize window"
+                >
+                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 19h12v-2H6z"></path>
+                  </svg>
+                </button>
+                <button
+                  id="close-cram-modal"
+                  class="icon-button danger"
+                  type="button"
+                  aria-label="Close Cram Mode modal"
+                >
+                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
+                    ></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div id="cram-setup-view" class="cram-stack">
+              <section class="cram-hero">
+                <div class="cram-hero-copy">
+                  <p class="panel-label">Exam rescue</p>
+                  <p id="cram-session-meta" class="panel-help"></p>
+                </div>
+                <div class="cram-hero-badge">Best use of tonight</div>
+              </section>
+
+              <section class="cram-panel">
+                <div class="cram-panel-header">
+                  <div>
+                    <h3 class="cram-panel-title">Exam context</h3>
+                    <p class="cram-panel-copy">
+                      Tell SideKlick what you are studying and how much time is
+                      left.
+                    </p>
+                  </div>
+                </div>
+                <div class="cram-input-grid">
+                  <label class="modal-field">
+                    <span>Exam name</span>
+                    <input
+                      id="cram-exam-name"
+                      type="text"
+                      placeholder="AP Biology Unit 4 Test"
+                    />
+                  </label>
+                  <label class="modal-field">
+                    <span>Time available</span>
+                    <select id="cram-time-available" class="cram-select">
+                      <option value="30 minutes">30 min</option>
+                      <option value="1 hour" selected>1 hour</option>
+                      <option value="2 hours">2 hours</option>
+                      <option value="All night">All night</option>
+                    </select>
+                  </label>
+                </div>
+              </section>
+
+              <section class="cram-panel">
+                <div class="cram-panel-header">
+                  <div>
+                    <h3 class="cram-panel-title">Exam material</h3>
+                    <p class="cram-panel-copy">
+                      Paste what you have or upload one or more files.
+                    </p>
+                  </div>
+                  <p id="cram-material-count" class="cram-token-hint">
+                    Approx 0 tokens loaded
+                  </p>
+                </div>
+                <div class="cram-upload-panel">
+                  <label class="modal-field">
+                    <span>Upload material</span>
+                    <div class="quiz-file-shell cram-file-shell">
+                      <input
+                        id="cram-material-file"
+                        class="quiz-file-input"
+                        type="file"
+                        multiple
+                      />
+                      <label for="cram-material-file" class="quiz-file-button"
+                        >Choose files</label
+                      >
+                      <span id="cram-file-name" class="quiz-file-name"
+                        >No files selected</span
+                      >
+                    </div>
+                  </label>
+                  <label class="modal-field">
+                    <span>Or paste material</span>
+                    <textarea
+                      id="cram-material-text"
+                      rows="7"
+                      placeholder="Paste study material here"
+                    ></textarea>
+                  </label>
+                </div>
+                <p id="cram-material-status" class="panel-help cram-material-status">
+                  Ready to build from uploaded and pasted material.
+                </p>
+              </section>
+
+              <section class="cram-panel">
+                <div class="cram-panel-header">
+                  <div>
+                    <h3 class="cram-panel-title">Additional notes</h3>
+                    <p class="cram-panel-copy">
+                      Add teacher emphasis, exam format, or topics you are
+                      worried about.
+                    </p>
+                  </div>
+                </div>
+                <label class="modal-field">
+                  <span>Optional context</span>
+                  <textarea
+                    id="cram-additional-notes"
+                    rows="4"
+                    placeholder="Teacher keeps emphasizing free-response on cellular respiration and signaling pathways."
+                  ></textarea>
+                </label>
+              </section>
+
+              <div class="modal-actions">
+                <button
+                  id="generate-cram-button"
+                  class="continue-button"
+                  type="button"
+                >
+                  Build My Study Plan
+                </button>
+              </div>
+            </div>
+
+            <div id="cram-view" class="cram-stack" hidden>
+              <div class="cram-results-bar">
+                <div class="cram-results-copy">
+                  <p class="panel-label">Cram plan</p>
+                  <p id="cram-subtitle" class="panel-help"></p>
+                </div>
+                <p id="cram-priority-hint" class="cram-results-hint">
+                  Focus on the first card before moving to anything else.
+                </p>
+              </div>
+
+              <div class="cram-results-grid">
+                <section class="cram-results-card cram-results-card-primary">
+                  <p class="panel-label">Study First</p>
+                  <ul id="cram-study-first" class="cram-list"></ul>
+                </section>
+                <section class="cram-results-card">
+                  <p class="panel-label">Study Next</p>
+                  <ul id="cram-study-next" class="cram-list"></ul>
+                </section>
+                <section class="cram-results-card">
+                  <p class="panel-label">Skip If Needed</p>
+                  <ul id="cram-skip-list" class="cram-list"></ul>
+                </section>
+                <section class="cram-results-card">
+                  <p class="panel-label">Tonight's Plan</p>
+                  <ol id="cram-time-plan" class="cram-list cram-list-ordered"></ol>
+                </section>
+              </div>
+
+              <div class="cram-results-grid cram-results-grid-secondary">
+                <section class="cram-results-card">
+                  <p class="panel-label">Likely Questions</p>
+                  <ul id="cram-likely-questions" class="cram-list"></ul>
+                </section>
+                <section class="cram-results-card">
+                  <p class="panel-label">Quick Self-Test</p>
+                  <ul id="cram-quick-self-test" class="cram-list"></ul>
+                </section>
+              </div>
+
+              <div class="modal-actions">
+                <button
+                  id="back-to-cram-setup-button"
+                  class="ghost-button"
+                  type="button"
+                >
+                  Edit Inputs
+                </button>
+                <button
+                  id="regenerate-cram-button"
+                  class="continue-button"
+                  type="button"
+                >
+                  Regenerate Plan
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
       </section>
     </main>
 
+    <script src="./shared/cram-constraints.js"></script>
     <script src="./home.js"></script>
   </body>
 </html>

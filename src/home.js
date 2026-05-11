@@ -6,7 +6,6 @@ const minimizeNative = document.querySelector("#minimize-native");
 const closeWindow = document.querySelector("#close-window");
 const compactCloseWindow = document.querySelector("#compact-close-window");
 const restoreWindow = document.querySelector("#restore-window");
-const compactStarButton = document.querySelector("#compact-star-button");
 const homeDashboardView = document.querySelector("#home-dashboard-view");
 const homeSettingsView = document.querySelector("#home-settings-view");
 const homeAuthGateView = document.querySelector("#home-auth-gate-view");
@@ -87,6 +86,43 @@ const quizExplanationAnswer = document.querySelector(
 const quizExplanationText = document.querySelector("#quiz-explanation-text");
 const saveQuizButton = document.querySelector("#save-quiz-button");
 const quizSubmitButton = document.querySelector("#quiz-submit-button");
+const cramBackdrop = document.querySelector("#cram-backdrop");
+const closeCramModalButton = document.querySelector("#close-cram-modal");
+const cramThemeToggle = document.querySelector("#cram-theme-toggle");
+const cramMinimizeNative = document.querySelector("#cram-minimize-native");
+const cramSessionMeta = document.querySelector("#cram-session-meta");
+const cramSetupView = document.querySelector("#cram-setup-view");
+const cramView = document.querySelector("#cram-view");
+const cramExamNameInput = document.querySelector("#cram-exam-name");
+const cramTimeAvailableSelect = document.querySelector("#cram-time-available");
+const cramMaterialFile = document.querySelector("#cram-material-file");
+const cramFileName = document.querySelector("#cram-file-name");
+const cramMaterialText = document.querySelector("#cram-material-text");
+const cramAdditionalNotes = document.querySelector("#cram-additional-notes");
+const cramMaterialCount = document.querySelector("#cram-material-count");
+const cramMaterialStatus = document.querySelector("#cram-material-status");
+const generateCramButton = document.querySelector("#generate-cram-button");
+const cramSubtitle = document.querySelector("#cram-subtitle");
+const cramStudyFirst = document.querySelector("#cram-study-first");
+const cramStudyNext = document.querySelector("#cram-study-next");
+const cramSkipList = document.querySelector("#cram-skip-list");
+const cramTimePlan = document.querySelector("#cram-time-plan");
+const cramLikelyQuestions = document.querySelector("#cram-likely-questions");
+const cramQuickSelfTest = document.querySelector("#cram-quick-self-test");
+const backToCramSetupButton = document.querySelector(
+  "#back-to-cram-setup-button",
+);
+const regenerateCramButton = document.querySelector("#regenerate-cram-button");
+const cramShared = window.CRAM_SHARED || {};
+const cramInputConstraints = cramShared.cramInputConstraints || {
+  maxMaterialCharacters: 24000,
+};
+const validateCramMaterialInput =
+  cramShared.validateCramMaterialInput ||
+  ((value) => ({
+    ok: Boolean(String(value ?? "").trim()),
+    normalizedMaterial: String(value ?? "").trim(),
+  }));
 const resizeHandle = document.querySelector("#resize-handle");
 const settingsThemeStatus = document.querySelector("#settings-theme-status");
 const settingsSourceStatus = document.querySelector("#settings-source-status");
@@ -161,6 +197,10 @@ let activeQuizClassFolder = null;
 let uploadedQuizMaterial = "";
 let activeQuiz = null;
 let quizHasBeenChecked = false;
+let activeCramPlan = null;
+let uploadedCramMaterials = [];
+let cramMaterialUploadError = "";
+let isGeneratingCramPlan = false;
 let activeHomeView = "dashboard";
 let privacySettings = null;
 let authSession = null;
@@ -184,6 +224,8 @@ const MUI_CREATE_ACTION_ICON_PATHS = {
 
   quiz:
     "M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5.99 13H12v-2h2.01v2zm1.54-5.07-.9.92c-.65.66-.86 1.16-.86 2.15h-1.8v-.45c0-1 .41-1.91 1.07-2.57l1.24-1.26c.37-.36.58-.86.58-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H9.08c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.26z",
+  cram:
+    "M4 5h16v2H4zm2 4h12v2H6zm-1 4h14v2H5zm2 4h8v2H7z",
 };
 
 const sourceLabels = {
@@ -299,6 +341,7 @@ function getContextualCreateActions() {
     return [
       { key: "unit", label: "Unit", icon: MUI_CREATE_ACTION_ICON_PATHS.unit },
       { key: "session", label: "Session", icon: MUI_CREATE_ACTION_ICON_PATHS.session },
+      { key: "cram", label: "Cram Mode", icon: MUI_CREATE_ACTION_ICON_PATHS.cram },
       { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
     ];
   }
@@ -307,12 +350,14 @@ function getContextualCreateActions() {
     return [
       { key: "lesson", label: "Lesson", icon: MUI_CREATE_ACTION_ICON_PATHS.lesson },
       { key: "session", label: "Session", icon: MUI_CREATE_ACTION_ICON_PATHS.session },
+      { key: "cram", label: "Cram Mode", icon: MUI_CREATE_ACTION_ICON_PATHS.cram },
       { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
     ];
   }
 
   return [
     { key: "session", label: "Session", icon: MUI_CREATE_ACTION_ICON_PATHS.session },
+    { key: "cram", label: "Cram Mode", icon: MUI_CREATE_ACTION_ICON_PATHS.cram },
     { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
   ];
 }
@@ -904,15 +949,63 @@ function buildSessionCardStats(session) {
   return `${requestCount} request${requestCount === 1 ? "" : "s"} • ${formatSessionDate(session.endedAt)}`;
 }
 
+function normalizeExtractedFileText(rawText) {
+  return rawText
+    .replace(/\u0000/g, " ")
+    .replace(/[^\S\r\n]+/g, " ")
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function extractReadableSegments(rawText) {
+  const segments = rawText.match(/[A-Za-z0-9][A-Za-z0-9 ,.:;'"()/%&!?+\-]{5,}/g);
+  if (!segments) {
+    return "";
+  }
+
+  return segments.slice(0, 400).join("\n");
+}
+
 async function readQuizMaterialFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () =>
-      resolve(typeof reader.result === "string" ? reader.result : "");
-    reader.onerror = () =>
-      reject(reader.error || new Error("Failed to read file."));
-    reader.readAsText(file);
-  });
+  const buffer = await file.arrayBuffer();
+  const decodedText = new TextDecoder("utf-8", { fatal: false }).decode(buffer);
+  const normalizedText = normalizeExtractedFileText(decodedText);
+
+  if (normalizedText) {
+    return normalizedText;
+  }
+
+  const extractedText = extractReadableSegments(decodedText);
+  if (extractedText) {
+    return extractedText;
+  }
+
+  throw new Error("Failed to extract readable text from file.");
+}
+
+function getCombinedUploadedCramMaterial() {
+  return uploadedCramMaterials
+    .map(({ name, content }) => `--- ${name} ---\n${content}`)
+    .join("\n\n");
+}
+
+function getCombinedCramMaterialInput() {
+  return [getCombinedUploadedCramMaterial().trim(), cramMaterialText.value.trim()]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function getCramUploadSummaryText() {
+  if (uploadedCramMaterials.length === 0) {
+    return "No files selected";
+  }
+
+  if (uploadedCramMaterials.length === 1) {
+    return uploadedCramMaterials[0].name;
+  }
+
+  return `${uploadedCramMaterials.length} files selected`;
 }
 
 function openSessionSummary(session) {
@@ -1078,6 +1171,160 @@ function closeQuizModal() {
   activeQuiz = null;
   quizHasBeenChecked = false;
   quizQuestions.parentElement?.classList.remove("has-explanation");
+}
+
+function updateCramMaterialCount() {
+  const pastedLength = cramMaterialText?.value.trim().length || 0;
+  const uploadedLength = uploadedCramMaterials.reduce(
+    (total, file) => total + file.content.length,
+    0,
+  );
+  const combinedLength = pastedLength + uploadedLength;
+  const approxTokens = Math.ceil(combinedLength / 4);
+  const hasUploadedMaterial = uploadedCramMaterials.length > 0;
+  const hasUploadError = Boolean(cramMaterialUploadError);
+  const overLimit = combinedLength > cramInputConstraints.maxMaterialCharacters;
+
+  cramMaterialCount.textContent = `Approx ${approxTokens.toLocaleString()} tokens loaded`;
+  cramMaterialStatus.textContent = hasUploadError
+      ? cramMaterialUploadError
+      : overLimit
+        ? `Too much material loaded for one pass. Keep it under ${cramInputConstraints.maxMaterialCharacters.toLocaleString()} characters by trimming to the most testable notes.`
+      : hasUploadedMaterial
+        ? `Using ${uploadedCramMaterials.length} uploaded file${uploadedCramMaterials.length === 1 ? "" : "s"} together with any pasted material.`
+        : "Paste material first. Uploads can supplement the notes you paste here.";
+  cramMaterialStatus.dataset.tone =
+    hasUploadError || overLimit ? "danger" : "neutral";
+  generateCramButton.disabled = isGeneratingCramPlan;
+
+  return {
+    approxTokens,
+  };
+}
+
+function resetCramModalState() {
+  activeCramPlan = null;
+  uploadedCramMaterials = [];
+  cramMaterialUploadError = "";
+  cramSetupView.hidden = false;
+  cramView.hidden = true;
+  cramExamNameInput.value = "";
+  cramTimeAvailableSelect.value = "1 hour";
+  cramMaterialFile.value = "";
+  cramFileName.textContent = "No files selected";
+  cramMaterialText.value = "";
+  cramAdditionalNotes.value = "";
+  cramSubtitle.textContent = "";
+  cramStudyFirst.replaceChildren();
+  cramStudyNext.replaceChildren();
+  cramSkipList.replaceChildren();
+  cramTimePlan.replaceChildren();
+  cramLikelyQuestions.replaceChildren();
+  cramQuickSelfTest.replaceChildren();
+  isGeneratingCramPlan = false;
+  generateCramButton.disabled = false;
+  generateCramButton.textContent = "Build My Study Plan";
+  updateCramMaterialCount();
+}
+
+function closeCramModal() {
+  cramBackdrop.hidden = true;
+  activeCramPlan = null;
+}
+
+function openCramModalForCurrentClass() {
+  if (!requireSignedIn("start Cram Mode")) {
+    return;
+  }
+
+  const currentClassFolder = getCurrentClassFolder();
+  if (!currentClassFolder || currentClassFolder.type !== "class") {
+    return;
+  }
+
+  resetCramModalState();
+  const unitPathLabel = buildCurrentUnitPathLabel();
+  cramSessionMeta.textContent = unitPathLabel
+    ? `${currentClassFolder.name || "Class"} • ${unitPathLabel}`
+    : `${currentClassFolder.name || "Class"} • Exam rescue mode`;
+  cramBackdrop.hidden = false;
+  cramExamNameInput.focus();
+}
+
+function renderCramList(container, items) {
+  container.replaceChildren();
+
+  items.forEach((item) => {
+    const entry = document.createElement("li");
+    entry.className = "cram-list-item";
+    entry.textContent = item;
+    container.appendChild(entry);
+  });
+}
+
+async function generateCramPlan() {
+  if (!requireSignedIn("build a cram plan")) {
+    return;
+  }
+
+  const currentClassFolder = getCurrentClassFolder();
+  if (!currentClassFolder) {
+    return;
+  }
+
+  const examName = cramExamNameInput.value.trim();
+  const material = getCombinedCramMaterialInput();
+  updateCramMaterialCount();
+  if (!examName) {
+    cramExamNameInput.focus();
+    return;
+  }
+  const materialValidation = validateCramMaterialInput(material);
+  if (!materialValidation.ok) {
+    cramMaterialStatus.dataset.tone = "danger";
+    cramMaterialStatus.textContent = materialValidation.message;
+    cramMaterialText.focus();
+    return;
+  }
+
+  isGeneratingCramPlan = true;
+  generateCramButton.disabled = true;
+  generateCramButton.textContent = "Building plan...";
+
+  try {
+    const classId = await ensureBackendClassId(currentClassFolder);
+    activeCramPlan = await window.overlayApi.generateCramPlan({
+      classId,
+      courseName: currentClassFolder.name,
+      unitPathLabel: buildCurrentUnitPathLabel(),
+      examName,
+      timeAvailable: cramTimeAvailableSelect.value,
+      examMaterial: materialValidation.normalizedMaterial,
+      additionalNotes: cramAdditionalNotes.value.trim() || null,
+    });
+
+    cramSubtitle.textContent = activeCramPlan.subtitle;
+    renderCramList(cramStudyFirst, activeCramPlan.studyFirst);
+    renderCramList(cramStudyNext, activeCramPlan.studyNext);
+    renderCramList(cramSkipList, activeCramPlan.skipIfNeeded);
+    renderCramList(cramTimePlan, activeCramPlan.timePlan);
+    renderCramList(cramLikelyQuestions, activeCramPlan.likelyQuestions);
+    renderCramList(cramQuickSelfTest, activeCramPlan.quickSelfTest);
+
+    cramSetupView.hidden = true;
+    cramView.hidden = false;
+  } catch (error) {
+    cramMaterialStatus.dataset.tone = "danger";
+    cramMaterialStatus.textContent =
+      error instanceof Error
+        ? error.message
+        : "Could not build a cram plan right now.";
+  } finally {
+    isGeneratingCramPlan = false;
+    generateCramButton.disabled = false;
+    generateCramButton.textContent = "Build My Study Plan";
+    updateCramMaterialCount();
+  }
 }
 
 function showQuizExplanation(question, index) {
@@ -1398,8 +1645,8 @@ function renderFolders() {
     const currentType = getCurrentContainerType();
     folderNameInput.placeholder =
       currentType === "class"
-        ? "Search units, lessons, sessions, or quizzes"
-        : "Search lessons, sessions, or quizzes";
+        ? "Search units, lessons, sessions, cram plans, or quizzes"
+        : "Search lessons, sessions, cram plans, or quizzes";
     emptyTitle.textContent =
       currentType === "class"
         ? "Nothing in this class yet."
@@ -1408,10 +1655,10 @@ function renderFolders() {
           : "Nothing in this lesson yet.";
     emptyCopy.textContent =
       currentType === "class"
-        ? "Add a unit, start a session, or build a quiz from this class."
+        ? "Add a unit, start a session, open Cram Mode, or build a quiz from this class."
         : currentType === "unit"
-          ? "Add a lesson, start a session, or build a quiz inside this unit."
-          : "Start a session or build a quiz inside this lesson.";
+          ? "Add a lesson, start a session, open Cram Mode, or build a quiz inside this unit."
+          : "Start a session, open Cram Mode, or build a quiz inside this lesson.";
   }
 
   for (const folder of visibleChildren) {
@@ -1796,6 +2043,19 @@ quizMinimizeNative.addEventListener("click", async () => {
   await window.overlayApi.minimizeNative();
 });
 
+cramThemeToggle.addEventListener("click", async () => {
+  if (!requireSignedIn("change appearance")) {
+    return;
+  }
+  const nextSource = currentTone === "dark" ? "light" : "dark";
+  const result = await window.overlayApi.setThemeSource(nextSource);
+  applyThemePreference(result);
+});
+
+cramMinimizeNative.addEventListener("click", async () => {
+  await window.overlayApi.minimizeNative();
+});
+
 closeWindow.addEventListener("click", async () => {
   await window.overlayApi.closeWindow();
 });
@@ -1806,10 +2066,6 @@ compactCloseWindow.addEventListener("click", async () => {
 
 restoreWindow.addEventListener("click", async () => {
   await window.overlayApi.expandWindow();
-});
-
-compactStarButton.addEventListener("click", () => {
-  setHomeView(activeHomeView === "settings" ? "dashboard" : "settings");
 });
 
 backFolderButton.addEventListener("click", () => {
@@ -1870,6 +2126,25 @@ quizBackdrop.addEventListener("click", (event) => {
     closeQuizModal();
   }
 });
+closeCramModalButton.addEventListener("click", closeCramModal);
+cramBackdrop.addEventListener("click", (event) => {
+  if (event.target === cramBackdrop) {
+    closeCramModal();
+  }
+});
+cramMaterialText.addEventListener("input", updateCramMaterialCount);
+cramAdditionalNotes.addEventListener("input", updateCramMaterialCount);
+generateCramButton.addEventListener("click", () => {
+  void generateCramPlan();
+});
+backToCramSetupButton.addEventListener("click", () => {
+  cramView.hidden = true;
+  cramSetupView.hidden = false;
+});
+regenerateCramButton.addEventListener("click", () => {
+  cramView.hidden = true;
+  void generateCramPlan();
+});
 quizGapFocus.addEventListener("input", () => {
   quizGapFocusValue.textContent = `${quizGapFocus.value}%`;
 });
@@ -1884,6 +2159,42 @@ quizMaterialFile.addEventListener("change", async () => {
   uploadedQuizMaterial = await readQuizMaterialFile(file);
   quizFileName.textContent = file.name;
   quizSourceUploaded.checked = true;
+});
+cramMaterialFile.addEventListener("change", async () => {
+  const files = Array.from(cramMaterialFile.files || []);
+  if (files.length === 0) {
+    uploadedCramMaterials = [];
+    cramMaterialUploadError = "";
+    cramFileName.textContent = "No files selected";
+    updateCramMaterialCount();
+    return;
+  }
+
+  try {
+    const results = await Promise.allSettled(
+      files.map(async (file) => ({
+        name: file.name,
+        content: await readQuizMaterialFile(file),
+      })),
+    );
+    const successfulFiles = results
+      .filter((result) => result.status === "fulfilled")
+      .map((result) => result.value);
+    const failedCount = results.length - successfulFiles.length;
+
+    uploadedCramMaterials = successfulFiles;
+    cramMaterialUploadError = failedCount
+      ? `Loaded ${successfulFiles.length} file${successfulFiles.length === 1 ? "" : "s"}, but ${failedCount} file${failedCount === 1 ? "" : "s"} couldn't be read cleanly.`
+      : "";
+    cramFileName.textContent = getCramUploadSummaryText();
+  } catch (error) {
+    uploadedCramMaterials = [];
+    cramMaterialUploadError =
+      "Could not extract readable text from those files.";
+    cramFileName.textContent = "Files couldn't be read";
+    console.error("Failed to read Cram Mode material files", error);
+  }
+  updateCramMaterialCount();
 });
 
 for (const button of settingsThemeButtons) {
@@ -1937,6 +2248,8 @@ function openFolderActionMenu() {
       closeFolderActionMenu();
       if (action.key === "quiz") {
         openQuizModalForCurrentClass();
+      } else if (action.key === "cram") {
+        openCramModalForCurrentClass();
       } else {
         openModal(action.key);
       }
@@ -2183,11 +2496,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   applyPrivacySettings(settings);
   applyAuthSession(session);
   setPrivacyAccountStatus(
-    "Theme changes apply across Home, Chat, and quiz views.",
+    "Theme changes apply across Home, Chat, Cram Mode, and quiz views.",
   );
   setHomeView("dashboard");
   renderFolders();
   attachResizeHandle(resizeHandle);
+  updateCramMaterialCount();
 });
 
 window.addEventListener("resize", scheduleFitText);

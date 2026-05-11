@@ -2,7 +2,6 @@ import { Router } from "express";
 import { ZodError } from "zod";
 
 import {
-  assignClassOwner,
   enforceClassOwnershipFromBody,
   getAuthenticatedUserId,
   requireJwtAuth,
@@ -20,10 +19,9 @@ classesRouter.post("/", (request, response) => {
     // This route handles both create and update.
     // If `id` is present in the payload we update that class profile.
     const classProfile = classProfileSchema.parse(request.body);
-    const savedClassProfile = saveClassProfile(classProfile);
-    if (savedClassProfile.id) {
-      assignClassOwner(savedClassProfile.id, getAuthenticatedUserId(request));
-    }
+    const savedClassProfile = saveClassProfile(classProfile, {
+      ownerUserId: getAuthenticatedUserId(request),
+    });
 
     response.status(200).json({
       classProfile: savedClassProfile,

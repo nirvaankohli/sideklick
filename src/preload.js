@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld("overlayApi", {
   saveClassProfile: (classProfile) => ipcRenderer.invoke("backend:saveClassProfile", classProfile),
   assist: (payload) => ipcRenderer.invoke("backend:assist", payload),
   submitFeedback: (payload) => ipcRenderer.invoke("backend:feedback", payload),
+  generateCramPlan: (payload) => ipcRenderer.invoke("backend:cram", payload),
   generateQuiz: (payload) => ipcRenderer.invoke("backend:quiz", payload),
   registerAccount: (payload) => ipcRenderer.invoke("backend:authRegister", payload),
   loginAccount: (payload) => ipcRenderer.invoke("backend:authLogin", payload),

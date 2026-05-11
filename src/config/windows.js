@@ -22,8 +22,8 @@ const sharedWindowTemplate = {
       minHeight: 180,
     },
     compact: {
-      width: 260,
-      height: 76,
+      width: 272,
+      height: 82,
     },
     anchor: {
       horizontal: "right",
@@ -79,8 +79,8 @@ const windowTemplates = {
         minHeight: 520,
       },
       compact: {
-        width: 240,
-        height: 74,
+        width: 252,
+        height: 80,
       },
     },
   },
@@ -96,8 +96,8 @@ const windowTemplates = {
         minHeight: 420,
       },
       compact: {
-        width: 260,
-        height: 76,
+        width: 272,
+        height: 82,
       },
     },
   },

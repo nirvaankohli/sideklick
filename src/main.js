@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
 const https = require("https");
+const dotenv = require("dotenv");
 require("tsx/cjs");
 const {
   app,
@@ -68,8 +69,25 @@ const LOCAL_API_BASE_URL =
   process.env.LOCAL_API_BASE_URL || "http://127.0.0.1:3001";
 const DEFAULT_MANAGED_BACKEND_URL = "";
 const DEFAULT_MANAGED_BACKEND_JWT = "";
-const DEFAULT_BACKEND_JWT_SECRET = "sideclick-managed-backend-dev-secret";
 const MANAGED_AUTH_KEY = "managedAuth";
+
+function loadEnvironment() {
+  const candidatePaths = [
+    path.resolve(process.cwd(), ".env"),
+    path.resolve(__dirname, "../.env"),
+  ];
+
+  for (const envPath of candidatePaths) {
+    if (!fs.existsSync(envPath)) {
+      continue;
+    }
+
+    dotenv.config({ path: envPath });
+    return;
+  }
+}
+
+loadEnvironment();
 
 function getAppLogoPath() {
   return path.join(process.cwd(), "assets", "images", "logo", "logo.png");
@@ -77,6 +95,43 @@ function getAppLogoPath() {
 
 function getThemePreferencePath() {
   return path.join(app.getPath("userData"), "preferences.json");
+}
+
+function getLocalBackendJwtSecretPath() {
+  return path.join(app.getPath("userData"), "local-backend-jwt-secret.txt");
+}
+
+function ensureLocalBackendJwtSecret() {
+  const configuredSecret =
+    typeof process.env.BACKEND_JWT_SECRET === "string"
+      ? process.env.BACKEND_JWT_SECRET.trim()
+      : "";
+
+  if (configuredSecret) {
+    return configuredSecret;
+  }
+
+  const secretPath = getLocalBackendJwtSecretPath();
+  try {
+    if (fs.existsSync(secretPath)) {
+      const storedSecret = fs.readFileSync(secretPath, "utf8").trim();
+      if (storedSecret) {
+        process.env.BACKEND_JWT_SECRET = storedSecret;
+        return storedSecret;
+      }
+    }
+  } catch (error) {
+    console.warn("[local-backend] failed to read stored JWT secret", error);
+  }
+
+  const generatedSecret = crypto.randomBytes(48).toString("hex");
+  fs.mkdirSync(path.dirname(secretPath), { recursive: true });
+  fs.writeFileSync(secretPath, generatedSecret, "utf8");
+  process.env.BACKEND_JWT_SECRET = generatedSecret;
+  console.warn(
+    "[local-backend] BACKEND_JWT_SECRET was not set. Generated a persistent local secret for this device.",
+  );
+  return generatedSecret;
 }
 
 function readPreferences() {
@@ -404,6 +459,7 @@ async function startLocalBackend() {
   }
 
   try {
+    ensureLocalBackendJwtSecret();
     await startServer({
       host: "127.0.0.1",
       port: 3001,
@@ -441,36 +497,6 @@ function getManagedBackendJwt() {
     return storedAuth.token;
   }
   return null;
-}
-
-function getBackendJwtSecret() {
-  const configuredSecret =
-    typeof process.env.BACKEND_JWT_SECRET === "string"
-      ? process.env.BACKEND_JWT_SECRET.trim()
-      : "";
-
-  return configuredSecret || DEFAULT_BACKEND_JWT_SECRET;
-}
-
-function base64UrlEncode(value) {
-  return Buffer.from(value, "utf8").toString("base64url");
-}
-
-function createLocalBackendJwt() {
-  const header = base64UrlEncode(JSON.stringify({
-    alg: "HS256",
-    typ: "JWT",
-  }));
-  const payload = base64UrlEncode(JSON.stringify({
-    sub: "local-electron-client",
-    exp: Math.floor(Date.now() / 1000) + 60 * 60,
-  }));
-  const signature = crypto
-    .createHmac("sha256", getBackendJwtSecret())
-    .update(`${header}.${payload}`)
-    .digest("base64url");
-
-  return `${header}.${payload}.${signature}`;
 }
 
 function normalizeManagedBackendBaseUrl(baseUrl) {
@@ -904,6 +930,13 @@ ipcMain.handle("backend:feedback", async (_event, payload) => {
   });
 });
 
+ipcMain.handle("backend:cram", async (_event, payload) => {
+  return callManagedBackend("/api/cram", {
+    method: "POST",
+    body: payload,
+  });
+});
+
 ipcMain.handle("backend:quiz", async (_event, payload) => {
   return callManagedBackend("/api/quiz", {
     method: "POST",
@@ -929,8 +962,26 @@ ipcMain.handle("backend:authLogin", async (_event, payload) => {
   return setStoredManagedAuth(session);
 });
 
-ipcMain.handle("backend:authLogout", () => {
-  return clearStoredManagedAuth();
+ipcMain.handle("backend:authLogout", async () => {
+  let logoutError = null;
+
+  if (getStoredManagedAuth()?.token) {
+    try {
+      await callManagedBackend("/api/auth/logout", {
+        method: "POST",
+      });
+    } catch (error) {
+      logoutError = error;
+    }
+  }
+
+  clearStoredManagedAuth();
+
+  if (logoutError) {
+    throw logoutError;
+  }
+
+  return null;
 });
 
 ipcMain.handle("backend:authSession", async () => {

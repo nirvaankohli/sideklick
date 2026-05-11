@@ -212,6 +212,34 @@ export const quizResponseSchema = z.object({
   questions: z.array(quizQuestionSchema).min(3).max(8),
 }).strict();
 
+export const cramTimeAvailableSchema = z.enum([
+  "30 minutes",
+  "1 hour",
+  "2 hours",
+  "All night",
+]);
+
+export const cramRequestSchema = z.object({
+  classId: z.number().int().positive().optional(),
+  examName: z.string().trim().min(1),
+  timeAvailable: cramTimeAvailableSchema,
+  examMaterial: z.string().trim().min(1),
+  additionalNotes: nullableTrimmedString,
+  courseName: nullableTrimmedString,
+  unitPathLabel: nullableTrimmedString,
+}).strict();
+
+export const cramResponseSchema = z.object({
+  title: z.string().trim().min(1),
+  subtitle: z.string().trim().min(1),
+  studyFirst: z.array(z.string().trim().min(1)).min(1).max(4),
+  studyNext: z.array(z.string().trim().min(1)).min(1).max(4),
+  skipIfNeeded: z.array(z.string().trim().min(1)).min(1).max(4),
+  likelyQuestions: z.array(z.string().trim().min(1)).min(3).max(6),
+  quickSelfTest: z.array(z.string().trim().min(1)).min(3).max(6),
+  timePlan: z.array(z.string().trim().min(1)).min(3).max(5),
+}).strict();
+
 export const privacySettingsSchema = z.object({
   screenshotPolicy: z.enum(["automatic", "manual", "disabled"]),
   syncConsent: z.enum(["unknown", "granted", "denied"]),
@@ -253,6 +281,9 @@ export type FeedbackRequestInput = z.infer<typeof feedbackRequestSchema>;
 export type QuizQuestionInput = z.infer<typeof quizQuestionSchema>;
 export type QuizRequestInput = z.infer<typeof quizRequestSchema>;
 export type QuizResponseInput = z.infer<typeof quizResponseSchema>;
+export type CramTimeAvailableInput = z.infer<typeof cramTimeAvailableSchema>;
+export type CramRequestInput = z.infer<typeof cramRequestSchema>;
+export type CramResponseInput = z.infer<typeof cramResponseSchema>;
 export type PrivacySettingsInput = z.infer<typeof privacySettingsSchema>;
 export type PrivacySettingsPatchInput = z.infer<typeof privacySettingsPatchSchema>;
 export type DeleteAccountRequestInput = z.infer<typeof deleteAccountRequestSchema>;

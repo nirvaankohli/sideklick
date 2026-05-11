@@ -1,83 +1,16 @@
-import crypto from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 
 import { getDatabase } from "../db/index.ts";
-
-type JwtClaims = {
-  sub: string;
-  exp?: number;
-  [key: string]: unknown;
-};
+import type { AuthenticatedJwtClaims } from "../services/auth.ts";
+import { verifyAuthenticatedToken } from "../services/auth.ts";
 
 type AuthenticatedRequest = Request & {
-  auth?: JwtClaims;
+  auth?: AuthenticatedJwtClaims;
 };
-
-function base64UrlDecode(value: string): Buffer {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = normalized.length % 4 === 0 ? "" : "=".repeat(4 - (normalized.length % 4));
-  return Buffer.from(`${normalized}${padding}`, "base64");
-}
-
-function parseJwtPayload(token: string): JwtClaims {
-  const parts = token.split(".");
-  if (parts.length !== 3) {
-    throw new Error("Malformed JWT.");
-  }
-
-  const decodedHeader = JSON.parse(base64UrlDecode(parts[0]).toString("utf8")) as {
-    alg?: string;
-  };
-  if (decodedHeader.alg !== "HS256") {
-    throw new Error("Unsupported JWT algorithm.");
-  }
-
-  const payload = JSON.parse(base64UrlDecode(parts[1]).toString("utf8")) as JwtClaims;
-  if (!payload.sub || typeof payload.sub !== "string") {
-    throw new Error("JWT is missing subject.");
-  }
-
-  return payload;
-}
-
-function getJwtSecret(): string {
-  const secret =
-    typeof process.env.BACKEND_JWT_SECRET === "string"
-      ? process.env.BACKEND_JWT_SECRET.trim()
-      : "";
-
-  return secret || "sideclick-managed-backend-dev-secret";
-}
-
-function verifyJwtSignature(token: string): JwtClaims {
-  const parts = token.split(".");
-  if (parts.length !== 3) {
-    throw new Error("Malformed JWT.");
-  }
-
-  const signatureInput = `${parts[0]}.${parts[1]}`;
-  const expectedSignature = crypto
-    .createHmac("sha256", getJwtSecret())
-    .update(signatureInput)
-    .digest("base64url");
-  const providedSignature = parts[2];
-
-  const expectedBuffer = Buffer.from(expectedSignature, "utf8");
-  const providedBuffer = Buffer.from(providedSignature, "utf8");
-  if (
-    expectedBuffer.length !== providedBuffer.length ||
-    !crypto.timingSafeEqual(expectedBuffer, providedBuffer)
-  ) {
-    throw new Error("Invalid JWT signature.");
-  }
-
-  const payload = parseJwtPayload(token);
-  if (typeof payload.exp === "number" && payload.exp * 1000 <= Date.now()) {
-    throw new Error("JWT has expired.");
-  }
-
-  return payload;
-}
+type AuthorizationFailure = {
+  status: 403 | 404;
+  error: string;
+};
 
 function getBearerToken(request: Request): string | null {
   const authorizationHeader = request.get("authorization");
@@ -103,8 +36,11 @@ function readIntegerId(value: unknown): number | null {
     : null;
 }
 
-function claimClassOwnershipIfNeeded(classId: number, userId: string): string | null {
-  const db = getDatabase();
+export function authorizeClassAccess(
+  classId: number,
+  userId: string,
+  db = getDatabase(),
+): AuthorizationFailure | null {
   const row = db.prepare(
     `
       SELECT owner_user_id
@@ -115,28 +51,27 @@ function claimClassOwnershipIfNeeded(classId: number, userId: string): string | 
   ).get(classId) as { owner_user_id: string | null } | undefined;
 
   if (!row) {
-    return null;
+    return {
+      status: 404,
+      error: "Class resource not found.",
+    };
   }
 
-  if (!row.owner_user_id) {
-    db.prepare(
-      `
-        UPDATE classes
-        SET owner_user_id = ?
-        WHERE id = ? AND owner_user_id IS NULL
-      `,
-    ).run(userId, classId);
-    return userId;
+  if (row.owner_user_id !== userId) {
+    return {
+      status: 403,
+      error: "Forbidden class resource access.",
+    };
   }
 
-  return row.owner_user_id;
+  return null;
 }
 
-function claimSessionOwnershipIfNeeded(sessionId: number, userId: string): {
-  sessionOwnerId: string | null;
-  classOwnerId: string | null;
-} | null {
-  const db = getDatabase();
+export function authorizeSessionAccess(
+  sessionId: number,
+  userId: string,
+  db = getDatabase(),
+): AuthorizationFailure | null {
   const row = db.prepare(
     `
       SELECT
@@ -155,41 +90,27 @@ function claimSessionOwnershipIfNeeded(sessionId: number, userId: string): {
   } | undefined;
 
   if (!row) {
-    return null;
+    return {
+      status: 404,
+      error: "Session resource not found.",
+    };
   }
 
-  if (!row.session_owner_id) {
-    db.prepare(
-      `
-        UPDATE sessions
-        SET owner_user_id = ?
-        WHERE id = ? AND owner_user_id IS NULL
-      `,
-    ).run(userId, sessionId);
+  if (row.session_owner_id !== userId && row.class_owner_id !== userId) {
+    return {
+      status: 403,
+      error: "Forbidden session resource access.",
+    };
   }
 
-  if (row.class_id && !row.class_owner_id) {
-    db.prepare(
-      `
-        UPDATE classes
-        SET owner_user_id = ?
-        WHERE id = ? AND owner_user_id IS NULL
-      `,
-    ).run(userId, row.class_id);
-  }
-
-  return {
-    sessionOwnerId: row.session_owner_id || userId,
-    classOwnerId: row.class_owner_id || userId,
-  };
+  return null;
 }
 
-function claimInteractionOwnershipIfNeeded(interactionId: number, userId: string): {
-  interactionOwnerId: string | null;
-  classOwnerId: string | null;
-  sessionOwnerId: string | null;
-} | null {
-  const db = getDatabase();
+export function authorizeInteractionAccess(
+  interactionId: number,
+  userId: string,
+  db = getDatabase(),
+): AuthorizationFailure | null {
   const row = db.prepare(
     `
       SELECT
@@ -213,44 +134,24 @@ function claimInteractionOwnershipIfNeeded(interactionId: number, userId: string
   } | undefined;
 
   if (!row) {
-    return null;
+    return {
+      status: 404,
+      error: "Interaction resource not found.",
+    };
   }
 
-  if (!row.interaction_owner_id) {
-    db.prepare(
-      `
-        UPDATE interactions
-        SET owner_user_id = ?
-        WHERE id = ? AND owner_user_id IS NULL
-      `,
-    ).run(userId, interactionId);
+  if (
+    row.interaction_owner_id !== userId &&
+    row.class_owner_id !== userId &&
+    row.session_owner_id !== userId
+  ) {
+    return {
+      status: 403,
+      error: "Forbidden interaction resource access.",
+    };
   }
 
-  if (row.class_id && !row.class_owner_id) {
-    db.prepare(
-      `
-        UPDATE classes
-        SET owner_user_id = ?
-        WHERE id = ? AND owner_user_id IS NULL
-      `,
-    ).run(userId, row.class_id);
-  }
-
-  if (row.session_id && !row.session_owner_id) {
-    db.prepare(
-      `
-        UPDATE sessions
-        SET owner_user_id = ?
-        WHERE id = ? AND owner_user_id IS NULL
-      `,
-    ).run(userId, row.session_id);
-  }
-
-  return {
-    interactionOwnerId: row.interaction_owner_id || userId,
-    classOwnerId: row.class_owner_id || userId,
-    sessionOwnerId: row.session_owner_id || userId,
-  };
+  return null;
 }
 
 export function requireJwtAuth(
@@ -265,7 +166,7 @@ export function requireJwtAuth(
       return;
     }
 
-    (request as AuthenticatedRequest).auth = verifyJwtSignature(token);
+    (request as AuthenticatedRequest).auth = verifyAuthenticatedToken(token);
     next();
   } catch (error) {
     response.status(401).json({
@@ -287,14 +188,12 @@ export function enforceClassOwnershipFromBody(fieldName = "classId") {
         return;
       }
 
-      const ownerId = claimClassOwnershipIfNeeded(classId, getAuthSubject(request as AuthenticatedRequest));
-      if (!ownerId) {
-        response.status(404).json({ error: "Class resource not found." });
-        return;
-      }
-
-      if (ownerId !== getAuthSubject(request as AuthenticatedRequest)) {
-        response.status(403).json({ error: "Forbidden class resource access." });
+      const failure = authorizeClassAccess(
+        classId,
+        getAuthSubject(request as AuthenticatedRequest),
+      );
+      if (failure) {
+        response.status(failure.status).json({ error: failure.error });
         return;
       }
 
@@ -320,17 +219,12 @@ export function enforceSessionOwnershipFromBody(fieldName = "sessionId") {
         return;
       }
 
-      const ownership = claimSessionOwnershipIfNeeded(sessionId, getAuthSubject(request as AuthenticatedRequest));
-      if (!ownership) {
-        response.status(404).json({ error: "Session resource not found." });
-        return;
-      }
-
-      if (
-        ownership.sessionOwnerId !== getAuthSubject(request as AuthenticatedRequest) &&
-        ownership.classOwnerId !== getAuthSubject(request as AuthenticatedRequest)
-      ) {
-        response.status(403).json({ error: "Forbidden session resource access." });
+      const failure = authorizeSessionAccess(
+        sessionId,
+        getAuthSubject(request as AuthenticatedRequest),
+      );
+      if (failure) {
+        response.status(failure.status).json({ error: failure.error });
         return;
       }
 
@@ -356,18 +250,12 @@ export function enforceInteractionOwnershipFromBody(fieldName = "interactionId")
         return;
       }
 
-      const ownership = claimInteractionOwnershipIfNeeded(interactionId, getAuthSubject(request as AuthenticatedRequest));
-      if (!ownership) {
-        response.status(404).json({ error: "Interaction resource not found." });
-        return;
-      }
-
-      if (
-        ownership.interactionOwnerId !== getAuthSubject(request as AuthenticatedRequest) &&
-        ownership.classOwnerId !== getAuthSubject(request as AuthenticatedRequest) &&
-        ownership.sessionOwnerId !== getAuthSubject(request as AuthenticatedRequest)
-      ) {
-        response.status(403).json({ error: "Forbidden interaction resource access." });
+      const failure = authorizeInteractionAccess(
+        interactionId,
+        getAuthSubject(request as AuthenticatedRequest),
+      );
+      if (failure) {
+        response.status(failure.status).json({ error: failure.error });
         return;
       }
 
@@ -378,17 +266,6 @@ export function enforceInteractionOwnershipFromBody(fieldName = "interactionId")
       });
     }
   };
-}
-
-export function assignClassOwner(classId: number, userId: string): void {
-  const db = getDatabase();
-  db.prepare(
-    `
-      UPDATE classes
-      SET owner_user_id = COALESCE(owner_user_id, ?)
-      WHERE id = ?
-    `,
-  ).run(userId, classId);
 }
 
 export function getAuthenticatedUserId(request: Request): string {

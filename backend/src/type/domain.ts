@@ -177,6 +177,33 @@ export type QuizResponse = {
   questions: QuizQuestion[];
 };
 
+export type CramTimeAvailable =
+  | "30 minutes"
+  | "1 hour"
+  | "2 hours"
+  | "All night";
+
+export type CramRequest = {
+  classId?: number;
+  examName: string;
+  timeAvailable: CramTimeAvailable;
+  examMaterial: string;
+  additionalNotes?: string | null;
+  courseName?: string | null;
+  unitPathLabel?: string | null;
+};
+
+export type CramResponse = {
+  title: string;
+  subtitle: string;
+  studyFirst: string[];
+  studyNext: string[];
+  skipIfNeeded: string[];
+  likelyQuestions: string[];
+  quickSelfTest: string[];
+  timePlan: string[];
+};
+
 export type PrivacySettings = {
   screenshotPolicy: "automatic" | "manual" | "disabled";
   syncConsent: "unknown" | "granted" | "denied";

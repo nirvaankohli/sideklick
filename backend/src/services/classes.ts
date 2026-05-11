@@ -1,5 +1,5 @@
-import { getDatabase } from "../db";
-import type { ClassProfile } from "../type";
+import { getDatabase } from "../db/index.ts";
+import type { ClassProfile } from "../type/index.ts";
 
 type ClassRow = {
   id: number;
@@ -53,7 +53,12 @@ export function getClassProfileById(id: number): ClassProfile | null {
   return mapClassRow(row);
 }
 
-export function saveClassProfile(input: ClassProfile): ClassProfile {
+export function saveClassProfile(
+  input: ClassProfile,
+  options: {
+    ownerUserId?: string | null;
+  } = {},
+): ClassProfile {
   const db = getDatabase();
   // Arrays are stored as JSON text for now to keep the schema simple.
   const serializedKeyConcepts = JSON.stringify(input.keyConcepts);
@@ -85,6 +90,7 @@ export function saveClassProfile(input: ClassProfile): ClassProfile {
     const result = db.prepare(
       `
         INSERT INTO classes (
+          owner_user_id,
           class_name,
           subject,
           current_unit,
@@ -92,6 +98,7 @@ export function saveClassProfile(input: ClassProfile): ClassProfile {
           key_concepts,
           notes
         ) VALUES (
+          @ownerUserId,
           @className,
           @subject,
           @currentUnit,
@@ -101,6 +108,7 @@ export function saveClassProfile(input: ClassProfile): ClassProfile {
         )
       `,
     ).run({
+      ownerUserId: options.ownerUserId ?? null,
       className: input.className,
       subject: input.subject,
       currentUnit: input.currentUnit ?? null,

@@ -11,24 +11,25 @@ import {
   initializeDatabase,
   initializePostgres,
   isPostgresConfigured,
-} from "./db";
+} from "./db/index.ts";
 import { requireJwtAuth } from "./middleware/auth";
+import { createApiRateLimitMiddleware } from "./middleware/rate-limit.ts";
 import { writeAuditEvent } from "./observability/audit";
 import { buildHealthSnapshot } from "./observability/health";
 import { incrementMetric, recordDurationMetric } from "./observability/metrics";
 import { authRouter } from "./routes/auth";
 import { assistRouter } from "./routes/assist";
 import { classesRouter } from "./routes/classes";
+import { cramRouter } from "./routes/cram";
 import { feedbackRouter } from "./routes/feedback";
 import { privacyRouter } from "./routes/privacy";
 import { quizRouter } from "./routes/quiz";
+import { assertJwtConfiguration } from "./services/auth.ts";
 import { getPrivacyWorkerHandlers } from "./services/privacy";
 import { startBackgroundWorkers, stopBackgroundWorkers } from "./workers";
 
 const DEFAULT_PORT = 3001;
 const DEFAULT_HOST = "127.0.0.1";
-const DEFAULT_RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 120;
 
 export type LocalServerStatus = {
   ok: true;
@@ -56,46 +57,6 @@ function createRequestId(): string {
   return crypto.randomBytes(8).toString("hex");
 }
 
-function getClientAddress(request: express.Request): string {
-  return request.ip || request.socket.remoteAddress || "unknown";
-}
-
-function createRateLimitMiddleware() {
-  const bucket = new Map<string, { count: number; resetsAt: number }>();
-  const windowMs = Number(process.env.BACKEND_RATE_LIMIT_WINDOW_MS || DEFAULT_RATE_LIMIT_WINDOW_MS);
-  const maxRequests = Number(process.env.BACKEND_RATE_LIMIT_MAX_REQUESTS || DEFAULT_RATE_LIMIT_MAX_REQUESTS);
-
-  return (
-    request: express.Request,
-    response: express.Response,
-    next: express.NextFunction,
-  ) => {
-    if (!request.path.startsWith("/api/")) {
-      next();
-      return;
-    }
-
-    const now = Date.now();
-    const clientAddress = getClientAddress(request);
-    const existingEntry = bucket.get(clientAddress);
-    const currentEntry =
-      existingEntry && existingEntry.resetsAt > now
-        ? existingEntry
-        : { count: 0, resetsAt: now + windowMs };
-
-    currentEntry.count += 1;
-    bucket.set(clientAddress, currentEntry);
-
-    if (currentEntry.count > maxRequests) {
-      response.setHeader("Retry-After", Math.ceil((currentEntry.resetsAt - now) / 1000));
-      response.status(429).json({ error: "Rate limit exceeded." });
-      return;
-    }
-
-    next();
-  };
-}
-
 async function getActiveDatabaseCounts() {
   return isPostgresConfigured()
     ? getPostgresDatabaseCounts()
@@ -117,10 +78,11 @@ function getTlsOptions() {
 }
 
 export function createServer(): Express {
+  assertJwtConfiguration();
   const app = express();
 
   app.disable("x-powered-by");
-  app.use(createRateLimitMiddleware());
+  app.use(createApiRateLimitMiddleware());
   app.use((request, response, next) => {
     const requestId = createRequestId();
     const startedAt = Date.now();
@@ -155,6 +117,7 @@ export function createServer(): Express {
   app.use("/api/auth", authRouter);
   app.use("/api/assist", assistRouter);
   app.use("/api/classes", classesRouter);
+  app.use("/api/cram", cramRouter);
   app.use("/api/feedback", feedbackRouter);
   app.use("/api", privacyRouter);
   app.use("/api/quiz", quizRouter);

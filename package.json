@@ -1,7 +1,8 @@
 {
-  "name": "big-red-hacks-overlay",
+  "name": "sideklick",
   "version": "0.1.0",
-  "description": "Transparent Electron overlay skeleton for Big Red Hacks.",
+  "productName": "SideKlick",
+  "description": "AI study sidekick desktop app for class sessions, context-aware help, and quiz generation.",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",

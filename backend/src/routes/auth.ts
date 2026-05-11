@@ -2,11 +2,18 @@ import { Router } from "express";
 import { ZodError } from "zod";
 
 import { getAuthenticatedUserId, requireJwtAuth } from "../middleware/auth";
-import { loginUser, registerUser, getAuthenticatedUser } from "../services/auth.ts";
+import { createAuthRateLimitMiddleware } from "../middleware/rate-limit.ts";
+import {
+  getAuthenticatedUser,
+  loginUser,
+  registerUser,
+  revokeUserSessions,
+} from "../services/auth.ts";
 
 export const authRouter = Router();
+const authRateLimitMiddleware = createAuthRateLimitMiddleware();
 
-authRouter.post("/register", (request, response) => {
+authRouter.post("/register", authRateLimitMiddleware, (request, response) => {
   try {
     const session = registerUser(request.body ?? {});
     response.status(201).json(session);
@@ -25,7 +32,7 @@ authRouter.post("/register", (request, response) => {
   }
 });
 
-authRouter.post("/login", (request, response) => {
+authRouter.post("/login", authRateLimitMiddleware, (request, response) => {
   try {
     const session = loginUser(request.body ?? {});
     response.status(200).json(session);
@@ -54,4 +61,16 @@ authRouter.get("/me", requireJwtAuth, (request, response) => {
   }
 
   response.status(200).json({ user });
+});
+
+authRouter.post("/logout", requireJwtAuth, (request, response) => {
+  const revoked = revokeUserSessions(getAuthenticatedUserId(request));
+  if (!revoked) {
+    response.status(404).json({
+      error: "Authenticated user not found.",
+    });
+    return;
+  }
+
+  response.status(200).json({ ok: true });
 });

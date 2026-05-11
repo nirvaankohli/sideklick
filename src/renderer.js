@@ -5,7 +5,6 @@ const stopSessionButton = document.querySelector("#stop-session");
 const closeWindow = document.querySelector("#close-window");
 const compactCloseWindow = document.querySelector("#compact-close-window");
 const restoreWindow = document.querySelector("#restore-window");
-const compactStarButton = document.querySelector("#compact-star-button");
 const sessionClassLabel = document.querySelector("#session-class-label");
 const sessionNameLabel = document.querySelector("#session-name-label");
 const chatThread = document.querySelector("#chat-thread");
@@ -873,12 +872,6 @@ compactCloseWindow.addEventListener("click", async () => {
 
 restoreWindow.addEventListener("click", async () => {
   await window.overlayApi.expandWindow();
-});
-
-compactStarButton.addEventListener("click", async () => {
-  const nextSource = currentTone === "dark" ? "light" : "dark";
-  const result = await window.overlayApi.setThemeSource(nextSource);
-  applyThemeState(result);
 });
 
 chatInput.addEventListener("paste", async (event) => {

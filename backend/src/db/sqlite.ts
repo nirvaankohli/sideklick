@@ -121,6 +121,7 @@ function createTables(db: DatabaseLike): void {
       display_name TEXT,
       password_hash TEXT,
       password_salt TEXT,
+      token_version INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
@@ -340,6 +341,40 @@ function ensureUserColumns(db: DatabaseLike): void {
   if (!columnNames.has("password_salt")) {
     db.exec("ALTER TABLE users ADD COLUMN password_salt TEXT;");
   }
+
+  if (!columnNames.has("token_version")) {
+    db.exec("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0;");
+  }
+}
+
+function ensureUserConstraints(db: DatabaseLike): void {
+  const duplicateRow = db.prepare(
+    `
+      SELECT
+        lower(email) AS normalized_email,
+        COUNT(*) AS duplicate_count
+      FROM users
+      WHERE email IS NOT NULL
+      GROUP BY lower(email)
+      HAVING COUNT(*) > 1
+      LIMIT 1
+    `,
+  ).get() as {
+    normalized_email: string;
+    duplicate_count: number;
+  } | undefined;
+
+  if (duplicateRow) {
+    throw new Error(
+      `Cannot enforce unique email constraint while duplicate users exist for ${duplicateRow.normalized_email}.`,
+    );
+  }
+
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique_idx
+    ON users(lower(email))
+    WHERE email IS NOT NULL;
+  `);
 }
 
 export function getLegacyDatabase(): DatabaseLike {
@@ -357,6 +392,7 @@ export function getLegacyDatabase(): DatabaseLike {
   ensureGapEventColumns(database);
   ensureSessionColumns(database);
   ensureUserColumns(database);
+  ensureUserConstraints(database);
 
   return database;
 }
