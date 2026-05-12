@@ -186,6 +186,15 @@ const backToCramSetupButton = document.querySelector(
   "#back-to-cram-setup-button",
 );
 const regenerateCramButton = document.querySelector("#regenerate-cram-button");
+const classMaterialBackdrop = document.querySelector("#class-material-backdrop");
+const classMaterialModalTitle = document.querySelector("#class-material-modal-title");
+const closeClassMaterialModalButton = document.querySelector("#close-class-material-modal");
+const classMaterialFile = document.querySelector("#class-material-file");
+const classMaterialFileStatus = document.querySelector("#class-material-file-status");
+const classMaterialText = document.querySelector("#class-material-text");
+const classMaterialRollup = document.querySelector("#class-material-rollup");
+const saveClassMaterialButton = document.querySelector("#save-class-material-button");
+const classMaterialMeta = document.querySelector("#class-material-meta");
 const cramShared = window.CRAM_SHARED || {};
 const cramConstraintsConfig = cramShared.cramInputConstraints || {
   maxMaterialCharacters: 24000,
@@ -312,6 +321,8 @@ const MUI_CREATE_ACTION_ICON_PATHS = {
     "M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5.99 13H12v-2h2.01v2zm1.54-5.07-.9.92c-.65.66-.86 1.16-.86 2.15h-1.8v-.45c0-1 .41-1.91 1.07-2.57l1.24-1.26c.37-.36.58-.86.58-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H9.08c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.26z",
   cram:
     "M4 5h16v2H4zm2 4h12v2H6zm-1 4h14v2H5zm2 4h8v2H7z",
+  material:
+    "M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z",
 };
 
 const sourceLabels = {
@@ -482,6 +493,7 @@ function getContextualCreateActions() {
     return [
       { key: "unit", label: "Unit", icon: MUI_CREATE_ACTION_ICON_PATHS.unit },
       { key: "session", label: "Session", icon: MUI_CREATE_ACTION_ICON_PATHS.session },
+      { key: "material", label: "Class Material", icon: MUI_CREATE_ACTION_ICON_PATHS.material },
       { key: "cram", label: "Cram Mode", icon: MUI_CREATE_ACTION_ICON_PATHS.cram },
       { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
     ];
@@ -491,6 +503,7 @@ function getContextualCreateActions() {
     return [
       { key: "lesson", label: "Lesson", icon: MUI_CREATE_ACTION_ICON_PATHS.lesson },
       { key: "session", label: "Session", icon: MUI_CREATE_ACTION_ICON_PATHS.session },
+      { key: "material", label: "Class Material", icon: MUI_CREATE_ACTION_ICON_PATHS.material },
       { key: "cram", label: "Cram Mode", icon: MUI_CREATE_ACTION_ICON_PATHS.cram },
       { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
     ];
@@ -498,6 +511,7 @@ function getContextualCreateActions() {
 
   return [
     { key: "session", label: "Session", icon: MUI_CREATE_ACTION_ICON_PATHS.session },
+    { key: "material", label: "Class Material", icon: MUI_CREATE_ACTION_ICON_PATHS.material },
     { key: "cram", label: "Cram Mode", icon: MUI_CREATE_ACTION_ICON_PATHS.cram },
     { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
   ];
@@ -913,7 +927,11 @@ function normalizeFolders(source) {
           return false;
         }
 
-        if (child.type === "session" || child.type === "quiz") {
+        if (
+          child.type === "session" ||
+          child.type === "quiz" ||
+          child.type === "material"
+        ) {
           return true;
         }
 
@@ -1096,6 +1114,42 @@ function createEmptyAssessmentProfile(name = "Main template") {
     gradingNotes: "",
     uploads: [],
     analysis: createEmptyAssessmentAnalysis(),
+  };
+}
+
+function classMaterialHasContent(material) {
+  if (!material || typeof material !== "object") {
+    return false;
+  }
+
+  const pastedText =
+    typeof material.text === "string" ? material.text.trim() : "";
+  const uploads = normalizeClassMaterialUploads(material.uploads);
+  return Boolean(pastedText || uploads.length > 0);
+}
+
+function normalizeClassMaterialItem(item = {}) {
+  const source = item && typeof item === "object" ? item : {};
+  return {
+    id:
+      typeof source.id === "string" && source.id.trim()
+        ? source.id.trim()
+        : makeId(),
+    type: "material",
+    name:
+      typeof source.name === "string" && source.name.trim()
+        ? source.name.trim()
+        : "Class Material",
+    text: typeof source.text === "string" ? source.text : "",
+    uploads: normalizeClassMaterialUploads(source.uploads),
+    createdAt:
+      typeof source.createdAt === "string" && source.createdAt.trim()
+        ? source.createdAt
+        : new Date().toISOString(),
+    updatedAt:
+      typeof source.updatedAt === "string" && source.updatedAt.trim()
+        ? source.updatedAt
+        : new Date().toISOString(),
   };
 }
 
@@ -1286,10 +1340,27 @@ function summarizeAssessmentProfile(profile) {
 }
 
 function decorateClassFolderWithAssessment(folder) {
+  const legacyClassMaterial = classMaterialHasContent(folder?.classMaterial)
+    ? normalizeClassMaterialItem(folder.classMaterial)
+    : null;
+  const { classMaterial: legacyClassMaterialField, ...folderWithoutLegacy } = folder;
+  void legacyClassMaterialField;
+  const normalizedChildren = Array.isArray(folder.children) ? [...folder.children] : [];
+  const existingMaterialIndex = normalizedChildren.findIndex(
+    (child) => child?.type === "material",
+  );
+  if (existingMaterialIndex >= 0) {
+    normalizedChildren[existingMaterialIndex] = normalizeClassMaterialItem(
+      normalizedChildren[existingMaterialIndex],
+    );
+  } else if (legacyClassMaterial) {
+    normalizedChildren.unshift(legacyClassMaterial);
+  }
   const collection = getAssessmentProfileCollectionSummary(folder);
   const summary = summarizeAssessmentProfile(collection.activeProfile);
   return {
-    ...folder,
+    ...folderWithoutLegacy,
+    children: normalizedChildren,
     assessmentProfiles: collection.profiles,
     activeAssessmentProfileId: collection.activeProfileId,
     assessmentProfile: collection.activeProfile,
@@ -1945,8 +2016,18 @@ function createNewAssessmentProfile() {
 
 async function analyzeActiveAssessmentProfile() {
   const draft = getAssessmentDraft();
-  if (draft.uploads.length === 0) {
-    assessmentUploadError = "Upload at least one teacher assessment before processing.";
+  const classMaterialSources = getClassMaterialAssessmentSources();
+  const uploadedMaterials = [
+    ...draft.uploads.map((upload) => ({
+      name: upload.name,
+      content: upload.content,
+      handler: upload.handler,
+    })),
+    ...classMaterialSources,
+  ].slice(0, 12);
+  if (uploadedMaterials.length === 0) {
+    assessmentUploadError =
+      "Upload at least one teacher assessment or save class material before processing.";
     renderAssessmentSummary();
     return;
   }
@@ -1968,11 +2049,7 @@ async function analyzeActiveAssessmentProfile() {
       customFormat: draft.customFormat || null,
       exampleQuestions: draft.exampleQuestions,
       gradingNotes: draft.gradingNotes || null,
-      uploadedMaterials: draft.uploads.map((upload) => ({
-        name: upload.name,
-        content: upload.content,
-        handler: upload.handler,
-      })),
+      uploadedMaterials,
     });
 
     setAssessmentDraft({
@@ -2048,7 +2125,7 @@ async function saveAssessmentProfile() {
 async function saveAndProcessAssessmentProfile() {
   syncAssessmentDraftFromInputs();
   const draft = getAssessmentDraft();
-  if (draft.uploads.length > 0) {
+  if (draft.uploads.length > 0 || getClassMaterialAssessmentSources().length > 0) {
     await analyzeActiveAssessmentProfile();
   }
   await saveAssessmentProfile();
@@ -2131,7 +2208,8 @@ function getCombinedUploadedCramMaterial() {
 }
 
 function getCombinedCramMaterialInput() {
-  return [getCombinedUploadedCramMaterial().trim(), cramMaterialText.value.trim()]
+  const classMatl = getClassMaterialText();
+  return [classMatl, getCombinedUploadedCramMaterial().trim(), cramMaterialText.value.trim()]
     .filter(Boolean)
     .join("\n\n");
 }
@@ -2422,6 +2500,245 @@ function updateCramAssessmentProfileMeta(classFolder) {
     summary.analysis.conciseSummary ||
     summary.testFormat ||
     "Use this saved teacher format.";
+}
+
+/* ── Class material modal ─────────────────────────────────── */
+
+let classMaterialUploads = [];
+
+function normalizeClassMaterialUploads(uploads) {
+  if (!Array.isArray(uploads)) {
+    return [];
+  }
+
+  return uploads
+    .filter((upload) => upload && typeof upload === "object")
+    .map((upload) => {
+      const content =
+        typeof upload.content === "string"
+          ? upload.content.trim()
+          : typeof upload.extractedText === "string"
+            ? upload.extractedText.trim()
+            : "";
+
+      return {
+        name: typeof upload.name === "string" ? upload.name.trim() : "file",
+        content,
+        handler: typeof upload.handler === "string" ? upload.handler : "text",
+        originalCharacters: Number(upload.originalCharacters) || content.length,
+        compressedCharacters: Number(upload.compressedCharacters) || content.length,
+        estimatedTokenSavings: Number(upload.estimatedTokenSavings) || 0,
+        addedAt:
+          typeof upload.addedAt === "string" && upload.addedAt.trim()
+            ? upload.addedAt
+            : new Date().toISOString(),
+      };
+    })
+    .filter((upload) => upload.content);
+}
+
+function getClassMaterialUploadStatusText(uploadCount) {
+  return uploadCount === 0
+    ? "No files yet"
+    : `${uploadCount} file${uploadCount === 1 ? "" : "s"} loaded`;
+}
+
+function getClassMaterialItemForCurrentClass() {
+  const classFolder = getCurrentClassFolder();
+  if (!classFolder) {
+    return null;
+  }
+
+  const childMaterial = Array.isArray(classFolder.children)
+    ? classFolder.children.find((child) => child?.type === "material")
+    : null;
+  if (childMaterial) {
+    return normalizeClassMaterialItem(childMaterial);
+  }
+
+  if (classMaterialHasContent(classFolder.classMaterial)) {
+    return normalizeClassMaterialItem(classFolder.classMaterial);
+  }
+
+  return null;
+}
+
+function getClassMaterialForCurrentClass() {
+  const materialItem = getClassMaterialItemForCurrentClass();
+  return materialItem
+    ? {
+        text: materialItem.text,
+        uploads: materialItem.uploads,
+      }
+    : { text: "", uploads: [] };
+}
+
+function getClassMaterialText() {
+  const material = getClassMaterialForCurrentClass();
+  if (!material) {
+    return "";
+  }
+
+  const uploadedText = material.uploads
+    .map((upload) => upload.content || "")
+    .filter(Boolean)
+    .join("\n\n");
+  const pastedText = material.text.trim();
+  return [uploadedText, pastedText].filter(Boolean).join("\n\n");
+}
+
+function getClassMaterialAssessmentSources() {
+  const material = getClassMaterialForCurrentClass();
+  const uploadedSources = material.uploads.map((upload) => ({
+    name: upload.name,
+    content: upload.content,
+    handler: upload.handler || "text",
+  }));
+  const pastedText = material.text.trim();
+  if (pastedText) {
+    uploadedSources.push({
+      name: "Class Material Notes",
+      content: pastedText,
+      handler: "text",
+    });
+  }
+
+  return uploadedSources;
+}
+
+function openClassMaterialModal() {
+  const classFolder = getCurrentClassFolder();
+  if (!classFolder) {
+    return;
+  }
+
+  const material = getClassMaterialForCurrentClass();
+  classMaterialUploads = [...material.uploads];
+  classMaterialModalTitle.textContent = `${classFolder.name || "Class"} Material`;
+  classMaterialText.value = material.text;
+  classMaterialFile.value = "";
+  classMaterialFileStatus.textContent = getClassMaterialUploadStatusText(
+    classMaterialUploads.length,
+  );
+  renderClassMaterialRollup();
+  classMaterialBackdrop.hidden = false;
+}
+
+function closeClassMaterialModal() {
+  classMaterialBackdrop.hidden = true;
+  classMaterialUploads = [];
+}
+
+function renderClassMaterialRollup() {
+  classMaterialRollup.replaceChildren();
+  if (classMaterialUploads.length === 0) {
+    return;
+  }
+
+  for (const upload of classMaterialUploads) {
+    const chip = document.createElement("span");
+    chip.className = "assessment-upload-rollup-chip";
+    chip.innerHTML = `
+      <span class="assessment-upload-rollup-chip-name">${upload.name || "file"}</span>
+      <button class="assessment-upload-rollup-chip-remove" type="button" aria-label="Remove ${upload.name || "file"}">&times;</button>
+    `;
+    chip.querySelector(".assessment-upload-rollup-chip-remove").addEventListener("click", () => {
+      classMaterialUploads = classMaterialUploads.filter((u) => u !== upload);
+      classMaterialFileStatus.textContent = getClassMaterialUploadStatusText(
+        classMaterialUploads.length,
+      );
+      renderClassMaterialRollup();
+    });
+    classMaterialRollup.appendChild(chip);
+  }
+}
+
+async function handleClassMaterialFileUpload(files) {
+  if (!files || files.length === 0) {
+    return;
+  }
+
+  classMaterialFileStatus.textContent = "Processing...";
+  saveClassMaterialButton.disabled = true;
+
+  try {
+    const results = await Promise.allSettled(
+      Array.from(files).map((file) => extractStudyMaterialFromFiles([file], "quiz")),
+    );
+    const successfulFiles = results
+      .filter((result) => result.status === "fulfilled")
+      .map((result) => result.value[0])
+      .filter((result) => result?.content)
+      .map((result) => ({
+        name: result.name || "file",
+        content: result.content,
+        handler: result.handler || "text",
+        originalCharacters: Number(result.originalCharacters) || result.content.length,
+        compressedCharacters:
+          Number(result.compressedCharacters) || result.content.length,
+        estimatedTokenSavings: Number(result.estimatedTokenSavings) || 0,
+        addedAt: new Date().toISOString(),
+      }));
+    const failedCount = results.length - successfulFiles.length;
+    classMaterialUploads = [...classMaterialUploads, ...successfulFiles];
+    classMaterialFileStatus.textContent =
+      failedCount > 0
+        ? successfulFiles.length > 0
+          ? `Loaded ${successfulFiles.length} file${successfulFiles.length === 1 ? "" : "s"}, but ${failedCount} could not be read.`
+          : "No files loaded. Try another file."
+        : getClassMaterialUploadStatusText(classMaterialUploads.length);
+    renderClassMaterialRollup();
+  } catch {
+    classMaterialFileStatus.textContent = "Upload failed. Try again.";
+  } finally {
+    saveClassMaterialButton.disabled = false;
+    classMaterialFile.value = "";
+  }
+}
+
+async function saveClassMaterial() {
+  const classPath = getCurrentClassPath();
+  if (!classPath) {
+    return;
+  }
+
+  saveClassMaterialButton.disabled = true;
+  saveClassMaterialButton.textContent = "Saving...";
+
+  try {
+    const currentMaterialItem = getClassMaterialItemForCurrentClass();
+    const timestamp = new Date().toISOString();
+    const nextFolders = updateFolderAtPath(classPath, (item) => {
+      const nextMaterialItem = normalizeClassMaterialItem({
+        ...currentMaterialItem,
+        text: classMaterialText.value.trim(),
+        uploads: classMaterialUploads,
+        updatedAt: timestamp,
+        createdAt: currentMaterialItem?.createdAt || timestamp,
+      });
+      const nextChildren = Array.isArray(item.children) ? [...item.children] : [];
+      const existingIndex = nextChildren.findIndex(
+        (child) => child?.type === "material",
+      );
+      if (existingIndex >= 0) {
+        nextChildren[existingIndex] = nextMaterialItem;
+      } else {
+        nextChildren.unshift(nextMaterialItem);
+      }
+
+      const { classMaterial: legacyClassMaterial, ...rest } = item;
+      void legacyClassMaterial;
+      return {
+        ...rest,
+        children: nextChildren,
+      };
+    });
+    await persistFolders(nextFolders);
+    closeClassMaterialModal();
+  } finally {
+    saveClassMaterialButton.disabled = false;
+    saveClassMaterialButton.textContent = "Save Material";
+  }
 }
 
 function openQuizModalForCurrentClass() {
@@ -2799,7 +3116,8 @@ async function generateQuizForActiveSession() {
   }
 
   const pastedMaterial = quizMaterialText.value.trim();
-  const uploadedMaterial = [uploadedQuizMaterial, pastedMaterial]
+  const classMatl = getClassMaterialText();
+  const uploadedMaterial = [classMatl, uploadedQuizMaterial, pastedMaterial]
     .filter(Boolean)
     .join("\n\n");
   const classId = await ensureBackendClassId(activeQuizClassFolder);
@@ -2989,8 +3307,8 @@ function renderFolders() {
     const currentType = getCurrentContainerType();
     folderNameInput.placeholder =
       currentType === "class"
-        ? "Search units, lessons, sessions, cram plans, or quizzes"
-        : "Search lessons, sessions, cram plans, or quizzes";
+        ? "Search units, lessons, materials, sessions, cram plans, or quizzes"
+        : "Search lessons, materials, sessions, cram plans, or quizzes";
     emptyTitle.textContent =
       currentType === "class"
         ? "Nothing in this class yet."
@@ -2999,10 +3317,10 @@ function renderFolders() {
           : "Nothing in this lesson yet.";
     emptyCopy.textContent =
       currentType === "class"
-        ? "Add a unit, start a session, open Cram Mode, or build a quiz from this class."
+        ? "Add a unit, save class material, start a session, open Cram Mode, or build a quiz from this class."
         : currentType === "unit"
-          ? "Add a lesson, start a session, open Cram Mode, or build a quiz inside this unit."
-          : "Start a session, open Cram Mode, or build a quiz inside this lesson.";
+          ? "Add a lesson, open the shared class material, start a session, open Cram Mode, or build a quiz inside this unit."
+          : "Open the shared class material, start a session, open Cram Mode, or build a quiz inside this lesson.";
   }
 
   for (const folder of visibleChildren) {
@@ -3014,10 +3332,24 @@ function renderFolders() {
     openButton.className = "folder-open-button";
     const isSessionItem = folder.type === "session";
     const isQuizItem = folder.type === "quiz";
+    const isMaterialItem = folder.type === "material";
     const isClassItem = folder.type === "class";
+    const materialUploadCount = Array.isArray(folder.uploads) ? folder.uploads.length : 0;
+    const materialSnippet = isMaterialItem
+      ? String(folder.text || "")
+          .replace(/\s+/g, " ")
+          .trim()
+      : "";
     const metaText = !isSessionItem
       ? isQuizItem
         ? `${folder.questionCount || 0} questions • ${formatSessionDate(folder.createdAt)}`
+        : isMaterialItem
+          ? [
+              `${materialUploadCount} upload${materialUploadCount === 1 ? "" : "s"}`,
+              folder.updatedAt ? formatSessionDate(folder.updatedAt) : null,
+            ]
+              .filter(Boolean)
+              .join(" â€¢ ")
         : [
             `${(folder.children || []).length} item${(folder.children || []).length === 1 ? "" : "s"}`,
             isClassItem && folder.testFormat ? folder.testFormat : null,
@@ -3027,6 +3359,11 @@ function renderFolders() {
       : "";
     const sessionSummaryText = isSessionItem
       ? buildSessionCardSentence(folder)
+      : isMaterialItem
+        ? materialSnippet ||
+          (materialUploadCount > 0
+            ? "Shared uploaded material for quizzes, cram plans, and assessments."
+            : "Shared class material for quizzes, cram plans, and assessments.")
       : isQuizItem
         ? typeof folder.summary === "string" && folder.summary.trim()
           ? folder.summary.trim()
@@ -3042,13 +3379,15 @@ function renderFolders() {
               ? '<path d="M7 2h8l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1.5V8h4.5"></path>'
               : isQuizItem
                 ? '<path d="M9 2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v10a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2zm0 6H7v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8h-2v2h-2V8h-4v2H9V8zm2-4v2h4V4h-4z"></path>'
+                : isMaterialItem
+                  ? `<path d="${MUI_CREATE_ACTION_ICON_PATHS.material}"></path>`
                 : '<path d="M10 4 12 6h8c1.1 0 2 .9 2 2v8.5c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h6z"></path>'
           }
         </svg>
       </span>
       <span class="folder-card-title">${folder.name}</span>
       ${
-        isSessionItem || isQuizItem
+        isSessionItem || isQuizItem || isMaterialItem
           ? `<span class="folder-card-summary">${sessionSummaryText}</span>
       <span class="folder-card-session-stats">${isSessionItem ? sessionStatsText : metaText}</span>`
           : `<span class="folder-card-meta">${metaText}</span>`
@@ -3075,6 +3414,10 @@ function renderFolders() {
     if (isSessionItem) {
       openButton.addEventListener("click", () => {
         openSessionSummary(folder);
+      });
+    } else if (isMaterialItem) {
+      openButton.addEventListener("click", () => {
+        openClassMaterialModal();
       });
     } else if (isQuizItem) {
       openButton.addEventListener("click", () => {
@@ -3607,6 +3950,19 @@ quizBackdrop.addEventListener("click", (event) => {
   }
 });
 
+closeClassMaterialModalButton?.addEventListener("click", closeClassMaterialModal);
+classMaterialBackdrop?.addEventListener("click", (event) => {
+  if (event.target === classMaterialBackdrop) {
+    closeClassMaterialModal();
+  }
+});
+classMaterialFile?.addEventListener("change", () => {
+  void handleClassMaterialFileUpload(classMaterialFile.files);
+});
+saveClassMaterialButton?.addEventListener("click", () => {
+  void saveClassMaterial();
+});
+
 editCurrentClassButton?.addEventListener("click", () => {
   openClassEditModal();
 });
@@ -3825,6 +4181,8 @@ function openFolderActionMenu() {
         openQuizModalForCurrentClass();
       } else if (action.key === "cram") {
         openCramModalForCurrentClass();
+      } else if (action.key === "material") {
+        openClassMaterialModal();
       } else {
         openModal(action.key);
       }

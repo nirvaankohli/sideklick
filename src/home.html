@@ -923,6 +923,86 @@
           </section>
         </div>
 
+        <div id="class-material-backdrop" class="modal-backdrop no-drag" hidden>
+          <section
+            class="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="class-material-modal-title"
+          >
+            <div class="modal-header">
+              <div>
+                <p class="panel-label">Class Material</p>
+                <h2 id="class-material-modal-title" class="modal-title">
+                  Class Material
+                </h2>
+              </div>
+              <button
+                id="close-class-material-modal"
+                class="icon-button"
+                type="button"
+                aria-label="Close class material modal"
+              >
+                <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
+                  ></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="quiz-setup-form">
+              <p id="class-material-meta" class="panel-help">
+                Upload or paste material that all quizzes, cram plans, and assessment formats can reference.
+              </p>
+
+              <div class="quiz-material-section">
+                <label class="modal-field">
+                  <span>Upload files</span>
+                  <div class="assessment-upload-drop">
+                    <input
+                      id="class-material-file"
+                      class="assessment-file-input"
+                      type="file"
+                      multiple
+                      accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                    />
+                    <label for="class-material-file" class="assessment-upload-drop-label quiz-upload-drop-compact">
+                      <span class="assessment-upload-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" class="icon-svg">
+                          <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
+                        </svg>
+                      </span>
+                      <span class="assessment-upload-title">Upload or drop files</span>
+                    </label>
+                    <span id="class-material-file-status" class="panel-help">No files yet</span>
+                  </div>
+                </label>
+                <label class="modal-field">
+                  <span>Or paste notes</span>
+                  <textarea
+                    id="class-material-text"
+                    rows="5"
+                    placeholder="Paste class notes, textbook excerpts, or study guides"
+                  ></textarea>
+                </label>
+              </div>
+
+              <div id="class-material-rollup" class="assessment-upload-rollup"></div>
+
+              <div class="modal-actions">
+                <button
+                  id="save-class-material-button"
+                  class="continue-button"
+                  type="button"
+                >
+                  Save Material
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+
         <div id="quiz-backdrop" class="modal-backdrop no-drag" hidden>
           <section
             class="modal-card quiz-modal"
