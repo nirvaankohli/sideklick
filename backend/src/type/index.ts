@@ -2,6 +2,9 @@ export type { DatabaseCounts } from "./database";
 export type {
   AuthSession,
   AuthUser,
+  AssessmentProfileAnalysisRequest,
+  AssessmentProfileAnalysisResponse,
+  AssessmentProfileMaterial,
   AssistRequest,
   AssistResponse,
   CramChunkInsight,
@@ -23,6 +26,7 @@ export type {
   QuizQuestion,
   QuizRequest,
   QuizResponse,
+  TeacherAssessmentProfile,
   RetentionJob,
   RetentionJobStatus,
   RetentionJobType,

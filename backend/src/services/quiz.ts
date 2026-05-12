@@ -5,8 +5,14 @@ import { getDatabase } from "../db/index.ts";
 import {
   quizRequestSchema,
   quizResponseSchema,
+  teacherAssessmentProfileSchema,
 } from "../schema/index.ts";
-import type { ClassProfile, QuizRequest, QuizResponse } from "../type/index.ts";
+import type {
+  ClassProfile,
+  QuizRequest,
+  QuizResponse,
+  TeacherAssessmentProfile,
+} from "../type/index.ts";
 import { getClassProfileById } from "./classes.ts";
 
 type SessionRow = {
@@ -92,6 +98,7 @@ function getTopGaps(classId: number): GapRow[] {
 
 export function buildQuizSystemInstructions(
   classProfile: ClassProfile | null,
+  teacherAssessmentProfile: TeacherAssessmentProfile | null = null,
 ): string[] {
   const instructions = [
     "You are generating a study quiz for a desktop learning product.",
@@ -102,18 +109,41 @@ export function buildQuizSystemInstructions(
     "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
   ];
 
-  if (classProfile?.testFormat?.trim()) {
+  const testFormat =
+    teacherAssessmentProfile?.testFormat?.trim() ||
+    classProfile?.testFormat?.trim() ||
+    "";
+  const exampleQuestions =
+    teacherAssessmentProfile?.exampleQuestions?.length
+      ? teacherAssessmentProfile.exampleQuestions
+      : classProfile?.testExamples ?? [];
+  const gradingSignals = teacherAssessmentProfile?.gradingSignals ?? [];
+  const wordingPatterns = teacherAssessmentProfile?.wordingPatterns ?? [];
+
+  if (testFormat) {
     instructions.push(
-      `Mirror the teacher's assessment feel from this format: ${classProfile.testFormat.trim()}.`,
+      `Mirror the teacher's assessment feel from this format: ${testFormat}.`,
     );
     instructions.push(
       "If that format is not naturally multiple choice, adapt its reasoning style, stem shape, and difficulty into multiple-choice practice without breaking the response schema.",
     );
   }
 
-  if (Array.isArray(classProfile?.testExamples) && classProfile.testExamples.length > 0) {
+  if (Array.isArray(exampleQuestions) && exampleQuestions.length > 0) {
     instructions.push(
       "Use the teacher examples as style anchors for pacing, vocabulary, distractor style, and what the teacher tends to ask, but do not copy them verbatim.",
+    );
+  }
+
+  if (gradingSignals.length > 0) {
+    instructions.push(
+      `Keep the grading feel aligned to these signals: ${gradingSignals.join(" | ")}.`,
+    );
+  }
+
+  if (wordingPatterns.length > 0) {
+    instructions.push(
+      `Shape question wording around these patterns: ${wordingPatterns.join(" | ")}.`,
     );
   }
 
@@ -123,12 +153,14 @@ export function buildQuizSystemInstructions(
 export function buildQuizPromptPacket({
   input,
   classProfile,
+  teacherAssessmentProfile = null,
   sessions,
   keyTopics,
   gapRows,
 }: {
   input: QuizRequest;
   classProfile: ClassProfile | null;
+  teacherAssessmentProfile?: TeacherAssessmentProfile | null;
   sessions: SessionRow[];
   keyTopics: string[];
   gapRows: GapRow[];
@@ -160,12 +192,24 @@ export function buildQuizPromptPacket({
 
   return {
     class_profile: classProfile,
-    teacher_assessment_profile: classProfile
+    teacher_assessment_profile: teacherAssessmentProfile
       ? {
-          test_format: classProfile.testFormat ?? null,
-          example_questions: classProfile.testExamples ?? [],
+          profile_name: teacherAssessmentProfile.profileName ?? null,
+          test_format: teacherAssessmentProfile.testFormat ?? null,
+          concise_summary: teacherAssessmentProfile.conciseSummary ?? null,
+          example_questions: teacherAssessmentProfile.exampleQuestions ?? [],
+          grading_signals: teacherAssessmentProfile.gradingSignals ?? [],
+          wording_patterns: teacherAssessmentProfile.wordingPatterns ?? [],
+          likely_question_moves:
+            teacherAssessmentProfile.likelyQuestionMoves ?? [],
+          quiz_adjustments: teacherAssessmentProfile.quizAdjustments ?? [],
         }
-      : null,
+      : classProfile
+        ? {
+            test_format: classProfile.testFormat ?? null,
+            example_questions: classProfile.testExamples ?? [],
+          }
+        : null,
     selected_sessions: sessions.map((session) => ({
       title: session.title,
       notes: session.notes,
@@ -191,6 +235,9 @@ export function buildQuizPromptPacket({
 function buildQuizPrompt(input: QuizRequest): string {
   const sessions = getSessionRows(input.sessionIds);
   const classProfile = getClassProfileById(input.classId);
+  const teacherAssessmentProfile = input.teacherAssessmentProfile
+    ? teacherAssessmentProfileSchema.parse(input.teacherAssessmentProfile)
+    : null;
   const keyTopics = [
     ...new Set(
       sessions.flatMap((session) => JSON.parse(session.key_topics) as string[]),
@@ -202,6 +249,7 @@ function buildQuizPrompt(input: QuizRequest): string {
     buildQuizPromptPacket({
       input,
       classProfile,
+      teacherAssessmentProfile,
       sessions,
       keyTopics,
       gapRows,
@@ -214,6 +262,9 @@ function buildQuizPrompt(input: QuizRequest): string {
 export async function generateQuiz(input: unknown): Promise<QuizResponse> {
   const parsedInput = quizRequestSchema.parse(input);
   const client = getOpenAIClient();
+  const teacherAssessmentProfile = parsedInput.teacherAssessmentProfile
+    ? teacherAssessmentProfileSchema.parse(parsedInput.teacherAssessmentProfile)
+    : null;
 
   const response = await client.responses.parse({
     model: getOpenAIModel(),
@@ -221,7 +272,10 @@ export async function generateQuiz(input: unknown): Promise<QuizResponse> {
       {
         role: "system",
         content: [
-          ...buildQuizSystemInstructions(getClassProfileById(parsedInput.classId)),
+          ...buildQuizSystemInstructions(
+            getClassProfileById(parsedInput.classId),
+            teacherAssessmentProfile,
+          ),
         ].join(" "),
       },
       {

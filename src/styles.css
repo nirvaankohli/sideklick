@@ -2315,6 +2315,572 @@ button {
   box-shadow: 0 0 0 3px rgba(143, 211, 255, 0.12);
 }
 
+.assessment-config-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 18px 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(143, 211, 255, 0.26);
+  background:
+    radial-gradient(circle at top left, rgba(143, 211, 255, 0.18), transparent 56%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+}
+
+.window-shell[data-tone="light"] .assessment-config-card {
+  border-color: rgba(84, 151, 214, 0.22);
+  background:
+    radial-gradient(circle at top left, rgba(143, 211, 255, 0.28), transparent 52%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(242, 247, 255, 0.9));
+}
+
+.assessment-config-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.assessment-config-title {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.assessment-config-button {
+  padding-inline: 20px;
+}
+
+.assessment-shell {
+  display: grid;
+  gap: 14px;
+  height: 100%;
+  padding: 4px 2px 6px;
+}
+
+.assessment-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.assessment-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.6fr);
+  gap: 14px;
+  padding: 8px 0 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.window-shell[data-tone="light"] .assessment-hero {
+  border-bottom-color: rgba(36, 72, 122, 0.12);
+}
+
+.assessment-title {
+  margin: 0;
+  font-size: clamp(1.45rem, 1.9vw, 1.9rem);
+  letter-spacing: -0.04em;
+}
+
+.assessment-subtitle {
+  margin: 6px 0 0;
+  max-width: 42ch;
+  color: var(--dark-muted);
+  line-height: 1.45;
+  font-size: 0.96rem;
+}
+
+.window-shell[data-tone="light"] .assessment-subtitle {
+  color: var(--light-muted);
+}
+
+.assessment-live-summary {
+  align-self: center;
+  padding: 10px 0 10px 16px;
+  border-left: 2px solid rgba(143, 211, 255, 0.34);
+  color: var(--dark-muted);
+  line-height: 1.45;
+  font-size: 0.94rem;
+}
+
+.window-shell[data-tone="light"] .assessment-live-summary {
+  color: var(--light-muted);
+  border-left-color: rgba(84, 151, 214, 0.26);
+}
+
+.assessment-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+  gap: 22px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.assessment-manager-view,
+.assessment-editor-view {
+  min-height: 0;
+}
+
+.assessment-manager-view {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.assessment-empty-state {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: 28px 22px;
+  border: 1px dashed rgba(143, 211, 255, 0.34);
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(143, 211, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.02);
+  text-align: center;
+}
+
+.window-shell[data-tone="light"] .assessment-empty-state {
+  border-color: rgba(84, 151, 214, 0.28);
+  background:
+    linear-gradient(180deg, rgba(143, 211, 255, 0.1), rgba(255, 255, 255, 0.88)),
+    rgba(255, 255, 255, 0.82);
+}
+
+.assessment-empty-title {
+  margin: 0;
+  font-size: 1.02rem;
+  letter-spacing: -0.02em;
+}
+
+.assessment-profile-list {
+  display: grid;
+  gap: 10px;
+}
+
+.assessment-profile-row {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.window-shell[data-tone="light"] .assessment-profile-row {
+  border-bottom-color: rgba(36, 72, 122, 0.1);
+}
+
+.assessment-profile-row-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.assessment-profile-row-copy strong {
+  font-size: 0.98rem;
+  letter-spacing: -0.02em;
+}
+
+.assessment-profile-row-copy span {
+  color: var(--dark-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.window-shell[data-tone="light"] .assessment-profile-row-copy span {
+  color: var(--light-muted);
+}
+
+.assessment-manager-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.assessment-editor-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.assessment-flow {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.assessment-flow-main {
+  align-content: start;
+}
+
+.assessment-side-column {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.assessment-section {
+  display: grid;
+  gap: 12px;
+  padding: 2px 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.assessment-section-compact {
+  gap: 12px;
+  padding-top: 0;
+}
+
+.window-shell[data-tone="light"] .assessment-section {
+  border-bottom-color: rgba(36, 72, 122, 0.1);
+}
+
+.assessment-section-summary {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.assessment-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.assessment-section-title {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.assessment-section-copy {
+  margin: 0;
+  max-width: 36ch;
+  color: var(--dark-muted);
+  line-height: 1.5;
+  text-align: right;
+}
+
+.window-shell[data-tone="light"] .assessment-section-copy {
+  color: var(--light-muted);
+}
+
+.assessment-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.assessment-inline-field-hidden,
+.assessment-preset-grid {
+  display: none;
+}
+
+.assessment-preset-button {
+  -webkit-app-region: no-drag;
+  display: grid;
+  gap: 4px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.assessment-preset-button[data-selected="true"] {
+  border-color: rgba(143, 211, 255, 0.42);
+  background: rgba(143, 211, 255, 0.1);
+}
+
+.window-shell[data-tone="light"] .assessment-preset-button {
+  border-color: rgba(36, 72, 122, 0.1);
+}
+
+.window-shell[data-tone="light"] .assessment-preset-button[data-selected="true"] {
+  border-color: rgba(84, 151, 214, 0.3);
+  background: rgba(143, 211, 255, 0.18);
+}
+
+.assessment-preset-title {
+  font-weight: 600;
+}
+
+.assessment-preset-copy {
+  color: var(--dark-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.window-shell[data-tone="light"] .assessment-preset-copy {
+  color: var(--light-muted);
+}
+
+.assessment-inline-field {
+  display: grid;
+  gap: 8px;
+}
+
+.assessment-profile-bar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.1fr) minmax(180px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.assessment-profile-actions {
+  -webkit-app-region: no-drag;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.assessment-inline-field span {
+  color: var(--dark-muted);
+  font-size: 0.88rem;
+}
+
+.window-shell[data-tone="light"] .assessment-inline-field span {
+  color: var(--light-muted);
+}
+
+.assessment-inline-field input,
+.assessment-inline-field textarea,
+.assessment-inline-field select {
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+  outline: none;
+}
+
+.window-shell[data-tone="light"] .assessment-inline-field input,
+.window-shell[data-tone="light"] .assessment-inline-field textarea,
+.window-shell[data-tone="light"] .assessment-inline-field select {
+  border-color: rgba(36, 72, 122, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.assessment-inline-field input:focus,
+.assessment-inline-field textarea:focus,
+.assessment-inline-field select:focus {
+  border-color: rgba(143, 211, 255, 0.42);
+  box-shadow: 0 0 0 3px rgba(143, 211, 255, 0.12);
+}
+
+.assessment-upload-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.assessment-upload-drop {
+  display: grid;
+  gap: 10px;
+}
+
+.assessment-upload-drop-label {
+  -webkit-app-region: no-drag;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px 22px;
+  border: 1px dashed rgba(143, 211, 255, 0.34);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(143, 211, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.02);
+  color: inherit;
+  cursor: pointer;
+  text-align: center;
+}
+
+.window-shell[data-tone="light"] .assessment-upload-drop-label {
+  border-color: rgba(84, 151, 214, 0.28);
+  background:
+    linear-gradient(180deg, rgba(143, 211, 255, 0.14), rgba(255, 255, 255, 0.88)),
+    rgba(255, 255, 255, 0.84);
+}
+
+.assessment-upload-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(143, 211, 255, 0.12);
+  color: var(--accent);
+}
+
+.assessment-upload-title {
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.assessment-upload-copy {
+  max-width: 34ch;
+  color: var(--dark-muted);
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+.window-shell[data-tone="light"] .assessment-upload-copy {
+  color: var(--light-muted);
+}
+
+.assessment-upload-status {
+  margin: 0;
+}
+
+.assessment-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.assessment-upload-button {
+  padding-inline: 18px;
+}
+
+.assessment-upload-rollup {
+  display: grid;
+  gap: 6px;
+}
+
+.assessment-upload-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.window-shell[data-tone="light"] .assessment-upload-chip {
+  border-bottom-color: rgba(36, 72, 122, 0.1);
+}
+
+.assessment-upload-chip-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.assessment-upload-chip-copy span {
+  color: var(--dark-muted);
+  font-size: 0.88rem;
+}
+
+.window-shell[data-tone="light"] .assessment-upload-chip-copy span {
+  color: var(--light-muted);
+}
+
+.assessment-chip-remove {
+  padding-inline: 12px;
+}
+
+.assessment-summary-points {
+  display: grid;
+  gap: 10px;
+}
+
+.assessment-analysis-insights {
+  display: grid;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.assessment-analysis-block {
+  display: grid;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.window-shell[data-tone="light"] .assessment-analysis-block {
+  border-top-color: rgba(36, 72, 122, 0.1);
+}
+
+.assessment-analysis-label {
+  margin: 0;
+  color: var(--dark-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.window-shell[data-tone="light"] .assessment-analysis-label {
+  color: var(--light-muted);
+}
+
+.assessment-summary-point {
+  margin: 0;
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.45;
+  font-size: 0.94rem;
+}
+
+.assessment-summary-point::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(143, 211, 255, 0.6);
+}
+
+.assessment-summary-point.is-empty {
+  color: var(--dark-muted);
+}
+
+.window-shell[data-tone="light"] .assessment-summary-point.is-empty {
+  color: var(--light-muted);
+}
+
+.assessment-actions {
+  display: flex;
+  justify-content: stretch;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.assessment-actions .ghost-button,
+.assessment-actions .continue-button {
+  flex: 1 1 0;
+}
+
+.assessment-hidden-cancel {
+  display: none;
+}
+
+.assessment-summary-panel {
+  position: sticky;
+  top: 0;
+  align-self: start;
+}
+
+.quiz-profile-row {
+  display: grid;
+  gap: 10px;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -4544,6 +5110,9 @@ button {
   .folder-create-row,
   .session-layout,
   .chat-compose,
+  .assessment-layout,
+  .assessment-profile-bar,
+  .assessment-section-split,
   .cram-input-grid,
   .cram-results-grid,
   .quiz-source-grid,
@@ -4567,6 +5136,7 @@ button {
   }
 
   .quiz-hero,
+  .assessment-hero,
   .cram-hero,
   .cram-panel-header,
   .cram-results-bar,
@@ -4577,9 +5147,14 @@ button {
   }
 
   .settings-inline-group,
-  .settings-toggle-row {
+  .settings-toggle-row,
+  .assessment-profile-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .assessment-summary-panel {
+    position: static;
   }
 
   .settings-auth-fields {

@@ -7,6 +7,7 @@ const closeWindow = document.querySelector("#close-window");
 const compactCloseWindow = document.querySelector("#compact-close-window");
 const restoreWindow = document.querySelector("#restore-window");
 const homeDashboardView = document.querySelector("#home-dashboard-view");
+const homeAssessmentView = document.querySelector("#home-assessment-view");
 const homeSettingsView = document.querySelector("#home-settings-view");
 const homeAuthGateView = document.querySelector("#home-auth-gate-view");
 const settingsHomeButton = document.querySelector("#settings-home-button");
@@ -28,6 +29,9 @@ const cancelClassModal = document.querySelector("#cancel-class-modal");
 const saveClassModal = document.querySelector("#save-class-modal");
 const classFields = document.querySelector("#class-fields");
 const sessionFields = document.querySelector("#session-fields");
+const assessmentConfigCard = document.querySelector("#assessment-config-card");
+const assessmentConfigStatus = document.querySelector("#assessment-config-status");
+const openAssessmentConfigButton = document.querySelector("#open-assessment-config-button");
 const nameFieldLabel = document.querySelector("#name-field-label");
 const teacherNameField = document.querySelector("#teacher-name-field");
 const teacherNotesField = document.querySelector("#teacher-notes-field");
@@ -49,6 +53,44 @@ const classTestExamplesInput = document.querySelector(
 const classAdditionalNotesInput = document.querySelector(
   "#class-additional-notes-input",
 );
+const assessmentBackButton = document.querySelector("#assessment-back-button");
+const assessmentBreadcrumbClass = document.querySelector(
+  "#assessment-breadcrumb-class",
+);
+const assessmentTitle = document.querySelector("#assessment-title");
+const assessmentLiveSummary = document.querySelector("#assessment-live-summary");
+const assessmentManagerView = document.querySelector("#assessment-manager-view");
+const assessmentEmptyState = document.querySelector("#assessment-empty-state");
+const assessmentProfileList = document.querySelector("#assessment-profile-list");
+const assessmentManagerCreateButton = document.querySelector(
+  "#assessment-manager-create-button",
+);
+const assessmentEditorView = document.querySelector("#assessment-editor-view");
+const assessmentEditorBackButton = document.querySelector(
+  "#assessment-editor-back-button",
+);
+const assessmentProfileSelect = document.querySelector("#assessment-profile-select");
+const assessmentProfileName = document.querySelector("#assessment-profile-name");
+const assessmentNewProfileButton = document.querySelector(
+  "#assessment-new-profile-button",
+);
+const assessmentAnalyzeButton = document.querySelector("#assessment-analyze-button");
+const assessmentAnalysisStatus = document.querySelector("#assessment-analysis-status");
+const assessmentPresetGrid = document.querySelector("#assessment-preset-grid");
+const assessmentCustomFormat = document.querySelector("#assessment-custom-format");
+const assessmentMaterialFile = document.querySelector("#assessment-material-file");
+const assessmentUploadStatus = document.querySelector("#assessment-upload-status");
+const assessmentUploadRollup = document.querySelector("#assessment-upload-rollup");
+const assessmentExampleQuestions = document.querySelector(
+  "#assessment-example-questions",
+);
+const assessmentGradingNotes = document.querySelector("#assessment-grading-notes");
+const assessmentSummaryPoints = document.querySelector("#assessment-summary-points");
+const assessmentAnalysisInsights = document.querySelector(
+  "#assessment-analysis-insights",
+);
+const assessmentCancelButton = document.querySelector("#assessment-cancel-button");
+const assessmentSaveButton = document.querySelector("#assessment-save-button");
 const sessionNameInput = document.querySelector("#session-name-input");
 const sessionNotesInput = document.querySelector("#session-notes-input");
 const sessionSummaryBackdrop = document.querySelector(
@@ -73,6 +115,12 @@ const quizSourceSummary = document.querySelector("#quiz-source-summary");
 const quizSourceNotes = document.querySelector("#quiz-source-notes");
 const quizSourceTopics = document.querySelector("#quiz-source-topics");
 const quizSourceUploaded = document.querySelector("#quiz-source-uploaded");
+const quizAssessmentProfileSelect = document.querySelector(
+  "#quiz-assessment-profile-select",
+);
+const quizAssessmentProfileMeta = document.querySelector(
+  "#quiz-assessment-profile-meta",
+);
 const quizMaterialFile = document.querySelector("#quiz-material-file");
 const quizFileName = document.querySelector("#quiz-file-name");
 const quizMaterialText = document.querySelector("#quiz-material-text");
@@ -102,6 +150,12 @@ const cramSetupView = document.querySelector("#cram-setup-view");
 const cramView = document.querySelector("#cram-view");
 const cramExamNameInput = document.querySelector("#cram-exam-name");
 const cramTimeAvailableSelect = document.querySelector("#cram-time-available");
+const cramAssessmentProfileSelect = document.querySelector(
+  "#cram-assessment-profile-select",
+);
+const cramAssessmentProfileMeta = document.querySelector(
+  "#cram-assessment-profile-meta",
+);
 const cramMaterialFile = document.querySelector("#cram-material-file");
 const cramFileName = document.querySelector("#cram-file-name");
 const cramUploadRollup = document.querySelector("#cram-upload-rollup");
@@ -224,6 +278,15 @@ let cramMaterialUploadError = "";
 let cramMaterialUploadSummary = "";
 let isGeneratingCramPlan = false;
 let activeHomeView = "dashboard";
+let activeAssessmentClassPath = null;
+let activeAssessmentProfiles = [];
+let activeAssessmentProfileId = "";
+let activeAssessmentSource = null;
+let assessmentUploadError = "";
+let isAnalyzingAssessmentProfile = false;
+let activeAssessmentPanel = "manager";
+let currentModalAssessmentProfiles = [];
+let currentModalActiveAssessmentProfileId = "";
 let privacySettings = null;
 let authSession = null;
 let postAuthHomeView = "dashboard";
@@ -280,6 +343,45 @@ const localOnlyLabels = {
   false: "Cloud features allowed",
 };
 
+const ASSESSMENT_PRESETS = [
+  {
+    id: "mcq",
+    title: "Mostly multiple choice",
+    format: "Mostly multiple choice with one clearly correct answer",
+    cues: "Fast stems, recognitional recall, strong distractors",
+  },
+  {
+    id: "mixed",
+    title: "Mixed quiz",
+    format: "Mixed multiple choice and short response",
+    cues: "Some recall, some explanation, light written justification",
+  },
+  {
+    id: "frq",
+    title: "FRQ heavy",
+    format: "Short free response and step-by-step explanation",
+    cues: "Teacher rewards reasoning, vocabulary, and shown work",
+  },
+  {
+    id: "diagram",
+    title: "Diagram and label",
+    format: "Diagram labeling, image interpretation, and applied explanation",
+    cues: "Visual prompts, identify parts, explain function",
+  },
+  {
+    id: "word-problem",
+    title: "Word problem",
+    format: "Scenario-based problems with setup and worked steps",
+    cues: "Translate the prompt, solve, and explain each move",
+  },
+  {
+    id: "essay",
+    title: "Essay / DBQ",
+    format: "Long-form argument, compare-contrast, or evidence-backed writing",
+    cues: "Claims, evidence, structure, and synthesis matter",
+  },
+];
+
 function makeId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
@@ -306,6 +408,18 @@ function getCurrentClassFolder() {
 
 function getCurrentClassPath() {
   return currentPath.length > 0 ? [currentPath[0]] : null;
+}
+
+function getClassAssessmentProfiles(classFolder) {
+  return getAssessmentProfileCollectionSummary(classFolder);
+}
+
+function getSelectedClassAssessmentProfile(classFolder, selectedId) {
+  const collection = getClassAssessmentProfiles(classFolder);
+  return (
+    collection.profiles.find((profile) => profile.id === selectedId) ||
+    collection.activeProfile
+  );
 }
 
 function getCurrentContainerType() {
@@ -452,6 +566,8 @@ function setHomeView(nextView) {
   activeHomeView =
     nextView === "settings"
       ? "settings"
+      : nextView === "assessment"
+        ? "assessment"
       : nextView === "auth"
         ? "auth"
         : "dashboard";
@@ -460,13 +576,20 @@ function setHomeView(nextView) {
       ? "Home"
       : activeHomeView === "settings"
         ? "Settings"
+        : activeHomeView === "assessment"
+          ? "Assessment"
         : "Sign In";
   homeDashboardView.hidden = activeHomeView !== "dashboard";
+  homeAssessmentView.hidden = activeHomeView !== "assessment";
   homeSettingsView.hidden = activeHomeView !== "settings";
   homeAuthGateView.hidden = activeHomeView !== "auth";
   homeDashboardView.classList.toggle(
     "home-view-active",
     activeHomeView === "dashboard",
+  );
+  homeAssessmentView.classList.toggle(
+    "home-view-active",
+    activeHomeView === "assessment",
   );
   homeSettingsView.classList.toggle(
     "home-view-active",
@@ -479,7 +602,8 @@ function setHomeView(nextView) {
     }
   }
   if (openSettingsButton) {
-    const shouldGoHome = activeHomeView === "settings";
+    const shouldGoHome =
+      activeHomeView === "settings" || activeHomeView === "assessment";
     openSettingsButton.setAttribute(
       "aria-label",
       shouldGoHome ? "Back to home" : "Open settings",
@@ -807,13 +931,12 @@ function normalizeFolders(source) {
   return Array.isArray(source)
     ? source
         .filter((item) => item?.type === "class")
-        .map((item) => ({
-          ...item,
-          testFormat:
-            typeof item.testFormat === "string" ? item.testFormat.trim() : "",
-          testExamples: normalizeTestExamples(item.testExamples),
-          children: normalizeChildren(item.children, 1),
-        }))
+        .map((item) =>
+          decorateClassFolderWithAssessment({
+            ...item,
+            children: normalizeChildren(item.children, 1),
+          }),
+        )
     : [];
 }
 
@@ -896,7 +1019,8 @@ function updateFolderAtPath(path, transform, source = folders) {
 }
 
 async function persistFolders(nextFolders) {
-  folders = await window.overlayApi.updateClassFolders(nextFolders);
+  const persisted = await window.overlayApi.updateClassFolders(nextFolders);
+  folders = normalizeFolders(persisted);
   renderFolders();
 }
 
@@ -915,15 +1039,325 @@ function normalizeTestExamples(value) {
     .slice(0, 8);
 }
 
+function uniqueStrings(values, limit = Number.POSITIVE_INFINITY) {
+  const seen = new Set();
+  const output = [];
+
+  for (const value of Array.isArray(values) ? values : []) {
+    const normalized = String(value || "").trim();
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    output.push(normalized);
+    if (output.length >= limit) {
+      break;
+    }
+  }
+
+  return output;
+}
+
 function formatTestExamplesForField(value) {
   return normalizeTestExamples(value).join("\n");
 }
 
+function splitSentences(value) {
+  return String(value || "")
+    .split(/\n+|(?<=[.!?])\s+/)
+    .map((part) => part.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+function createEmptyAssessmentAnalysis() {
+  return {
+    profileName: "",
+    testFormat: "",
+    conciseSummary: "",
+    genericDifferences: [],
+    exampleQuestions: [],
+    gradingSignals: [],
+    wordingPatterns: [],
+    likelyQuestionMoves: [],
+    quizAdjustments: [],
+    cramAdjustments: [],
+    sourceMaterialNames: [],
+  };
+}
+
+function createEmptyAssessmentProfile(name = "Main template") {
+  return {
+    id: makeId(),
+    name,
+    presetId: "",
+    customFormat: "",
+    exampleQuestions: [],
+    gradingNotes: "",
+    uploads: [],
+    analysis: createEmptyAssessmentAnalysis(),
+  };
+}
+
+function normalizeAssessmentUploads(uploads) {
+  if (!Array.isArray(uploads)) {
+    return [];
+  }
+
+  return uploads
+    .filter((upload) => upload && typeof upload === "object")
+    .map((upload) => ({
+      id:
+        typeof upload.id === "string" && upload.id.trim()
+          ? upload.id.trim()
+          : makeId(),
+      name: typeof upload.name === "string" ? upload.name.trim() : "Uploaded file",
+      handler: typeof upload.handler === "string" ? upload.handler : "text",
+      content: typeof upload.content === "string" ? upload.content.trim() : "",
+      originalCharacters: Number(upload.originalCharacters) || 0,
+      compressedCharacters: Number(upload.compressedCharacters) || 0,
+      estimatedTokenSavings: Number(upload.estimatedTokenSavings) || 0,
+    }))
+    .filter((upload) => upload.content);
+}
+
+function normalizeAssessmentProfile(profile) {
+  const source = profile && typeof profile === "object" ? profile : {};
+  return {
+    id:
+      typeof source.id === "string" && source.id.trim()
+        ? source.id.trim()
+        : makeId(),
+    name:
+      typeof source.name === "string" && source.name.trim()
+        ? source.name.trim()
+        : "Template",
+    presetId:
+      typeof source.presetId === "string" && source.presetId.trim()
+        ? source.presetId.trim()
+        : "",
+    customFormat:
+      typeof source.customFormat === "string" ? source.customFormat.trim() : "",
+    exampleQuestions: normalizeTestExamples(source.exampleQuestions),
+    gradingNotes:
+      typeof source.gradingNotes === "string" ? source.gradingNotes.trim() : "",
+    uploads: normalizeAssessmentUploads(source.uploads),
+    analysis: normalizeAssessmentAnalysis(source.analysis),
+  };
+}
+
+function normalizeAssessmentAnalysis(analysis) {
+  const source = analysis && typeof analysis === "object" ? analysis : {};
+  return {
+    profileName:
+      typeof source.profileName === "string" ? source.profileName.trim() : "",
+    testFormat:
+      typeof source.testFormat === "string" ? source.testFormat.trim() : "",
+    conciseSummary:
+      typeof source.conciseSummary === "string"
+        ? source.conciseSummary.trim()
+        : "",
+    genericDifferences: uniqueStrings(source.genericDifferences, 6),
+    exampleQuestions: normalizeTestExamples(source.exampleQuestions),
+    gradingSignals: uniqueStrings(source.gradingSignals, 8),
+    wordingPatterns: uniqueStrings(source.wordingPatterns, 8),
+    likelyQuestionMoves: uniqueStrings(source.likelyQuestionMoves, 8),
+    quizAdjustments: uniqueStrings(source.quizAdjustments, 6),
+    cramAdjustments: uniqueStrings(source.cramAdjustments, 6),
+    sourceMaterialNames: uniqueStrings(source.sourceMaterialNames, 12),
+  };
+}
+
+function normalizeAssessmentProfileCollection(source) {
+  const objectSource = source && typeof source === "object" ? source : {};
+  const rawProfiles = Array.isArray(objectSource.assessmentProfiles)
+    ? objectSource.assessmentProfiles
+    : objectSource.assessmentProfile
+      ? [objectSource.assessmentProfile]
+      : [];
+  const profiles = rawProfiles.length > 0
+    ? rawProfiles.map((profile, index) =>
+        normalizeAssessmentProfile({
+          name:
+            typeof profile?.name === "string" && profile.name.trim()
+              ? profile.name
+              : index === 0
+                ? "Main template"
+                : `Template ${index + 1}`,
+          ...profile,
+        }),
+      )
+    : [createEmptyAssessmentProfile()];
+  const activeCandidate =
+    typeof objectSource.activeAssessmentProfileId === "string"
+      ? objectSource.activeAssessmentProfileId.trim()
+      : "";
+  const activeProfileId = profiles.some((profile) => profile.id === activeCandidate)
+    ? activeCandidate
+    : profiles[0].id;
+
+  return {
+    profiles,
+    activeProfileId,
+  };
+}
+
+function getAssessmentProfileCollectionSummary(source) {
+  const collection = normalizeAssessmentProfileCollection(source);
+  const activeProfile =
+    collection.profiles.find((profile) => profile.id === collection.activeProfileId) ||
+    collection.profiles[0];
+  return {
+    ...collection,
+    activeProfile,
+  };
+}
+
+function getAssessmentPresetById(presetId) {
+  return ASSESSMENT_PRESETS.find((preset) => preset.id === presetId) || null;
+}
+
+function getAssessmentFormat(profile) {
+  const normalized = normalizeAssessmentProfile(profile);
+  if (normalized.analysis.testFormat) {
+    return normalized.analysis.testFormat;
+  }
+  if (normalized.customFormat) {
+    return normalized.customFormat;
+  }
+
+  return getAssessmentPresetById(normalized.presetId)?.format || "";
+}
+
+function extractAssessmentExamplesFromUploads(profile) {
+  const normalized = normalizeAssessmentProfile(profile);
+  return uniqueStrings(
+    normalized.uploads.flatMap((upload) =>
+      String(upload.content || "")
+        .split(/\n+/)
+        .map((line) => line.replace(/^[-*•\s]+/, "").trim())
+        .filter((line) => line.length >= 18)
+        .slice(0, 2),
+    ),
+    4,
+  );
+}
+
+function summarizeAssessmentProfile(profile) {
+  const normalized = normalizeAssessmentProfile(profile);
+  const preset = getAssessmentPresetById(normalized.presetId);
+  const analysis = normalizeAssessmentAnalysis(normalized.analysis);
+  const testFormat = getAssessmentFormat(normalized);
+  const uploadedExamples = extractAssessmentExamplesFromUploads(normalized);
+  const testExamples = uniqueStrings(
+    [...analysis.exampleQuestions, ...normalized.exampleQuestions, ...uploadedExamples],
+    6,
+  );
+  const summaryPoints = uniqueStrings(
+    [
+      normalized.name ? `Template: ${normalized.name}` : null,
+      analysis.conciseSummary ? `Profile: ${analysis.conciseSummary}` : null,
+      testFormat ? `Format: ${testFormat}` : null,
+      preset?.cues ? `Signal: ${preset.cues}` : null,
+      normalized.gradingNotes
+        ? `Grading notes: ${normalized.gradingNotes}`
+        : null,
+      analysis.genericDifferences[0]
+        ? `Difference: ${analysis.genericDifferences[0]}`
+        : null,
+      normalized.uploads.length > 0
+        ? `${normalized.uploads.length} teacher material source${normalized.uploads.length === 1 ? "" : "s"} uploaded`
+        : null,
+      testExamples[0] ? `Example anchor: ${testExamples[0]}` : null,
+    ],
+    6,
+  );
+
+  return {
+    profile: normalized,
+    analysis,
+    testFormat,
+    testExamples,
+    summaryPoints,
+    statusText:
+      summaryPoints[0] ||
+      "Upload real test material to build a reusable template.",
+  };
+}
+
+function decorateClassFolderWithAssessment(folder) {
+  const collection = getAssessmentProfileCollectionSummary(folder);
+  const summary = summarizeAssessmentProfile(collection.activeProfile);
+  return {
+    ...folder,
+    assessmentProfiles: collection.profiles,
+    activeAssessmentProfileId: collection.activeProfileId,
+    assessmentProfile: collection.activeProfile,
+    testFormat: summary.testFormat,
+    testExamples: summary.testExamples,
+  };
+}
+
+function getTeacherAssessmentProfilePayload(profile) {
+  const summary = summarizeAssessmentProfile(profile);
+  return {
+    profileId: summary.profile.id,
+    profileName:
+      summary.analysis.profileName ||
+      summary.profile.name ||
+      "Template",
+    testFormat: summary.testFormat || null,
+    conciseSummary: summary.analysis.conciseSummary || null,
+    genericDifferences: summary.analysis.genericDifferences,
+    exampleQuestions: summary.testExamples,
+    gradingSignals: uniqueStrings(
+      [
+        ...summary.analysis.gradingSignals,
+        ...splitSentences(summary.profile.gradingNotes),
+      ],
+      8,
+    ),
+    wordingPatterns: summary.analysis.wordingPatterns,
+    likelyQuestionMoves: summary.analysis.likelyQuestionMoves,
+    quizAdjustments: summary.analysis.quizAdjustments,
+    cramAdjustments: summary.analysis.cramAdjustments,
+    sourceMaterialNames: uniqueStrings(
+      [
+        ...summary.analysis.sourceMaterialNames,
+        ...summary.profile.uploads.map((upload) => upload.name),
+      ],
+      12,
+    ),
+  };
+}
+
 function buildBackendClassPayload(values) {
+  const assessmentSource = {
+    assessmentProfiles: values.assessmentProfiles,
+    activeAssessmentProfileId: values.activeAssessmentProfileId,
+    assessmentProfile: values.assessmentProfile,
+  };
+  const assessmentCollection = getAssessmentProfileCollectionSummary(assessmentSource);
+  const assessmentSummary = summarizeAssessmentProfile(
+    assessmentCollection.activeProfile,
+  );
   const noteParts = [
     values.description ? `Description: ${values.description}` : null,
     values.additionalNotes
       ? `Additional notes: ${values.additionalNotes}`
+      : null,
+    assessmentSummary.profile.gradingNotes
+      ? `Assessment grading notes: ${assessmentSummary.profile.gradingNotes}`
+      : null,
+    assessmentSummary.profile.uploads.length > 0
+      ? `Teacher materials: ${assessmentSummary.profile.uploads
+          .map((upload) => upload.name)
+          .join(", ")}`
+      : null,
+    assessmentSummary.profile.uploads.length > 0
+      ? `Assessment evidence:\n${assessmentSummary.profile.uploads
+          .map((upload) => `--- ${upload.name} ---\n${upload.content}`)
+          .join("\n\n")
+          .slice(0, 2800)}`
       : null,
     values.hierarchyNotes ? values.hierarchyNotes : null,
   ].filter(Boolean);
@@ -942,11 +1376,36 @@ function buildBackendClassPayload(values) {
     currentUnit: values.currentUnit || null,
     teacherFocus:
       teacherFocusParts.length > 0 ? teacherFocusParts.join(" | ") : null,
-    testFormat: values.testFormat || null,
-    testExamples: normalizeTestExamples(values.testExamples),
+    testFormat: assessmentSummary.testFormat || values.testFormat || null,
+    testExamples: uniqueStrings(
+      [...assessmentSummary.testExamples, ...normalizeTestExamples(values.testExamples)],
+      6,
+    ),
     keyConcepts: [],
     notes: noteParts.length > 0 ? noteParts.join("\n") : null,
   };
+}
+
+function buildClassFolderPayloadForBackend(
+  classFolder,
+  { currentUnit, hierarchyNotes } = {},
+) {
+  return buildBackendClassPayload({
+    course: classFolder?.name || "",
+    dbClassId: classFolder?.dbClassId,
+    teacherName: classFolder?.teacherName || "",
+    description: classFolder?.description || "",
+    teacherNotes: classFolder?.teacherNotes || "",
+    assessmentProfiles: classFolder?.assessmentProfiles || [],
+    activeAssessmentProfileId: classFolder?.activeAssessmentProfileId || "",
+    assessmentProfile:
+      classFolder?.assessmentProfile || createEmptyAssessmentProfile(),
+    testFormat: classFolder?.testFormat || "",
+    testExamples: classFolder?.testExamples || [],
+    additionalNotes: classFolder?.additionalNotes || "",
+    currentUnit: currentUnit ?? null,
+    hierarchyNotes: hierarchyNotes ?? null,
+  });
 }
 
 async function ensureBackendClassId(classFolder) {
@@ -959,15 +1418,7 @@ async function ensureBackendClassId(classFolder) {
   }
 
   const result = await window.overlayApi.saveClassProfile(
-    buildBackendClassPayload({
-      course: classFolder.name,
-      dbClassId: classFolder.dbClassId,
-      teacherName: classFolder.teacherName || "",
-      description: classFolder.description || "",
-      teacherNotes: classFolder.teacherNotes || "",
-      testFormat: classFolder.testFormat || "",
-      testExamples: classFolder.testExamples || [],
-      additionalNotes: classFolder.additionalNotes || "",
+    buildClassFolderPayloadForBackend(classFolder, {
       currentUnit: buildCurrentUnitPathLabel(),
       hierarchyNotes: buildHierarchyContextNotes(),
     }),
@@ -981,6 +1432,551 @@ async function ensureBackendClassId(classFolder) {
   await persistFolders(nextFolders);
 
   return result.classProfile.id;
+}
+
+function getAssessmentDraft() {
+  const collection = getAssessmentProfileCollectionSummary({
+    assessmentProfiles: activeAssessmentProfiles,
+    activeAssessmentProfileId,
+  });
+  return normalizeAssessmentProfile(collection.activeProfile);
+}
+
+function setAssessmentPanel(panel) {
+  activeAssessmentPanel = panel === "editor" ? "editor" : "manager";
+  if (assessmentManagerView) {
+    assessmentManagerView.hidden = activeAssessmentPanel !== "manager";
+  }
+  if (assessmentEditorView) {
+    assessmentEditorView.hidden = activeAssessmentPanel !== "editor";
+  }
+}
+
+function setAssessmentDraft(nextProfile) {
+  const normalizedProfile = normalizeAssessmentProfile(nextProfile);
+  activeAssessmentProfiles = activeAssessmentProfiles.map((profile) =>
+    profile.id === normalizedProfile.id ? normalizedProfile : profile,
+  );
+  if (!activeAssessmentProfiles.some((profile) => profile.id === normalizedProfile.id)) {
+    activeAssessmentProfiles = [...activeAssessmentProfiles, normalizedProfile];
+  }
+  activeAssessmentProfileId = normalizedProfile.id;
+  renderAssessmentProfileSelector();
+  renderAssessmentPresetGrid();
+  renderAssessmentUploadRollup();
+  renderAssessmentSummary();
+}
+
+function setAssessmentProfileCollection(collection) {
+  const normalized = getAssessmentProfileCollectionSummary(collection);
+  activeAssessmentProfiles = normalized.profiles;
+  activeAssessmentProfileId = normalized.activeProfileId;
+  if (assessmentProfileSelect) {
+    assessmentProfileSelect.value = activeAssessmentProfileId;
+  }
+  const activeProfile = getAssessmentDraft();
+  if (assessmentProfileName) {
+    assessmentProfileName.value = activeProfile.name || "";
+  }
+  if (assessmentCustomFormat) {
+    assessmentCustomFormat.value = activeProfile.customFormat || "";
+  }
+  if (assessmentExampleQuestions) {
+    assessmentExampleQuestions.value = formatTestExamplesForField(
+      activeProfile.exampleQuestions,
+    );
+  }
+  if (assessmentGradingNotes) {
+    assessmentGradingNotes.value = activeProfile.gradingNotes || "";
+  }
+  renderAssessmentProfileSelector();
+  renderAssessmentPresetGrid();
+  renderAssessmentUploadRollup();
+  renderAssessmentManager();
+  renderAssessmentSummary();
+}
+
+function renderAssessmentManager() {
+  if (!assessmentProfileList || !assessmentEmptyState) {
+    return;
+  }
+
+  const collection = getAssessmentProfileCollectionSummary({
+    assessmentProfiles: activeAssessmentProfiles,
+    activeAssessmentProfileId,
+  });
+  const visibleProfiles = collection.profiles.filter(
+    (profile) =>
+      profile.uploads.length > 0 ||
+      profile.gradingNotes ||
+      profile.customFormat ||
+      profile.exampleQuestions.length > 0 ||
+      profile.analysis.conciseSummary ||
+      profile.analysis.genericDifferences.length > 0,
+  );
+
+  assessmentProfileList.replaceChildren();
+  assessmentEmptyState.hidden = visibleProfiles.length > 0;
+  assessmentProfileList.hidden = visibleProfiles.length === 0;
+
+  if (assessmentLiveSummary && activeAssessmentPanel === "manager") {
+    assessmentLiveSummary.textContent =
+      visibleProfiles.length === 0
+        ? "No templates yet."
+        : `${visibleProfiles.length} template${visibleProfiles.length === 1 ? "" : "s"} saved.`;
+  }
+
+  visibleProfiles.forEach((profile, index) => {
+    const summary = summarizeAssessmentProfile(profile);
+    const row = document.createElement("article");
+    row.className = "assessment-profile-row";
+    row.innerHTML = `
+      <div class="assessment-profile-row-copy">
+        <strong>${profile.name || `Template ${index + 1}`}</strong>
+        <span>${summary.analysis.conciseSummary || summary.testFormat || "Ready to edit."}</span>
+      </div>
+    `;
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "ghost-button";
+    editButton.textContent = "Edit";
+    editButton.addEventListener("click", () => {
+      switchActiveAssessmentProfile(profile.id);
+      setAssessmentPanel("editor");
+    });
+
+    row.appendChild(editButton);
+    assessmentProfileList.appendChild(row);
+  });
+}
+
+function renderAssessmentProfileSelector() {
+  if (!assessmentProfileSelect) {
+    return;
+  }
+
+  const collection = getAssessmentProfileCollectionSummary({
+    assessmentProfiles: activeAssessmentProfiles,
+    activeAssessmentProfileId,
+  });
+  assessmentProfileSelect.replaceChildren();
+
+  collection.profiles.forEach((profile, index) => {
+    const option = document.createElement("option");
+    option.value = profile.id;
+    option.textContent = profile.name || `Template ${index + 1}`;
+    assessmentProfileSelect.appendChild(option);
+  });
+
+  assessmentProfileSelect.value = collection.activeProfileId;
+}
+
+function renderAssessmentPresetGrid() {
+  if (!assessmentPresetGrid) {
+    return;
+  }
+
+  const draft = getAssessmentDraft();
+  assessmentPresetGrid.replaceChildren();
+
+  ASSESSMENT_PRESETS.forEach((preset) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "assessment-preset-button";
+    button.dataset.selected = draft.presetId === preset.id ? "true" : "false";
+    button.innerHTML = `
+      <span class="assessment-preset-title">${preset.title}</span>
+      <span class="assessment-preset-copy">${preset.cues}</span>
+    `;
+    button.addEventListener("click", () => {
+      setAssessmentDraft({
+        ...draft,
+        presetId: preset.id,
+      });
+    });
+    assessmentPresetGrid.appendChild(button);
+  });
+}
+
+function renderAssessmentUploadRollup() {
+  if (!assessmentUploadRollup) {
+    return;
+  }
+
+  const draft = getAssessmentDraft();
+  assessmentUploadRollup.replaceChildren();
+  assessmentUploadStatus.textContent = assessmentUploadError
+    ? assessmentUploadError
+    : draft.uploads.length > 0
+      ? `${draft.uploads.length} file${draft.uploads.length === 1 ? "" : "s"} added.`
+      : "No files yet.";
+
+  draft.uploads.forEach((upload) => {
+    const chip = document.createElement("article");
+    chip.className = "assessment-upload-chip";
+    chip.innerHTML = `
+      <div class="assessment-upload-chip-copy">
+        <strong>${upload.name}</strong>
+        <span>${upload.handler.toUpperCase()} • ${upload.compressedCharacters.toLocaleString()} chars</span>
+      </div>
+    `;
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "ghost-button assessment-chip-remove";
+    removeButton.textContent = "Remove";
+    removeButton.addEventListener("click", () => {
+      const nextDraft = getAssessmentDraft();
+      nextDraft.uploads = nextDraft.uploads.filter((item) => item.id !== upload.id);
+      setAssessmentDraft(nextDraft);
+    });
+
+    chip.appendChild(removeButton);
+    assessmentUploadRollup.appendChild(chip);
+  });
+}
+
+function renderAssessmentSummary() {
+  const draft = getAssessmentDraft();
+  const summary = summarizeAssessmentProfile(draft);
+  const currentClassFolder = activeAssessmentClassPath
+    ? getFolderAtPath(activeAssessmentClassPath)
+    : null;
+  const currentClassLabel =
+    activeAssessmentSource === "modal"
+      ? classCourseInput.value.trim() || "New class"
+      : currentClassFolder?.name || "Class";
+
+  if (assessmentLiveSummary && activeAssessmentPanel === "editor") {
+    assessmentLiveSummary.textContent = summary.statusText;
+  }
+
+  if (assessmentTitle) {
+    assessmentTitle.textContent = `${currentClassLabel} assessment formats`;
+  }
+
+  if (assessmentBreadcrumbClass) {
+    assessmentBreadcrumbClass.textContent = currentClassLabel;
+  }
+
+  if (assessmentSummaryPoints) {
+    assessmentSummaryPoints.replaceChildren();
+    summary.summaryPoints.forEach((point) => {
+      const item = document.createElement("p");
+      item.className = "assessment-summary-point";
+      item.textContent = point;
+      assessmentSummaryPoints.appendChild(item);
+    });
+
+    if (summary.summaryPoints.length === 0) {
+      const item = document.createElement("p");
+      item.className = "assessment-summary-point is-empty";
+      item.textContent =
+        "Process a template and its configured format will appear here.";
+      assessmentSummaryPoints.appendChild(item);
+    }
+  }
+
+  if (assessmentAnalysisStatus) {
+    assessmentAnalysisStatus.textContent = isAnalyzingAssessmentProfile
+      ? "Processing this template..."
+      : summary.analysis.conciseSummary ||
+        (draft.uploads.length > 0
+          ? "Ready to process this into a class format."
+          : "Build a template from real tests, quizzes, and scans.");
+  }
+
+  if (assessmentAnalyzeButton) {
+    assessmentAnalyzeButton.disabled = isAnalyzingAssessmentProfile;
+    assessmentAnalyzeButton.textContent = isAnalyzingAssessmentProfile
+      ? "Processing..."
+      : "Process Template";
+  }
+
+  if (assessmentAnalysisInsights) {
+    const sections = [
+      {
+        label: "Format differences",
+        values: summary.analysis.genericDifferences,
+      },
+      {
+        label: "Grading cues",
+        values: summary.analysis.gradingSignals,
+      },
+      {
+        label: "Question wording",
+        values: summary.analysis.wordingPatterns,
+      },
+      {
+        label: "Quiz should match",
+        values: summary.analysis.quizAdjustments,
+      },
+      {
+        label: "Cram should match",
+        values: summary.analysis.cramAdjustments,
+      },
+    ].filter((section) => section.values.length > 0);
+
+    assessmentAnalysisInsights.replaceChildren();
+
+    sections.forEach((section) => {
+      const block = document.createElement("section");
+      block.className = "assessment-analysis-block";
+      const title = document.createElement("p");
+      title.className = "assessment-analysis-label";
+      title.textContent = section.label;
+      block.appendChild(title);
+
+      section.values.forEach((value) => {
+        const item = document.createElement("p");
+        item.className = "assessment-summary-point";
+        item.textContent = value;
+        block.appendChild(item);
+      });
+      assessmentAnalysisInsights.appendChild(block);
+    });
+  }
+}
+
+function updateAssessmentConfigCallout() {
+  if (!assessmentConfigStatus || !openAssessmentConfigButton) {
+    return;
+  }
+
+  if (currentModalMode !== "class") {
+    openAssessmentConfigButton.disabled = true;
+    assessmentConfigStatus.textContent =
+      "Assessment profiles are available for classes.";
+    return;
+  }
+
+  const collection = getAssessmentProfileCollectionSummary({
+    assessmentProfiles: currentModalAssessmentProfiles,
+    activeAssessmentProfileId: currentModalActiveAssessmentProfileId,
+  });
+  const summary = summarizeAssessmentProfile(collection.activeProfile);
+  openAssessmentConfigButton.disabled = false;
+  assessmentConfigStatus.textContent = summary.statusText;
+}
+
+function openAssessmentProfileForClassPath(classPath) {
+  const resolvedPath = Array.isArray(classPath) ? classPath : getCurrentClassPath();
+  const classFolder = resolvedPath ? getFolderAtPath(resolvedPath) : null;
+  if (!classFolder || classFolder.type !== "class") {
+    return;
+  }
+
+  activeAssessmentSource = "class";
+  activeAssessmentClassPath = [...resolvedPath];
+  assessmentUploadError = "";
+  if (assessmentMaterialFile) {
+    assessmentMaterialFile.value = "";
+  }
+  setAssessmentProfileCollection(classFolder);
+  setAssessmentPanel("manager");
+  setHomeView("assessment");
+}
+
+function openAssessmentProfileFromModalDraft() {
+  if (currentModalMode !== "class") {
+    return;
+  }
+
+  activeAssessmentSource = "modal";
+  activeAssessmentClassPath = null;
+  assessmentUploadError = "";
+  if (assessmentMaterialFile) {
+    assessmentMaterialFile.value = "";
+  }
+  classModalBackdrop.hidden = true;
+  setAssessmentProfileCollection({
+    assessmentProfiles: currentModalAssessmentProfiles,
+    activeAssessmentProfileId: currentModalActiveAssessmentProfileId,
+  });
+  setAssessmentPanel("manager");
+  setHomeView("assessment");
+}
+
+function closeAssessmentProfileView() {
+  const shouldRestoreModal = activeAssessmentSource === "modal";
+  activeAssessmentClassPath = null;
+  activeAssessmentProfiles = [];
+  activeAssessmentProfileId = "";
+  activeAssessmentSource = null;
+  assessmentUploadError = "";
+  isAnalyzingAssessmentProfile = false;
+  activeAssessmentPanel = "manager";
+  if (assessmentMaterialFile) {
+    assessmentMaterialFile.value = "";
+  }
+  setHomeView("dashboard");
+  if (shouldRestoreModal) {
+    classModalBackdrop.hidden = false;
+    updateAssessmentConfigCallout();
+  }
+}
+
+function syncAssessmentDraftFromInputs() {
+  const draft = getAssessmentDraft();
+  draft.name = assessmentProfileName?.value.trim() || draft.name;
+  draft.customFormat = assessmentCustomFormat.value.trim();
+  draft.exampleQuestions = normalizeTestExamples(
+    assessmentExampleQuestions.value,
+  );
+  draft.gradingNotes = assessmentGradingNotes.value.trim();
+  setAssessmentDraft(draft);
+}
+
+function switchActiveAssessmentProfile(profileId) {
+  const collection = getAssessmentProfileCollectionSummary({
+    assessmentProfiles: activeAssessmentProfiles,
+    activeAssessmentProfileId: profileId,
+  });
+  activeAssessmentProfileId = collection.activeProfileId;
+  const draft = getAssessmentDraft();
+  if (assessmentProfileName) {
+    assessmentProfileName.value = draft.name || "";
+  }
+  if (assessmentCustomFormat) {
+    assessmentCustomFormat.value = draft.customFormat || "";
+  }
+  if (assessmentExampleQuestions) {
+    assessmentExampleQuestions.value = formatTestExamplesForField(
+      draft.exampleQuestions,
+    );
+  }
+  if (assessmentGradingNotes) {
+    assessmentGradingNotes.value = draft.gradingNotes || "";
+  }
+  renderAssessmentProfileSelector();
+  renderAssessmentPresetGrid();
+  renderAssessmentUploadRollup();
+  renderAssessmentSummary();
+}
+
+function createNewAssessmentProfile() {
+  const collection = getAssessmentProfileCollectionSummary({
+    assessmentProfiles: activeAssessmentProfiles,
+    activeAssessmentProfileId,
+  });
+  const hasOnlyPlaceholder =
+    collection.profiles.length === 1 &&
+    collection.profiles[0].uploads.length === 0 &&
+    !collection.profiles[0].gradingNotes &&
+    !collection.profiles[0].customFormat &&
+    collection.profiles[0].exampleQuestions.length === 0 &&
+    !collection.profiles[0].analysis.conciseSummary;
+  const nextProfile = createEmptyAssessmentProfile(
+    `Template ${hasOnlyPlaceholder ? 1 : collection.profiles.length + 1}`,
+  );
+  activeAssessmentProfiles = hasOnlyPlaceholder
+    ? [nextProfile]
+    : [...collection.profiles, nextProfile];
+  switchActiveAssessmentProfile(nextProfile.id);
+  setAssessmentPanel("editor");
+}
+
+async function analyzeActiveAssessmentProfile() {
+  const draft = getAssessmentDraft();
+  if (draft.uploads.length === 0) {
+    assessmentUploadError = "Upload at least one teacher assessment before processing.";
+    renderAssessmentSummary();
+    return;
+  }
+
+  isAnalyzingAssessmentProfile = true;
+  assessmentUploadError = "";
+  renderAssessmentSummary();
+
+  try {
+    const classFolder = activeAssessmentClassPath
+      ? getFolderAtPath(activeAssessmentClassPath)
+      : null;
+    const classId = classFolder?.dbClassId || undefined;
+    const preset = getAssessmentPresetById(draft.presetId);
+    const analysis = await window.overlayApi.analyzeAssessmentProfile({
+      classId,
+      profileName: draft.name || null,
+      presetLabel: preset?.title || null,
+      customFormat: draft.customFormat || null,
+      exampleQuestions: draft.exampleQuestions,
+      gradingNotes: draft.gradingNotes || null,
+      uploadedMaterials: draft.uploads.map((upload) => ({
+        name: upload.name,
+        content: upload.content,
+        handler: upload.handler,
+      })),
+    });
+
+    setAssessmentDraft({
+      ...draft,
+      analysis: normalizeAssessmentAnalysis(analysis),
+    });
+  } catch (error) {
+    assessmentUploadError =
+      error instanceof Error
+        ? error.message
+        : "Could not process this template right now.";
+    renderAssessmentSummary();
+  } finally {
+    isAnalyzingAssessmentProfile = false;
+    renderAssessmentSummary();
+  }
+}
+
+async function saveAssessmentProfile() {
+  if (activeAssessmentSource === "modal") {
+    const collection = getAssessmentProfileCollectionSummary({
+      assessmentProfiles: activeAssessmentProfiles,
+      activeAssessmentProfileId,
+    });
+    currentModalAssessmentProfiles = collection.profiles;
+    currentModalActiveAssessmentProfileId = collection.activeProfileId;
+    closeAssessmentProfileView();
+    return;
+  }
+
+  if (!activeAssessmentClassPath) {
+    return;
+  }
+
+  const classFolder = getFolderAtPath(activeAssessmentClassPath);
+  if (!classFolder || classFolder.type !== "class") {
+    return;
+  }
+
+  const nextClassFolder = decorateClassFolderWithAssessment({
+    ...classFolder,
+    assessmentProfiles: activeAssessmentProfiles,
+    activeAssessmentProfileId,
+  });
+
+  let syncedClassFolder = nextClassFolder;
+
+  try {
+    const backendResult = await window.overlayApi.saveClassProfile(
+      buildClassFolderPayloadForBackend(nextClassFolder, {
+        currentUnit:
+          currentPath[0] === classFolder.id ? buildCurrentUnitPathLabel() : null,
+        hierarchyNotes:
+          currentPath[0] === classFolder.id ? buildHierarchyContextNotes() : null,
+      }),
+    );
+    syncedClassFolder = {
+      ...nextClassFolder,
+      dbClassId: backendResult.classProfile.id,
+    };
+  } catch (error) {
+    console.error("Failed to sync assessment profile", error);
+  }
+
+  const nextFolders = updateFolderAtPath(activeAssessmentClassPath, () =>
+    syncedClassFolder,
+  );
+  await persistFolders(nextFolders);
+  setAssessmentProfileCollection(syncedClassFolder);
+  setAssessmentPanel("manager");
 }
 
 function getSearchQuery() {
@@ -1174,6 +2170,12 @@ function resetQuizModalState() {
   quizSourceNotes.checked = false;
   quizSourceTopics.checked = true;
   quizSourceUploaded.checked = false;
+  if (quizAssessmentProfileSelect) {
+    quizAssessmentProfileSelect.value = "";
+  }
+  if (quizAssessmentProfileMeta) {
+    quizAssessmentProfileMeta.textContent = "Generic quiz mode.";
+  }
   quizGapFocus.value = "50";
   quizGapFocusValue.textContent = "50%";
   quizSubmitButton.textContent = "Check Answers";
@@ -1281,6 +2283,72 @@ function renderQuizSessionPicker(sessions) {
   });
 }
 
+function renderClassAssessmentProfileSelect(selectElement, classFolder, emptyLabel) {
+  if (!selectElement) {
+    return;
+  }
+
+  const collection = getClassAssessmentProfiles(classFolder);
+  selectElement.replaceChildren();
+
+  const genericOption = document.createElement("option");
+  genericOption.value = "";
+  genericOption.textContent = emptyLabel;
+  selectElement.appendChild(genericOption);
+
+  collection.profiles.forEach((profile) => {
+    const option = document.createElement("option");
+    option.value = profile.id;
+    option.textContent = profile.name || "Teacher style";
+    selectElement.appendChild(option);
+  });
+
+  selectElement.value = collection.activeProfileId || "";
+}
+
+function updateQuizAssessmentProfileMeta() {
+  if (!quizAssessmentProfileMeta || !activeQuizClassFolder) {
+    return;
+  }
+
+  const selectedProfile = getSelectedClassAssessmentProfile(
+    activeQuizClassFolder,
+    quizAssessmentProfileSelect?.value || "",
+  );
+
+  if (!quizAssessmentProfileSelect?.value) {
+    quizAssessmentProfileMeta.textContent = "Generic quiz mode.";
+    return;
+  }
+
+  const summary = summarizeAssessmentProfile(selectedProfile);
+  quizAssessmentProfileMeta.textContent =
+    summary.analysis.conciseSummary ||
+    summary.testFormat ||
+    "Use this saved teacher format.";
+}
+
+function updateCramAssessmentProfileMeta(classFolder) {
+  if (!cramAssessmentProfileMeta) {
+    return;
+  }
+
+  if (!cramAssessmentProfileSelect?.value) {
+    cramAssessmentProfileMeta.textContent = "Generic cram plan.";
+    return;
+  }
+
+  const selectedProfile = getSelectedClassAssessmentProfile(
+    classFolder,
+    cramAssessmentProfileSelect.value,
+  );
+  const summary = summarizeAssessmentProfile(selectedProfile);
+  cramAssessmentProfileMeta.textContent =
+    summary.analysis.conciseSummary ||
+    summary.testFormat ||
+    "Use this saved teacher format.";
+}
+
 function openQuizModalForCurrentClass() {
   if (!requireSignedIn("start a quiz")) {
     return;
@@ -1292,10 +2360,26 @@ function openQuizModalForCurrentClass() {
 
   activeQuizClassFolder = currentClassFolder;
   resetQuizModalState();
+  const assessmentSummary = summarizeAssessmentProfile(
+    currentClassFolder.assessmentProfile,
+  );
+  renderClassAssessmentProfileSelect(
+    cramAssessmentProfileSelect,
+    currentClassFolder,
+    "Generic cram mode",
+  );
   quizModalTitle.textContent = `Quiz: ${currentClassFolder.name || "Class"}`;
   quizSessionMeta.textContent =
-    "Pick any saved sessions from this view, or leave them unchecked to build from broader class context.";
+    assessmentSummary.testFormat
+      ? `Teacher style: ${assessmentSummary.testFormat}. Pick sessions or add material below.`
+      : "Pick any saved sessions from this view, or leave them unchecked to build from broader class context.";
   renderQuizSessionPicker(getCurrentClassSessions());
+  renderClassAssessmentProfileSelect(
+    quizAssessmentProfileSelect,
+    currentClassFolder,
+    "Generic practice",
+  );
+  updateQuizAssessmentProfileMeta();
   quizBackdrop.hidden = false;
 }
 
@@ -1348,6 +2432,12 @@ function resetCramModalState() {
   cramView.hidden = true;
   cramExamNameInput.value = "";
   cramTimeAvailableSelect.value = "1 hour";
+  if (cramAssessmentProfileSelect) {
+    cramAssessmentProfileSelect.value = "";
+  }
+  if (cramAssessmentProfileMeta) {
+    cramAssessmentProfileMeta.textContent = "Generic cram plan.";
+  }
   cramMaterialFile.value = "";
   cramFileName.textContent = "No files selected";
   cramMaterialText.value = "";
@@ -1395,9 +2485,13 @@ function openCramModalForCurrentClass() {
 
   resetCramModalState();
   const unitPathLabel = buildCurrentUnitPathLabel();
+  const assessmentSummary = summarizeAssessmentProfile(
+    currentClassFolder.assessmentProfile,
+  );
   cramSessionMeta.textContent = unitPathLabel
-    ? `${currentClassFolder.name || "Class"} • ${unitPathLabel}`
-    : `${currentClassFolder.name || "Class"} • Exam rescue mode`;
+    ? `${currentClassFolder.name || "Class"} • ${unitPathLabel}${assessmentSummary.testFormat ? ` • ${assessmentSummary.testFormat}` : ""}`
+    : `${currentClassFolder.name || "Class"} • Exam rescue mode${assessmentSummary.testFormat ? ` • ${assessmentSummary.testFormat}` : ""}`;
+  updateCramAssessmentProfileMeta(currentClassFolder);
   cramBackdrop.hidden = false;
   cramExamNameInput.focus();
 }
@@ -1444,6 +2538,12 @@ async function generateCramPlan() {
 
   try {
     const classId = await ensureBackendClassId(currentClassFolder);
+    const selectedAssessmentProfile = cramAssessmentProfileSelect?.value
+      ? getSelectedClassAssessmentProfile(
+          currentClassFolder,
+          cramAssessmentProfileSelect.value,
+        )
+      : null;
     activeCramPlan = await window.overlayApi.generateCramPlan({
       classId,
       courseName: currentClassFolder.name,
@@ -1452,6 +2552,9 @@ async function generateCramPlan() {
       timeAvailable: cramTimeAvailableSelect.value,
       examMaterial: materialValidation.normalizedMaterial,
       additionalNotes: cramAdditionalNotes.value.trim() || null,
+      teacherAssessmentProfile: selectedAssessmentProfile
+        ? getTeacherAssessmentProfilePayload(selectedAssessmentProfile)
+        : null,
     });
 
     cramSubtitle.textContent = activeCramPlan.subtitle;
@@ -1640,6 +2743,14 @@ async function generateQuizForActiveSession() {
     includeUploadedMaterial: quizSourceUploaded.checked,
     uploadedMaterial: uploadedMaterial || null,
     gapFocus: Number(quizGapFocus.value),
+    teacherAssessmentProfile: quizAssessmentProfileSelect?.value
+      ? getTeacherAssessmentProfilePayload(
+          getSelectedClassAssessmentProfile(
+            activeQuizClassFolder,
+            quizAssessmentProfileSelect.value,
+          ),
+        )
+      : null,
   };
 
   generateQuizButton.disabled = true;
@@ -1977,6 +3088,8 @@ function openClassEditModal(targetPath = getCurrentClassPath()) {
   openModal("class", {
     action: "edit",
     targetPath: classPath,
+    assessmentProfiles: classFolder.assessmentProfiles || [],
+    activeAssessmentProfileId: classFolder.activeAssessmentProfileId || "",
     values: {
       course: classFolder.name || "",
       teacherName: classFolder.teacherName || "",
@@ -1998,13 +3111,26 @@ function openModal(mode, options = {}) {
   currentModalTargetPath = Array.isArray(options.targetPath)
     ? [...options.targetPath]
     : null;
+  if (mode === "class") {
+    const collection = getAssessmentProfileCollectionSummary({
+      assessmentProfiles: options.assessmentProfiles || [],
+      activeAssessmentProfileId: options.activeAssessmentProfileId || "",
+      assessmentProfile: options.assessmentProfile || null,
+    });
+    currentModalAssessmentProfiles = collection.profiles;
+    currentModalActiveAssessmentProfileId = collection.activeProfileId;
+  } else {
+    currentModalAssessmentProfiles = [];
+    currentModalActiveAssessmentProfileId = "";
+  }
   classModalBackdrop.hidden = false;
   classFields.hidden = mode === "session";
   sessionFields.hidden = mode !== "session";
+  assessmentConfigCard.hidden = mode !== "class";
   teacherNameField.hidden = mode !== "class";
   teacherNotesField.hidden = mode !== "class";
-  testFormatField.hidden = mode !== "class";
-  testExamplesField.hidden = mode !== "class";
+  testFormatField.hidden = true;
+  testExamplesField.hidden = true;
   nameFieldLabel.textContent =
     mode === "class" ? "Course" : mode === "unit" ? "Unit Name" : "Lesson Name";
   additionalNotesLabel.textContent =
@@ -2060,6 +3186,7 @@ function openModal(mode, options = {}) {
   } else if (mode !== "session") {
     populateClassModalFields();
   }
+  updateAssessmentConfigCallout();
   if (mode !== "session") {
     classCourseInput.focus();
   } else {
@@ -2071,6 +3198,8 @@ function closeModal() {
   classModalBackdrop.hidden = true;
   currentModalAction = "create";
   currentModalTargetPath = null;
+  currentModalAssessmentProfiles = [];
+  currentModalActiveAssessmentProfileId = "";
   classCourseInput.value = "";
   classTeacherInput.value = "";
   classTestFormatInput.value = "";
@@ -2098,8 +3227,6 @@ async function saveModal() {
     }
 
     const teacherName = classTeacherInput.value.trim();
-    const testFormat = classTestFormatInput.value.trim();
-    const testExamples = normalizeTestExamples(classTestExamplesInput.value);
     const description = classDescriptionInput.value.trim();
     const teacherNotes = classTeacherNotesInput.value.trim();
     const additionalNotes = classAdditionalNotesInput.value.trim();
@@ -2110,6 +3237,14 @@ async function saveModal() {
         currentModalAction === "edit" && currentModalTargetPath
           ? getFolderAtPath(currentModalTargetPath)
           : null;
+      const assessmentCollection = getAssessmentProfileCollectionSummary({
+        assessmentProfiles: currentModalAssessmentProfiles,
+        activeAssessmentProfileId: currentModalActiveAssessmentProfileId,
+      });
+      const activeAssessmentProfile = assessmentCollection.activeProfile;
+      const assessmentSummary = summarizeAssessmentProfile(
+        activeAssessmentProfile,
+      );
       const backendResult = await window.overlayApi.saveClassProfile(
         buildBackendClassPayload({
           course,
@@ -2117,8 +3252,11 @@ async function saveModal() {
           teacherName,
           description,
           teacherNotes,
-          testFormat,
-          testExamples,
+          assessmentProfiles: assessmentCollection.profiles,
+          activeAssessmentProfileId: assessmentCollection.activeProfileId,
+          assessmentProfile: activeAssessmentProfile,
+          testFormat: assessmentSummary.testFormat,
+          testExamples: assessmentSummary.testExamples,
           additionalNotes,
         }),
       );
@@ -2128,9 +3266,12 @@ async function saveModal() {
         type: "class",
         name: course,
         dbClassId: backendResult.classProfile.id,
+        assessmentProfiles: assessmentCollection.profiles,
+        activeAssessmentProfileId: assessmentCollection.activeProfileId,
+        assessmentProfile: activeAssessmentProfile,
         teacherName,
-        testFormat,
-        testExamples,
+        testFormat: assessmentSummary.testFormat,
+        testExamples: assessmentSummary.testExamples,
         description,
         teacherNotes,
         additionalNotes,
@@ -2279,7 +3420,11 @@ shrinkWindow.addEventListener("click", async () => {
 });
 
 openSettingsButton.addEventListener("click", () => {
-  setHomeView(activeHomeView === "settings" ? "dashboard" : "settings");
+  setHomeView(
+    activeHomeView === "settings" || activeHomeView === "assessment"
+      ? "dashboard"
+      : "settings",
+  );
 });
 
 settingsHomeButton.addEventListener("click", () => {
@@ -2389,6 +3534,68 @@ quizBackdrop.addEventListener("click", (event) => {
 
 editCurrentClassButton?.addEventListener("click", () => {
   openClassEditModal();
+});
+openAssessmentConfigButton?.addEventListener("click", () => {
+  if (currentModalMode === "class") {
+    openAssessmentProfileFromModalDraft();
+  }
+});
+assessmentBackButton?.addEventListener("click", closeAssessmentProfileView);
+assessmentCancelButton?.addEventListener("click", closeAssessmentProfileView);
+assessmentEditorBackButton?.addEventListener("click", () => {
+  renderAssessmentManager();
+  setAssessmentPanel("manager");
+});
+assessmentManagerCreateButton?.addEventListener("click", createNewAssessmentProfile);
+assessmentSaveButton?.addEventListener("click", () => {
+  void saveAssessmentProfile();
+});
+assessmentProfileSelect?.addEventListener("change", () => {
+  switchActiveAssessmentProfile(assessmentProfileSelect.value);
+});
+assessmentProfileName?.addEventListener("input", syncAssessmentDraftFromInputs);
+assessmentAnalyzeButton?.addEventListener("click", () => {
+  void analyzeActiveAssessmentProfile();
+});
+assessmentCustomFormat?.addEventListener("input", syncAssessmentDraftFromInputs);
+assessmentExampleQuestions?.addEventListener(
+  "input",
+  syncAssessmentDraftFromInputs,
+);
+assessmentGradingNotes?.addEventListener("input", syncAssessmentDraftFromInputs);
+assessmentMaterialFile?.addEventListener("change", async () => {
+  const files = Array.from(assessmentMaterialFile.files || []);
+  if (files.length === 0) {
+    return;
+  }
+
+  const results = await Promise.allSettled(
+    files.map((file) => extractStudyMaterialFromFiles([file], "quiz")),
+  );
+  const successfulFiles = results
+    .filter((result) => result.status === "fulfilled")
+    .map((result) => result.value[0])
+    .map((upload) => ({
+      ...upload,
+      id: makeId(),
+    }));
+  const failedCount = results.length - successfulFiles.length;
+  const nextDraft = getAssessmentDraft();
+  nextDraft.uploads = [...nextDraft.uploads, ...successfulFiles];
+  assessmentUploadError = failedCount
+    ? `Loaded ${successfulFiles.length} file${successfulFiles.length === 1 ? "" : "s"}, but ${failedCount} could not be read.`
+    : "";
+  setAssessmentDraft(nextDraft);
+  assessmentMaterialFile.value = "";
+});
+quizAssessmentProfileSelect?.addEventListener("change", () => {
+  updateQuizAssessmentProfileMeta();
+});
+cramAssessmentProfileSelect?.addEventListener("change", () => {
+  const currentClassFolder = getCurrentClassFolder();
+  if (currentClassFolder) {
+    updateCramAssessmentProfileMeta(currentClassFolder);
+  }
 });
 closeCramModalButton.addEventListener("click", closeCramModal);
 cramBackdrop.addEventListener("click", (event) => {

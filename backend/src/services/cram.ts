@@ -12,12 +12,14 @@ import {
   cramExamMapSchema,
   cramRequestSchema,
   cramResponseSchema,
+  teacherAssessmentProfileSchema,
 } from "../schema/index.ts";
 import type {
   CramChunkInsight,
   CramExamMap,
   CramRequest,
   CramResponse,
+  TeacherAssessmentProfile,
 } from "../type/index.ts";
 import { getClassProfileById } from "./classes.ts";
 
@@ -309,10 +311,48 @@ function buildCramSubtitle(input: CramRequest): string {
 }
 
 function buildTeacherFocusHint(input: CramRequest): string {
+  const explicitTeacherProfile = input.teacherAssessmentProfile
+    ? teacherAssessmentProfileSchema.parse(input.teacherAssessmentProfile)
+    : null;
+  if (explicitTeacherProfile) {
+    const hintParts = [
+      explicitTeacherProfile.conciseSummary?.trim()
+        ? `Teacher style summary: ${explicitTeacherProfile.conciseSummary.trim()}.`
+        : null,
+      explicitTeacherProfile.testFormat?.trim()
+        ? `Expected test feel: ${explicitTeacherProfile.testFormat.trim()}.`
+        : null,
+      explicitTeacherProfile.gradingSignals?.[0]
+        ? `Grading signal: ${explicitTeacherProfile.gradingSignals[0]}.`
+        : null,
+      explicitTeacherProfile.exampleQuestions?.[0]
+        ? `Practice against prompts like: ${explicitTeacherProfile.exampleQuestions[0]}.`
+        : null,
+    ].filter(Boolean);
+
+    if (hintParts.length > 0) {
+      return hintParts.join(" ");
+    }
+  }
+
   if (input.classId) {
     const classProfile = getClassProfileById(input.classId);
-    if (classProfile?.teacherFocus?.trim()) {
-      return `Teacher focus to keep in view: ${classProfile.teacherFocus.trim()}.`;
+    if (classProfile) {
+      const hintParts = [
+        classProfile.teacherFocus?.trim()
+          ? `Teacher focus to keep in view: ${classProfile.teacherFocus.trim()}.`
+          : null,
+        classProfile.testFormat?.trim()
+          ? `Expected test feel: ${classProfile.testFormat.trim()}.`
+          : null,
+        Array.isArray(classProfile.testExamples) && classProfile.testExamples[0]
+          ? `Practice against prompts like: ${classProfile.testExamples[0]}.`
+          : null,
+      ].filter(Boolean);
+
+      if (hintParts.length > 0) {
+        return hintParts.join(" ");
+      }
     }
   }
 
@@ -321,6 +361,27 @@ function buildTeacherFocusHint(input: CramRequest): string {
   }
 
   return "If two topics feel equally important, choose the one that is harder to explain from memory.";
+}
+
+function buildTeacherProfilePromptPacket(
+  teacherAssessmentProfile: TeacherAssessmentProfile | null,
+) {
+  if (!teacherAssessmentProfile) {
+    return null;
+  }
+
+  return {
+    profile_name: teacherAssessmentProfile.profileName ?? null,
+    test_format: teacherAssessmentProfile.testFormat ?? null,
+    concise_summary: teacherAssessmentProfile.conciseSummary ?? null,
+    generic_differences: teacherAssessmentProfile.genericDifferences ?? [],
+    example_questions: teacherAssessmentProfile.exampleQuestions ?? [],
+    grading_signals: teacherAssessmentProfile.gradingSignals ?? [],
+    wording_patterns: teacherAssessmentProfile.wordingPatterns ?? [],
+    likely_question_moves: teacherAssessmentProfile.likelyQuestionMoves ?? [],
+    cram_adjustments: teacherAssessmentProfile.cramAdjustments ?? [],
+    source_material_names: teacherAssessmentProfile.sourceMaterialNames ?? [],
+  };
 }
 
 function buildTimePlan(
@@ -485,6 +546,9 @@ async function requestChunkInsightFromOpenAI(
   input: CramRequest,
   chunk: CramMaterialChunk,
 ): Promise<CramChunkInsight> {
+  const teacherAssessmentProfile = input.teacherAssessmentProfile
+    ? teacherAssessmentProfileSchema.parse(input.teacherAssessmentProfile)
+    : null;
   const response = await client.responses.parse({
     model: getOpenAIModel(),
     prompt_cache_key: "cram-mode-chunk-extraction-v1",
@@ -511,6 +575,9 @@ async function requestChunkInsightFromOpenAI(
                 course_name: input.courseName ?? null,
                 unit_path_label: input.unitPathLabel ?? null,
                 additional_notes: input.additionalNotes ?? null,
+                teacher_profile: buildTeacherProfilePromptPacket(
+                  teacherAssessmentProfile,
+                ),
                 chunk_label: chunk.label,
                 chunk_text: chunk.text,
               },
@@ -751,6 +818,9 @@ async function requestFinalCramPlanFromOpenAI(
   input: CramRequest,
   examMap: CramExamMap,
 ): Promise<CramResponse> {
+  const teacherAssessmentProfile = input.teacherAssessmentProfile
+    ? teacherAssessmentProfileSchema.parse(input.teacherAssessmentProfile)
+    : null;
   const response = await client.responses.parse({
     model: getOpenAIModel(),
     prompt_cache_key: "cram-mode-final-plan-v1",
@@ -776,6 +846,9 @@ async function requestFinalCramPlanFromOpenAI(
                 time_available: input.timeAvailable,
                 course_context: buildCourseContext(input),
                 teacher_focus_hint: buildTeacherFocusHint(input),
+                teacher_profile: buildTeacherProfilePromptPacket(
+                  teacherAssessmentProfile,
+                ),
                 additional_notes: input.additionalNotes ?? null,
                 exam_map: examMap,
               },

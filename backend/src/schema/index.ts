@@ -197,6 +197,40 @@ export const quizQuestionSchema = z.object({
   explanation: z.string().trim().min(1),
 }).strict();
 
+export const teacherAssessmentProfileSchema = z.object({
+  profileId: nullableTrimmedString,
+  profileName: nullableTrimmedString,
+  testFormat: nullableTrimmedString,
+  conciseSummary: nullableTrimmedString,
+  genericDifferences: z.array(z.string().trim().min(1)).max(6).default([]),
+  exampleQuestions: z.array(z.string().trim().min(1)).max(8).default([]),
+  gradingSignals: z.array(z.string().trim().min(1)).max(8).default([]),
+  wordingPatterns: z.array(z.string().trim().min(1)).max(8).default([]),
+  likelyQuestionMoves: z.array(z.string().trim().min(1)).max(8).default([]),
+  quizAdjustments: z.array(z.string().trim().min(1)).max(6).default([]),
+  cramAdjustments: z.array(z.string().trim().min(1)).max(6).default([]),
+  sourceMaterialNames: z.array(z.string().trim().min(1)).max(12).default([]),
+}).strict();
+
+export const assessmentProfileMaterialSchema = z.object({
+  name: z.string().trim().min(1),
+  content: z.string().trim().min(1),
+  handler: nullableTrimmedString,
+}).strict();
+
+export const assessmentProfileAnalysisRequestSchema = z.object({
+  classId: z.number().int().positive().optional(),
+  profileName: nullableTrimmedString,
+  presetLabel: nullableTrimmedString,
+  customFormat: nullableTrimmedString,
+  exampleQuestions: z.array(z.string().trim().min(1)).max(12).default([]),
+  gradingNotes: nullableTrimmedString,
+  uploadedMaterials: z.array(assessmentProfileMaterialSchema).min(1).max(12),
+}).strict();
+
+export const assessmentProfileAnalysisResponseSchema =
+  teacherAssessmentProfileSchema;
+
 export const quizRequestSchema = z.object({
   classId: z.number().int().positive(),
   sessionIds: z.array(z.number().int().positive()).default([]),
@@ -206,6 +240,7 @@ export const quizRequestSchema = z.object({
   includeUploadedMaterial: z.boolean(),
   uploadedMaterial: nullableTrimmedString,
   gapFocus: z.number().min(0).max(100),
+  teacherAssessmentProfile: teacherAssessmentProfileSchema.nullable().optional(),
 }).strict();
 
 export const quizResponseSchema = z.object({
@@ -229,6 +264,7 @@ export const cramRequestSchema = z.object({
   additionalNotes: nullableTrimmedString,
   courseName: nullableTrimmedString,
   unitPathLabel: nullableTrimmedString,
+  teacherAssessmentProfile: teacherAssessmentProfileSchema.nullable().optional(),
 }).strict();
 
 export const cramTopicImportanceSchema = z.enum(["high", "medium", "low"]);
@@ -321,6 +357,18 @@ export type BuiltContextInput = z.infer<typeof builtContextSchema>;
 export type AssistRequestInput = z.infer<typeof assistRequestSchema>;
 export type AssistResponseInput = z.infer<typeof assistResponseSchema>;
 export type FeedbackRequestInput = z.infer<typeof feedbackRequestSchema>;
+export type TeacherAssessmentProfileInput = z.infer<
+  typeof teacherAssessmentProfileSchema
+>;
+export type AssessmentProfileMaterialInput = z.infer<
+  typeof assessmentProfileMaterialSchema
+>;
+export type AssessmentProfileAnalysisRequestInput = z.infer<
+  typeof assessmentProfileAnalysisRequestSchema
+>;
+export type AssessmentProfileAnalysisResponseInput = z.infer<
+  typeof assessmentProfileAnalysisResponseSchema
+>;
 export type QuizQuestionInput = z.infer<typeof quizQuestionSchema>;
 export type QuizRequestInput = z.infer<typeof quizRequestSchema>;
 export type QuizResponseInput = z.infer<typeof quizResponseSchema>;

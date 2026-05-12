@@ -47,6 +47,10 @@ const {
   shouldCaptureAutomaticScreenshot,
 } = require("./main/capture.ts");
 const {
+  isManagedBackendAuthFailure,
+  resolveStoredAuthAfterSessionRefreshFailure,
+} = require("./main/auth-session.js");
+const {
   createIncomingMessageBridge,
 } = require("./main/bridge.ts");
 const {
@@ -534,7 +538,13 @@ async function callManagedBackend(endpoint, options = {}) {
     "Content-Type": "application/json",
   };
 
-  const managedBackendJwt = options.skipAuth ? null : getManagedBackendJwt();
+  const explicitAuthToken =
+    typeof options.authToken === "string" && options.authToken.trim()
+      ? options.authToken.trim()
+      : null;
+  const managedBackendJwt = options.skipAuth
+    ? null
+    : explicitAuthToken || getManagedBackendJwt();
   if (managedBackendJwt) {
     headers.Authorization = `Bearer ${managedBackendJwt}`;
   }
@@ -588,11 +598,13 @@ async function callManagedBackend(endpoint, options = {}) {
         retryAfter: response.headers.get("retry-after"),
       });
     }
-    throw new Error(
+    const error = new Error(
       payload && typeof payload.error === "string"
         ? payload.error
         : rawText || `Managed backend request failed for ${endpoint}`,
     );
+    error.status = response.status;
+    throw error;
   }
 
   return payload;
@@ -915,6 +927,13 @@ ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {
   });
 });
 
+ipcMain.handle("backend:assessmentProfileAnalyze", async (_event, payload) => {
+  return callManagedBackend("/api/assessment-profile/analyze", {
+    method: "POST",
+    body: payload,
+  });
+});
+
 ipcMain.handle("backend:assist", async (_event, payload) => {
   const privacySettings = getPrivacySettings();
   let screenshotDataUrl = enforceScreenshotPolicy(payload, privacySettings);
@@ -978,11 +997,13 @@ ipcMain.handle("backend:authLogin", async (_event, payload) => {
 
 ipcMain.handle("backend:authLogout", async () => {
   let logoutError = null;
+  const storedAuth = getStoredManagedAuth();
 
-  if (getStoredManagedAuth()?.token) {
+  if (storedAuth?.token) {
     try {
       await callManagedBackend("/api/auth/logout", {
         method: "POST",
+        authToken: storedAuth.token,
       });
     } catch (error) {
       logoutError = error;
@@ -1007,14 +1028,19 @@ ipcMain.handle("backend:authSession", async () => {
   try {
     const result = await callManagedBackend("/api/auth/me", {
       method: "GET",
+      authToken: storedAuth.token,
     });
     return setStoredManagedAuth({
       token: storedAuth.token,
       user: result.user,
     });
-  } catch {
-    clearStoredManagedAuth();
-    return null;
+  } catch (error) {
+    if (isManagedBackendAuthFailure(error)) {
+      clearStoredManagedAuth();
+      return null;
+    }
+
+    return resolveStoredAuthAfterSessionRefreshFailure(storedAuth, error);
   }
 });
 

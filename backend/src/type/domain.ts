@@ -162,6 +162,39 @@ export type QuizQuestion = {
   explanation: string;
 };
 
+export type TeacherAssessmentProfile = {
+  profileId?: string | null;
+  profileName?: string | null;
+  testFormat?: string | null;
+  conciseSummary?: string | null;
+  genericDifferences: string[];
+  exampleQuestions: string[];
+  gradingSignals: string[];
+  wordingPatterns: string[];
+  likelyQuestionMoves: string[];
+  quizAdjustments: string[];
+  cramAdjustments: string[];
+  sourceMaterialNames: string[];
+};
+
+export type AssessmentProfileMaterial = {
+  name: string;
+  content: string;
+  handler?: string | null;
+};
+
+export type AssessmentProfileAnalysisRequest = {
+  classId?: number;
+  profileName?: string | null;
+  presetLabel?: string | null;
+  customFormat?: string | null;
+  exampleQuestions: string[];
+  gradingNotes?: string | null;
+  uploadedMaterials: AssessmentProfileMaterial[];
+};
+
+export type AssessmentProfileAnalysisResponse = TeacherAssessmentProfile;
+
 export type QuizRequest = {
   classId: number;
   sessionIds: number[];
@@ -171,6 +204,7 @@ export type QuizRequest = {
   includeUploadedMaterial: boolean;
   uploadedMaterial?: string | null;
   gapFocus: number;
+  teacherAssessmentProfile?: TeacherAssessmentProfile | null;
 };
 
 export type QuizResponse = {
@@ -193,6 +227,7 @@ export type CramRequest = {
   additionalNotes?: string | null;
   courseName?: string | null;
   unitPathLabel?: string | null;
+  teacherAssessmentProfile?: TeacherAssessmentProfile | null;
 };
 
 export type CramTopicImportance = "high" | "medium" | "low";

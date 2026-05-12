@@ -168,6 +168,194 @@
               </section>
             </div>
 
+            <div id="home-assessment-view" class="home-view" hidden>
+              <section class="assessment-shell">
+                <div class="assessment-toolbar">
+                  <button
+                    id="assessment-back-button"
+                    class="settings-breadcrumb-button"
+                    type="button"
+                    aria-label="Back to class"
+                  >
+                    Home
+                  </button>
+                  <span
+                    class="settings-breadcrumb-separator"
+                    aria-hidden="true"
+                    >&gt;</span
+                  >
+                  <span id="assessment-breadcrumb-class" class="settings-breadcrumb-current"
+                    >Class</span
+                  >
+                  <span
+                    class="settings-breadcrumb-separator"
+                    aria-hidden="true"
+                    >&gt;</span
+                  >
+                  <span class="settings-breadcrumb-current">Assessment Profile</span>
+                </div>
+
+                <section class="assessment-hero">
+                  <div class="assessment-hero-copy">
+                    <h2 id="assessment-title" class="assessment-title">
+                      Assessment formats
+                    </h2>
+                    <p class="assessment-subtitle">
+                      Create reusable templates for this class.
+                    </p>
+                  </div>
+                  <div id="assessment-live-summary" class="assessment-live-summary">
+                    Style not configured yet.
+                  </div>
+                </section>
+
+                <div id="assessment-manager-view" class="assessment-manager-view">
+                  <div id="assessment-empty-state" class="assessment-empty-state" hidden>
+                    <p class="assessment-empty-title">
+                      You don't have any assessment profiles yet!
+                    </p>
+                  </div>
+                  <div id="assessment-profile-list" class="assessment-profile-list" hidden></div>
+                  <div class="assessment-manager-actions">
+                    <button
+                      id="assessment-manager-create-button"
+                      class="continue-button"
+                      type="button"
+                    >
+                      Create New
+                    </button>
+                  </div>
+                </div>
+
+                <div id="assessment-editor-view" class="assessment-editor-view" hidden>
+                  <div class="assessment-editor-header">
+                    <button
+                      id="assessment-editor-back-button"
+                      class="ghost-button"
+                      type="button"
+                    >
+                      Back
+                    </button>
+                    <label class="assessment-inline-field" for="assessment-profile-name">
+                      <span>Template name</span>
+                      <input
+                        id="assessment-profile-name"
+                        type="text"
+                        placeholder="Unit tests"
+                      />
+                    </label>
+                  </div>
+
+                  <div class="assessment-layout">
+                    <div class="assessment-flow assessment-flow-main">
+                      <section class="assessment-section assessment-section-compact">
+                        <p id="assessment-analysis-status" class="panel-help">
+                          Build a template from real tests, quizzes, and scans.
+                        </p>
+                      </section>
+
+                      <section class="assessment-section">
+                        <div class="assessment-section-header">
+                          <div>
+                            <h3 class="assessment-section-title">Customize your experience</h3>
+                          </div>
+                        </div>
+                        <div class="assessment-upload-drop">
+                          <input
+                            id="assessment-material-file"
+                            class="assessment-file-input"
+                            type="file"
+                            multiple
+                            accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                          />
+                          <label for="assessment-material-file" class="assessment-upload-drop-label">
+                            <span class="assessment-upload-icon" aria-hidden="true">
+                              <svg viewBox="0 0 24 24" class="icon-svg">
+                                <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
+                              </svg>
+                            </span>
+                            <span class="assessment-upload-title">Upload material</span>
+                            <span class="assessment-upload-copy">Tests, quizzes, photos, PDFs. Multiple allowed.</span>
+                          </label>
+                          <p id="assessment-upload-status" class="panel-help assessment-upload-status">
+                            No files yet.
+                          </p>
+                        </div>
+                        <div id="assessment-upload-rollup" class="assessment-upload-rollup"></div>
+                        <label class="assessment-inline-field" for="assessment-grading-notes">
+                          <span>Additional notes</span>
+                          <textarea
+                            id="assessment-grading-notes"
+                            rows="5"
+                            placeholder="Anything special about wording, grading, partial credit, diagrams, units, or pacing"
+                          ></textarea>
+                        </label>
+                        <label class="assessment-inline-field assessment-inline-field-hidden" for="assessment-profile-select">
+                          <span>Template</span>
+                          <select id="assessment-profile-select" class="cram-select">
+                          </select>
+                        </label>
+                        <label class="assessment-inline-field assessment-inline-field-hidden" for="assessment-custom-format">
+                          <span>Custom format</span>
+                          <input
+                            id="assessment-custom-format"
+                            type="text"
+                            placeholder="Scenario-heavy short answer with partial-credit steps"
+                          />
+                        </label>
+                        <label class="assessment-inline-field assessment-inline-field-hidden" for="assessment-example-questions">
+                          <span>Teacher wording</span>
+                          <textarea
+                            id="assessment-example-questions"
+                            rows="4"
+                            placeholder="Paste teacher stems or sample prompts"
+                          ></textarea>
+                        </label>
+                      </section>
+                    </div>
+
+                    <aside class="assessment-side-column">
+                      <section class="assessment-section assessment-section-summary assessment-summary-panel">
+                        <div class="assessment-section-header">
+                          <div>
+                            <h3 class="assessment-section-title">Configured format</h3>
+                          </div>
+                        </div>
+                        <div id="assessment-summary-points" class="assessment-summary-points"></div>
+                        <div id="assessment-analysis-insights" class="assessment-analysis-insights"></div>
+                      </section>
+
+                      <div class="assessment-actions">
+                        <button
+                          id="assessment-analyze-button"
+                          class="ghost-button"
+                          type="button"
+                        >
+                          Process
+                        </button>
+                        <button
+                          id="assessment-save-button"
+                          class="continue-button"
+                          type="button"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </aside>
+                  </div>
+                </div>
+
+                <button
+                  id="assessment-cancel-button"
+                  class="assessment-hidden-cancel"
+                  type="button"
+                  hidden
+                >
+                  Back
+                </button>
+              </section>
+            </div>
+
             <div id="home-settings-view" class="home-view" hidden>
               <section class="settings-shell">
                 <div class="settings-grid settings-grid-single">
@@ -639,6 +827,25 @@
                   placeholder="What this class is about"
                 ></textarea>
               </label>
+              <section id="assessment-config-card" class="assessment-config-card">
+                <div class="assessment-config-copy">
+                  <p class="panel-label">Assessment Profile</p>
+                  <p class="assessment-config-title">
+                    Personalize your practice quizzes, materials, and plans
+                    based on how your teacher grades and formats tests.
+                  </p>
+                  <p id="assessment-config-status" class="panel-help">
+                    Save the class first, then configure the teacher profile.
+                  </p>
+                </div>
+                <button
+                  id="open-assessment-config-button"
+                  class="continue-button assessment-config-button"
+                  type="button"
+                >
+                  Configure
+                </button>
+              </section>
               <label id="teacher-notes-field" class="modal-field">
                 <span>Teacher Notes</span>
                 <textarea
@@ -826,6 +1033,26 @@
                   </div>
                 </div>
                 <div id="quiz-session-picker" class="quiz-session-picker"></div>
+              </section>
+
+              <section class="quiz-panel">
+                <div class="quiz-panel-header">
+                  <div>
+                    <h3 class="quiz-panel-title">Teacher format</h3>
+                    <p class="quiz-panel-copy">
+                      Keep this quiz aligned to one saved assessment profile.
+                    </p>
+                  </div>
+                </div>
+                <div class="quiz-profile-row">
+                  <label class="modal-field">
+                    <span>Assessment profile</span>
+                    <select id="quiz-assessment-profile-select" class="cram-select"></select>
+                  </label>
+                  <p id="quiz-assessment-profile-meta" class="panel-help">
+                    Generic quiz mode.
+                  </p>
+                </div>
               </section>
 
               <section class="quiz-panel">
@@ -1104,7 +1331,14 @@
                       <option value="All night">All night</option>
                     </select>
                   </label>
+                  <label class="modal-field">
+                    <span>Assessment profile</span>
+                    <select id="cram-assessment-profile-select" class="cram-select"></select>
+                  </label>
                 </div>
+                <p id="cram-assessment-profile-meta" class="panel-help">
+                  Generic cram plan.
+                </p>
               </section>
 
               <section class="cram-panel">
