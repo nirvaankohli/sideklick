@@ -973,163 +973,62 @@
               </div>
             </div>
 
-            <div id="quiz-setup-view" class="quiz-stack">
-              <section class="quiz-hero">
-                <div class="quiz-hero-copy">
-                  <p class="panel-label">Build a study quiz</p>
-                  <p id="quiz-session-meta" class="panel-help"></p>
-                </div>
-                <div class="quiz-hero-badge">
-                  One class, any mix of sessions
-                </div>
-              </section>
+            <div id="quiz-setup-view" class="quiz-setup-form">
+              <p id="quiz-session-meta" class="panel-help"></p>
 
-              <section class="quiz-panel">
-                <div class="quiz-panel-header">
-                  <div>
-                    <h3 class="quiz-panel-title">Choose session material</h3>
-                    <p class="quiz-panel-copy">
-                      Pick none, one, or several saved sessions.
-                    </p>
-                  </div>
-                </div>
+              <label class="modal-field">
+                <span>Sessions</span>
                 <div id="quiz-session-picker" class="quiz-session-picker"></div>
-              </section>
+              </label>
 
-              <section class="quiz-panel">
-                <div class="quiz-panel-header">
-                  <div>
-                    <h3 class="quiz-panel-title">Teacher format</h3>
-                    <p class="quiz-panel-copy">
-                      Keep this quiz aligned to one saved assessment profile.
-                    </p>
-                  </div>
-                </div>
-                <div class="quiz-profile-row">
-                  <label class="modal-field">
-                    <span>Assessment profile</span>
-                    <select id="quiz-assessment-profile-select" class="cram-select"></select>
-                  </label>
-                  <p id="quiz-assessment-profile-meta" class="panel-help">
-                    Generic quiz mode.
-                  </p>
-                </div>
-              </section>
+              <label class="modal-field">
+                <span>Assessment format</span>
+                <select id="quiz-assessment-profile-select" class="cram-select"></select>
+                <p id="quiz-assessment-profile-meta" class="panel-help">
+                  Generic quiz mode.
+                </p>
+              </label>
 
-              <section class="quiz-panel">
-                <div class="quiz-panel-header">
-                  <div>
-                    <h3 class="quiz-panel-title">Sources to use</h3>
-                    <p class="quiz-panel-copy">
-                      Control what the quiz should draw from.
-                    </p>
+              <div class="quiz-material-section">
+                <label class="modal-field">
+                  <span>Material</span>
+                  <div class="assessment-upload-drop">
+                    <input
+                      id="quiz-material-file"
+                      class="assessment-file-input"
+                      type="file"
+                      accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                    />
+                    <label for="quiz-material-file" class="assessment-upload-drop-label quiz-upload-drop-compact">
+                      <span class="assessment-upload-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" class="icon-svg">
+                          <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
+                        </svg>
+                      </span>
+                      <span class="assessment-upload-title">Upload or drop a file</span>
+                    </label>
+                    <span id="quiz-file-name" class="panel-help">No file selected</span>
                   </div>
-                </div>
-                <div class="quiz-source-grid">
-                  <label class="quiz-source-option">
-                    <input
-                      id="quiz-source-summary"
-                      class="quiz-source-input"
-                      type="checkbox"
-                      checked
-                    />
-                    <span class="quiz-source-check" aria-hidden="true"></span>
-                    <span class="quiz-source-label-copy">Session summary</span>
-                  </label>
-                  <label class="quiz-source-option">
-                    <input
-                      id="quiz-source-notes"
-                      class="quiz-source-input"
-                      type="checkbox"
-                    />
-                    <span class="quiz-source-check" aria-hidden="true"></span>
-                    <span class="quiz-source-label-copy">Session notes</span>
-                  </label>
-                  <label class="quiz-source-option">
-                    <input
-                      id="quiz-source-topics"
-                      class="quiz-source-input"
-                      type="checkbox"
-                      checked
-                    />
-                    <span class="quiz-source-check" aria-hidden="true"></span>
-                    <span class="quiz-source-label-copy">Key topics</span>
-                  </label>
-                  <label class="quiz-source-option">
-                    <input
-                      id="quiz-source-uploaded"
-                      class="quiz-source-input"
-                      type="checkbox"
-                    />
-                    <span class="quiz-source-check" aria-hidden="true"></span>
-                    <span class="quiz-source-label-copy"
-                      >Uploaded material</span
-                    >
-                  </label>
-                </div>
-              </section>
-
-              <section class="quiz-panel">
-                <div class="quiz-panel-header">
-                  <div>
-                    <h3 class="quiz-panel-title">Extra material</h3>
-                    <p class="quiz-panel-copy">
-                      Upload notes or paste study material to fill in gaps.
-                    </p>
-                  </div>
-                </div>
-                <div class="quiz-upload-panel">
-                  <label class="modal-field">
-                    <span>Upload material</span>
-                    <div class="quiz-file-shell">
-                      <input
-                        id="quiz-material-file"
-                        class="quiz-file-input"
-                        type="file"
-                        accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                      />
-                      <label for="quiz-material-file" class="quiz-file-button"
-                        >Choose file</label
-                      >
-                      <span id="quiz-file-name" class="quiz-file-name"
-                        >No file selected</span
-                      >
-                    </div>
-                  </label>
-                  <label class="modal-field">
-                    <span>Or paste material</span>
-                    <textarea
-                      id="quiz-material-text"
-                      rows="5"
-                      placeholder="Paste study material here"
-                    ></textarea>
-                  </label>
-                </div>
-              </section>
-
-              <section class="quiz-panel">
-                <div class="quiz-panel-header">
-                  <div>
-                    <h3 class="quiz-panel-title">Gap focus</h3>
-                    <p class="quiz-panel-copy">
-                      Higher values push the quiz harder toward weak spots.
-                    </p>
-                  </div>
-                  <p class="quiz-gap-value">
-                    Focus on gaps:
-                    <strong id="quiz-gap-focus-value">50%</strong>
-                  </p>
-                </div>
-                <label class="modal-field quiz-slider-field">
-                  <input
-                    id="quiz-gap-focus"
-                    type="range"
-                    min="0"
-                    max="100"
-                    value="50"
-                  />
                 </label>
-              </section>
+                <label class="modal-field">
+                  <span>Or paste notes</span>
+                  <textarea
+                    id="quiz-material-text"
+                    rows="3"
+                    placeholder="Paste study material here"
+                  ></textarea>
+                </label>
+              </div>
+
+              <!-- Hidden source checkboxes (auto-enabled by default) -->
+              <div hidden>
+                <input id="quiz-source-summary" type="checkbox" checked />
+                <input id="quiz-source-notes" type="checkbox" checked />
+                <input id="quiz-source-topics" type="checkbox" checked />
+                <input id="quiz-source-uploaded" type="checkbox" checked />
+                <input id="quiz-gap-focus" type="range" value="50" />
+                <span id="quiz-gap-focus-value">50%</span>
+              </div>
 
               <div class="modal-actions">
                 <button
