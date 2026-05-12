@@ -170,189 +170,150 @@
 
             <div id="home-assessment-view" class="home-view" hidden>
               <section class="assessment-shell">
-                <div class="assessment-toolbar">
-                  <button
-                    id="assessment-back-button"
-                    class="settings-breadcrumb-button"
-                    type="button"
-                    aria-label="Back to class"
-                  >
-                    Home
-                  </button>
-                  <span
-                    class="settings-breadcrumb-separator"
-                    aria-hidden="true"
-                    >&gt;</span
-                  >
-                  <span id="assessment-breadcrumb-class" class="settings-breadcrumb-current"
-                    >Class</span
-                  >
-                  <span
-                    class="settings-breadcrumb-separator"
-                    aria-hidden="true"
-                    >&gt;</span
-                  >
-                  <span class="settings-breadcrumb-current">Assessment Profile</span>
-                </div>
-
-                <section class="assessment-hero">
-                  <div class="assessment-hero-copy">
-                    <h2 id="assessment-title" class="assessment-title">
-                      Assessment formats
-                    </h2>
-                    <p class="assessment-subtitle">
-                      Create reusable templates for this class.
-                    </p>
-                  </div>
-                  <div id="assessment-live-summary" class="assessment-live-summary">
-                    Style not configured yet.
-                  </div>
-                </section>
-
+                <!-- ── Manager view (card grid, mirrors class/session browser) ── -->
                 <div id="assessment-manager-view" class="assessment-manager-view">
-                  <div id="assessment-empty-state" class="assessment-empty-state" hidden>
-                    <p class="assessment-empty-title">
-                      You don't have any assessment profiles yet!
-                    </p>
+                  <div class="home-browser-header">
+                    <div>
+                      <p class="panel-label">Assessment Formats</p>
+                      <div id="assessment-breadcrumbs" class="breadcrumbs">
+                        <button
+                          id="assessment-back-button"
+                          class="breadcrumb-button"
+                          type="button"
+                        >Home</button>
+                        <span class="breadcrumb-separator">/</span>
+                        <span id="assessment-breadcrumb-class" class="breadcrumb-button">Class</span>
+                      </div>
+                    </div>
                   </div>
-                  <div id="assessment-profile-list" class="assessment-profile-list" hidden></div>
-                  <div class="assessment-manager-actions">
-                    <button
-                      id="assessment-manager-create-button"
-                      class="continue-button"
-                      type="button"
-                    >
-                      Create New
-                    </button>
+
+                  <div class="folder-create-row">
+                    <label class="search-input-shell" for="assessment-search-input">
+                      <span class="search-input-icon" aria-hidden="true">
+                        <svg class="icon-svg" viewBox="0 0 24 24">
+                          <path
+                            d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79L19 20.49 20.49 19 15.5 14Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"
+                          ></path>
+                        </svg>
+                      </span>
+                      <input
+                        id="assessment-search-input"
+                        class="folder-name-input"
+                        type="text"
+                        placeholder="Search assessment formats"
+                      />
+                    </label>
+                    <div class="folder-action-menu-shell">
+                      <button
+                        id="assessment-manager-create-button"
+                        class="folder-plus-button"
+                        type="button"
+                        aria-label="Create new assessment format"
+                      >
+                        <svg
+                          class="icon-svg folder-plus-icon"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div id="assessment-profile-grid" class="folder-grid"></div>
+                  <div id="assessment-empty-state" class="empty-state" hidden>
+                    <p id="assessment-empty-title" class="empty-title">
+                      No assessment formats yet.
+                    </p>
+                    <p class="empty-copy">
+                      Create an assessment format to personalize quizzes and study plans for this class.
+                    </p>
                   </div>
                 </div>
 
+                <!-- ── Editor view (minimalist: Name, Material, Notes, Save) ── -->
                 <div id="assessment-editor-view" class="assessment-editor-view" hidden>
-                  <div class="assessment-editor-header">
-                    <button
-                      id="assessment-editor-back-button"
-                      class="ghost-button"
-                      type="button"
-                    >
-                      Back
-                    </button>
+                  <div class="home-browser-header">
+                    <div>
+                      <p class="panel-label">Assessment Format</p>
+                      <div class="breadcrumbs">
+                        <button
+                          id="assessment-editor-back-button"
+                          class="breadcrumb-button"
+                          type="button"
+                        >Back</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="assessment-editor-form">
                     <label class="assessment-inline-field" for="assessment-profile-name">
-                      <span>Template name</span>
+                      <span>Name</span>
                       <input
                         id="assessment-profile-name"
                         type="text"
-                        placeholder="Unit tests"
+                        placeholder="e.g. Unit Tests, Midterm, Pop Quiz"
                       />
                     </label>
-                  </div>
 
-                  <div class="assessment-layout">
-                    <div class="assessment-flow assessment-flow-main">
-                      <section class="assessment-section assessment-section-compact">
-                        <p id="assessment-analysis-status" class="panel-help">
-                          Build a template from real tests, quizzes, and scans.
-                        </p>
-                      </section>
-
-                      <section class="assessment-section">
-                        <div class="assessment-section-header">
-                          <div>
-                            <h3 class="assessment-section-title">Customize your experience</h3>
-                          </div>
-                        </div>
-                        <div class="assessment-upload-drop">
-                          <input
-                            id="assessment-material-file"
-                            class="assessment-file-input"
-                            type="file"
-                            multiple
-                            accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                          />
-                          <label for="assessment-material-file" class="assessment-upload-drop-label">
-                            <span class="assessment-upload-icon" aria-hidden="true">
-                              <svg viewBox="0 0 24 24" class="icon-svg">
-                                <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
-                              </svg>
-                            </span>
-                            <span class="assessment-upload-title">Upload material</span>
-                            <span class="assessment-upload-copy">Tests, quizzes, photos, PDFs. Multiple allowed.</span>
-                          </label>
-                          <p id="assessment-upload-status" class="panel-help assessment-upload-status">
-                            No files yet.
-                          </p>
-                        </div>
-                        <div id="assessment-upload-rollup" class="assessment-upload-rollup"></div>
-                        <label class="assessment-inline-field" for="assessment-grading-notes">
-                          <span>Additional notes</span>
-                          <textarea
-                            id="assessment-grading-notes"
-                            rows="5"
-                            placeholder="Anything special about wording, grading, partial credit, diagrams, units, or pacing"
-                          ></textarea>
-                        </label>
-                        <label class="assessment-inline-field assessment-inline-field-hidden" for="assessment-profile-select">
-                          <span>Template</span>
-                          <select id="assessment-profile-select" class="cram-select">
-                          </select>
-                        </label>
-                        <label class="assessment-inline-field assessment-inline-field-hidden" for="assessment-custom-format">
-                          <span>Custom format</span>
-                          <input
-                            id="assessment-custom-format"
-                            type="text"
-                            placeholder="Scenario-heavy short answer with partial-credit steps"
-                          />
-                        </label>
-                        <label class="assessment-inline-field assessment-inline-field-hidden" for="assessment-example-questions">
-                          <span>Teacher wording</span>
-                          <textarea
-                            id="assessment-example-questions"
-                            rows="4"
-                            placeholder="Paste teacher stems or sample prompts"
-                          ></textarea>
-                        </label>
-                      </section>
+                    <div class="assessment-upload-drop">
+                      <input
+                        id="assessment-material-file"
+                        class="assessment-file-input"
+                        type="file"
+                        multiple
+                        accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                      />
+                      <label for="assessment-material-file" class="assessment-upload-drop-label">
+                        <span class="assessment-upload-icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" class="icon-svg">
+                            <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
+                          </svg>
+                        </span>
+                        <span class="assessment-upload-title">Upload material</span>
+                        <span class="assessment-upload-copy">Tests, quizzes, photos, PDFs. Multiple allowed.</span>
+                      </label>
+                      <p id="assessment-upload-status" class="panel-help assessment-upload-status">
+                        No files yet.
+                      </p>
                     </div>
+                    <div id="assessment-upload-rollup" class="assessment-upload-rollup"></div>
 
-                    <aside class="assessment-side-column">
-                      <section class="assessment-section assessment-section-summary assessment-summary-panel">
-                        <div class="assessment-section-header">
-                          <div>
-                            <h3 class="assessment-section-title">Configured format</h3>
-                          </div>
-                        </div>
-                        <div id="assessment-summary-points" class="assessment-summary-points"></div>
-                        <div id="assessment-analysis-insights" class="assessment-analysis-insights"></div>
-                      </section>
+                    <label class="assessment-inline-field" for="assessment-grading-notes">
+                      <span>Additional Notes</span>
+                      <textarea
+                        id="assessment-grading-notes"
+                        rows="4"
+                        placeholder="Anything special about wording, grading, partial credit, diagrams, units, or pacing"
+                      ></textarea>
+                    </label>
 
-                      <div class="assessment-actions">
-                        <button
-                          id="assessment-analyze-button"
-                          class="ghost-button"
-                          type="button"
-                        >
-                          Process
-                        </button>
-                        <button
-                          id="assessment-save-button"
-                          class="continue-button"
-                          type="button"
-                        >
-                          Save
-                        </button>
-                      </div>
-                    </aside>
+                    
+
+                    <div class="assessment-editor-actions">
+                      <p id="assessment-analysis-status" class="panel-help assessment-editor-status">
+                        Upload material and save to process automatically.
+                      </p>
+                      <button
+                        id="assessment-save-button"
+                        class="continue-button"
+                        type="button"
+                      >
+                        Save &amp; Process
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <button
-                  id="assessment-cancel-button"
-                  class="assessment-hidden-cancel"
-                  type="button"
-                  hidden
-                >
-                  Back
-                </button>
+                <!-- Hidden elements kept for backwards-compat -->
+                <div id="assessment-live-summary" class="assessment-live-summary" hidden></div>
+                <h2 id="assessment-title" class="assessment-title" hidden></h2>
+                <div id="assessment-summary-points" hidden></div>
+                <div id="assessment-analysis-insights" hidden></div>
+                <div id="assessment-preset-grid" hidden></div>
+                <button id="assessment-analyze-button" type="button" hidden></button>
+                <button id="assessment-cancel-button" class="assessment-hidden-cancel" type="button" hidden>Back</button>
               </section>
             </div>
 

@@ -61,7 +61,8 @@ const assessmentTitle = document.querySelector("#assessment-title");
 const assessmentLiveSummary = document.querySelector("#assessment-live-summary");
 const assessmentManagerView = document.querySelector("#assessment-manager-view");
 const assessmentEmptyState = document.querySelector("#assessment-empty-state");
-const assessmentProfileList = document.querySelector("#assessment-profile-list");
+const assessmentProfileGrid = document.querySelector("#assessment-profile-grid");
+const assessmentSearchInput = document.querySelector("#assessment-search-input");
 const assessmentManagerCreateButton = document.querySelector(
   "#assessment-manager-create-button",
 );
@@ -1496,8 +1497,12 @@ function setAssessmentProfileCollection(collection) {
   renderAssessmentSummary();
 }
 
+function getAssessmentSearchQuery() {
+  return (assessmentSearchInput?.value || "").trim().toLowerCase();
+}
+
 function renderAssessmentManager() {
-  if (!assessmentProfileList || !assessmentEmptyState) {
+  if (!assessmentProfileGrid || !assessmentEmptyState) {
     return;
   }
 
@@ -1505,7 +1510,8 @@ function renderAssessmentManager() {
     assessmentProfiles: activeAssessmentProfiles,
     activeAssessmentProfileId,
   });
-  const visibleProfiles = collection.profiles.filter(
+  const searchQuery = getAssessmentSearchQuery();
+  const savedProfiles = collection.profiles.filter(
     (profile) =>
       profile.uploads.length > 0 ||
       profile.gradingNotes ||
@@ -1514,41 +1520,94 @@ function renderAssessmentManager() {
       profile.analysis.conciseSummary ||
       profile.analysis.genericDifferences.length > 0,
   );
+  const visibleProfiles = searchQuery
+    ? savedProfiles.filter((profile) =>
+        (profile.name || "").toLowerCase().includes(searchQuery),
+      )
+    : savedProfiles;
 
-  assessmentProfileList.replaceChildren();
+  assessmentProfileGrid.replaceChildren();
   assessmentEmptyState.hidden = visibleProfiles.length > 0;
-  assessmentProfileList.hidden = visibleProfiles.length === 0;
 
-  if (assessmentLiveSummary && activeAssessmentPanel === "manager") {
-    assessmentLiveSummary.textContent =
-      visibleProfiles.length === 0
-        ? "No templates yet."
-        : `${visibleProfiles.length} template${visibleProfiles.length === 1 ? "" : "s"} saved.`;
+  const currentClassFolder = activeAssessmentClassPath
+    ? getFolderAtPath(activeAssessmentClassPath)
+    : null;
+  const classLabel = currentClassFolder?.name || "Class";
+  if (assessmentBreadcrumbClass) {
+    assessmentBreadcrumbClass.textContent = classLabel;
   }
 
   visibleProfiles.forEach((profile, index) => {
     const summary = summarizeAssessmentProfile(profile);
-    const row = document.createElement("article");
-    row.className = "assessment-profile-row";
-    row.innerHTML = `
-      <div class="assessment-profile-row-copy">
-        <strong>${profile.name || `Template ${index + 1}`}</strong>
-        <span>${summary.analysis.conciseSummary || summary.testFormat || "Ready to edit."}</span>
-      </div>
-    `;
+    const article = document.createElement("article");
+    article.className = "folder-card";
 
-    const editButton = document.createElement("button");
-    editButton.type = "button";
-    editButton.className = "ghost-button";
-    editButton.textContent = "Edit";
-    editButton.addEventListener("click", () => {
+    const openButton = document.createElement("button");
+    openButton.type = "button";
+    openButton.className = "folder-open-button";
+    const metaText = summary.analysis.conciseSummary || summary.testFormat || "Ready to edit.";
+    const uploadCount = profile.uploads.length;
+    const statsText = `${uploadCount} file${uploadCount === 1 ? "" : "s"} uploaded`;
+
+    openButton.innerHTML = `
+      <span class="folder-card-icon" aria-hidden="true">
+        <svg class="icon-svg" viewBox="0 0 24 24">
+          <path d="M9 2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v10a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2zm0 6H7v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8h-2v2h-2V8h-4v2H9V8zm2-4v2h4V4h-4z"></path>
+        </svg>
+      </span>
+      <span class="folder-card-title">${profile.name || `Template ${index + 1}`}</span>
+      <span class="folder-card-summary">${metaText}</span>
+      <span class="folder-card-session-stats">${statsText}</span>
+    `;
+    openButton.addEventListener("click", () => {
       switchActiveAssessmentProfile(profile.id);
       setAssessmentPanel("editor");
     });
 
-    row.appendChild(editButton);
-    assessmentProfileList.appendChild(row);
+    const actionButtons = document.createElement("div");
+    actionButtons.className = "folder-card-actions";
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "folder-edit-button";
+    editButton.setAttribute("aria-label", `Edit ${profile.name || "template"}`);
+    editButton.innerHTML = `
+      <svg class="icon-svg" viewBox="0 0 24 24">
+        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.13z"></path>
+      </svg>
+    `;
+    editButton.addEventListener("click", () => {
+      switchActiveAssessmentProfile(profile.id);
+      setAssessmentPanel("editor");
+    });
+    actionButtons.appendChild(editButton);
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "folder-delete-button";
+    deleteButton.setAttribute("aria-label", `Delete ${profile.name || "template"}`);
+    deleteButton.innerHTML = `
+      <svg class="icon-svg" viewBox="0 0 24 24">
+        <path d="M16 9v10H8V9h8m-1.5-6H9.5l-1 1H5v2h14V4h-3.5l-1-1z"></path>
+      </svg>
+    `;
+    deleteButton.addEventListener("click", async () => {
+      activeAssessmentProfiles = activeAssessmentProfiles.filter(
+        (p) => p.id !== profile.id,
+      );
+      if (activeAssessmentProfileId === profile.id) {
+        activeAssessmentProfileId = activeAssessmentProfiles[0]?.id || "";
+      }
+      renderAssessmentManager();
+      await saveAssessmentProfile();
+    });
+    actionButtons.appendChild(deleteButton);
+
+    article.append(openButton, actionButtons);
+    assessmentProfileGrid.appendChild(article);
   });
+
+  scheduleFitText();
 }
 
 function renderAssessmentProfileSelector() {
@@ -1680,11 +1739,18 @@ function renderAssessmentSummary() {
 
   if (assessmentAnalysisStatus) {
     assessmentAnalysisStatus.textContent = isAnalyzingAssessmentProfile
-      ? "Processing this template..."
+      ? "Processing..."
       : summary.analysis.conciseSummary ||
         (draft.uploads.length > 0
-          ? "Ready to process this into a class format."
-          : "Build a template from real tests, quizzes, and scans.");
+          ? "Material uploaded. Ready to save."
+          : "Upload material and save to process automatically.");
+  }
+
+  if (assessmentSaveButton) {
+    assessmentSaveButton.disabled = isAnalyzingAssessmentProfile;
+    assessmentSaveButton.textContent = isAnalyzingAssessmentProfile
+      ? "Processing..."
+      : "Save & Process";
   }
 
   if (assessmentAnalyzeButton) {
@@ -1977,6 +2043,15 @@ async function saveAssessmentProfile() {
   await persistFolders(nextFolders);
   setAssessmentProfileCollection(syncedClassFolder);
   setAssessmentPanel("manager");
+}
+
+async function saveAndProcessAssessmentProfile() {
+  syncAssessmentDraftFromInputs();
+  const draft = getAssessmentDraft();
+  if (draft.uploads.length > 0) {
+    await analyzeActiveAssessmentProfile();
+  }
+  await saveAssessmentProfile();
 }
 
 function getSearchQuery() {
@@ -3548,7 +3623,7 @@ assessmentEditorBackButton?.addEventListener("click", () => {
 });
 assessmentManagerCreateButton?.addEventListener("click", createNewAssessmentProfile);
 assessmentSaveButton?.addEventListener("click", () => {
-  void saveAssessmentProfile();
+  void saveAndProcessAssessmentProfile();
 });
 assessmentProfileSelect?.addEventListener("change", () => {
   switchActiveAssessmentProfile(assessmentProfileSelect.value);
@@ -3563,6 +3638,7 @@ assessmentExampleQuestions?.addEventListener(
   syncAssessmentDraftFromInputs,
 );
 assessmentGradingNotes?.addEventListener("input", syncAssessmentDraftFromInputs);
+assessmentSearchInput?.addEventListener("input", renderAssessmentManager);
 assessmentMaterialFile?.addEventListener("change", async () => {
   const files = Array.from(assessmentMaterialFile.files || []);
   if (files.length === 0) {
