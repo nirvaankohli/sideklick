@@ -3950,6 +3950,36 @@ button {
   margin-top: 18px;
 }
 
+.quiz-setup-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.quiz-setup-form > .panel-help {
+  margin: 0;
+}
+
+.quiz-material-section {
+  display: grid;
+  gap: 14px;
+}
+
+.quiz-upload-drop-compact {
+  padding: 18px 16px;
+  gap: 8px;
+}
+
+.quiz-upload-drop-compact .assessment-upload-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+}
+
+.quiz-upload-drop-compact .assessment-upload-title {
+  font-size: 0.94rem;
+}
+
 .quiz-hero,
 .quiz-panel,
 .quiz-results-bar,
@@ -4649,6 +4679,12 @@ button {
 
 .cram-upload-panel {
   display: grid;
+  gap: 14px;
+}
+
+.cram-setup-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
 

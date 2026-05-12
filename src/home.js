@@ -1886,11 +1886,11 @@ function closeAssessmentProfileView() {
 function syncAssessmentDraftFromInputs() {
   const draft = getAssessmentDraft();
   draft.name = assessmentProfileName?.value.trim() || draft.name;
-  draft.customFormat = assessmentCustomFormat.value.trim();
-  draft.exampleQuestions = normalizeTestExamples(
-    assessmentExampleQuestions.value,
-  );
-  draft.gradingNotes = assessmentGradingNotes.value.trim();
+  draft.customFormat = assessmentCustomFormat?.value.trim() || draft.customFormat;
+  draft.exampleQuestions = assessmentExampleQuestions
+    ? normalizeTestExamples(assessmentExampleQuestions.value)
+    : draft.exampleQuestions;
+  draft.gradingNotes = assessmentGradingNotes?.value.trim() ?? draft.gradingNotes;
   setAssessmentDraft(draft);
 }
 
@@ -2242,9 +2242,9 @@ function resetQuizModalState() {
   quizMaterialFile.value = "";
   quizFileName.textContent = "No file selected";
   quizSourceSummary.checked = true;
-  quizSourceNotes.checked = false;
+  quizSourceNotes.checked = true;
   quizSourceTopics.checked = true;
-  quizSourceUploaded.checked = false;
+  quizSourceUploaded.checked = true;
   if (quizAssessmentProfileSelect) {
     quizAssessmentProfileSelect.value = "";
   }

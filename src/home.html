@@ -1159,134 +1159,104 @@
               </div>
             </div>
 
-            <div id="cram-setup-view" class="cram-stack">
-              <section class="cram-hero">
-                <div class="cram-hero-copy">
-                  <p class="panel-label">Cram Mode</p>
-                  <p id="cram-session-meta" class="panel-help"></p>
-                </div>
-              </section>
+            <div id="cram-setup-view" class="quiz-setup-form">
+              <p id="cram-session-meta" class="panel-help"></p>
 
-              <section class="cram-panel">
-                <div class="cram-panel-header">
-                  <div>
-                    <h3 class="cram-panel-title">Exam Info</h3>
-                  </div>
-                </div>
-                <div class="cram-input-grid">
-                  <label class="modal-field">
-                    <span>Exam name</span>
+              <label class="modal-field">
+                <span>Exam name</span>
+                <input
+                  id="cram-exam-name"
+                  type="text"
+                  placeholder="AP Biology Unit 4 Test"
+                />
+              </label>
+
+              <div class="cram-setup-row">
+                <label class="modal-field">
+                  <span>Time available</span>
+                  <select id="cram-time-available" class="cram-select">
+                    <option value="30 minutes">30 min</option>
+                    <option value="1 hour" selected>1 hour</option>
+                    <option value="2 hours">2 hours</option>
+                    <option value="All night">All night</option>
+                  </select>
+                </label>
+                <label class="modal-field">
+                  <span>Assessment format</span>
+                  <select id="cram-assessment-profile-select" class="cram-select"></select>
+                </label>
+              </div>
+              <p id="cram-assessment-profile-meta" class="panel-help">
+                Generic cram plan.
+              </p>
+
+              <div class="quiz-material-section">
+                <label class="modal-field">
+                  <span>Material</span>
+                  <div class="assessment-upload-drop">
                     <input
-                      id="cram-exam-name"
-                      type="text"
-                      placeholder="AP Biology Unit 4 Test"
+                      id="cram-material-file"
+                      class="assessment-file-input"
+                      type="file"
+                      multiple
+                      accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
                     />
-                  </label>
-                  <label class="modal-field">
-                    <span>Time available</span>
-                    <select id="cram-time-available" class="cram-select">
-                      <option value="30 minutes">30 min</option>
-                      <option value="1 hour" selected>1 hour</option>
-                      <option value="2 hours">2 hours</option>
-                      <option value="All night">All night</option>
-                    </select>
-                  </label>
-                  <label class="modal-field">
-                    <span>Assessment profile</span>
-                    <select id="cram-assessment-profile-select" class="cram-select"></select>
-                  </label>
-                </div>
-                <p id="cram-assessment-profile-meta" class="panel-help">
-                  Generic cram plan.
-                </p>
-              </section>
-
-              <section class="cram-panel">
-                <div class="cram-panel-header">
-                  <div>
-                    <h3 class="cram-panel-title">Exam material</h3>
-                    <p class="cram-panel-copy">Paste or upload files.</p>
+                    <label for="cram-material-file" class="assessment-upload-drop-label quiz-upload-drop-compact">
+                      <span class="assessment-upload-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" class="icon-svg">
+                          <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
+                        </svg>
+                      </span>
+                      <span class="assessment-upload-title">Upload or drop files</span>
+                    </label>
+                    <span id="cram-file-name" class="panel-help">No files selected</span>
                   </div>
-                  <p id="cram-material-count" class="cram-token-hint">
-                    Approx 0 tokens loaded
-                  </p>
-                </div>
-                <div class="cram-upload-panel">
-                  <label class="modal-field">
-                    <span>Upload material</span>
-                    <div class="quiz-file-shell cram-file-shell">
-                      <input
-                        id="cram-material-file"
-                        class="quiz-file-input"
-                        type="file"
-                        multiple
-                        accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                      />
-                      <label for="cram-material-file" class="quiz-file-button"
-                        >Choose files</label
-                      >
-                      <span id="cram-file-name" class="quiz-file-name"
-                        >No files selected</span
-                      >
-                    </div>
-                  </label>
-                  <div class="cram-upload-meta">
-                    <div
-                      id="cram-upload-rollup"
-                      class="cram-upload-rollup"
-                      hidden
-                    ></div>
-                  </div>
-                  <label class="modal-field">
-                    <span>Or paste material</span>
-                    <textarea
-                      id="cram-material-text"
-                      rows="7"
-                      placeholder="Paste study material here"
-                    ></textarea>
-                  </label>
-                </div>
-                <p
-                  id="cram-material-status"
-                  class="panel-help cram-material-status"
-                >
-                  Ready to build from uploaded and pasted material.
-                </p>
-              </section>
-
-              <section class="cram-panel">
-                <div class="cram-panel-header">
-                  <div>
-                    <h3 class="cram-panel-title">Additional notes</h3>
-                    <p class="cram-panel-copy">
-                      Teacher emphasis, format, weak spots.
-                    </p>
-                  </div>
+                </label>
+                <div class="cram-upload-meta">
+                  <div
+                    id="cram-upload-rollup"
+                    class="cram-upload-rollup"
+                    hidden
+                  ></div>
                 </div>
                 <label class="modal-field">
-                  <span>Optional context</span>
+                  <span>Or paste notes</span>
                   <textarea
-                    id="cram-additional-notes"
+                    id="cram-material-text"
                     rows="4"
-                    placeholder="Teacher keeps emphasizing free-response on cellular respiration and signaling pathways."
+                    placeholder="Paste study material here"
                   ></textarea>
                 </label>
-              </section>
+              </div>
+              <p
+                id="cram-material-status"
+                class="panel-help cram-material-status"
+              >
+                Ready to build from uploaded and pasted material.
+              </p>
 
-              <div class="cram-action-dock">
-                <div class="cram-action-copy">
-                  <p class="panel-label">Plan Mode</p>
-                  <p class="panel-help">Build a timeline from this material.</p>
-                </div>
-                <div class="cram-action-well">
-                  <button
-                    id="generate-cram-button"
-                    class="continue-button"
-                    type="button"
-                  >
-                    Build My Study Plan
-                  </button>
-                </div>
+              <!-- Hidden token count (kept for data tracking) -->
+              <p id="cram-material-count" class="cram-token-hint" hidden>
+                Approx 0 tokens loaded
+              </p>
+
+              <label class="modal-field">
+                <span>Additional notes</span>
+                <textarea
+                  id="cram-additional-notes"
+                  rows="3"
+                  placeholder="Teacher emphasis, format, weak spots"
+                ></textarea>
+              </label>
+
+              <div class="modal-actions">
+                <button
+                  id="generate-cram-button"
+                  class="continue-button"
+                  type="button"
+                >
+                  Build My Study Plan
+                </button>
               </div>
             </div>
 
