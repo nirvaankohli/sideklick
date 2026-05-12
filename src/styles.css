@@ -2530,13 +2530,13 @@ button {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.window-shell[data-tone="light"] .assessment-section {
+  border-bottom-color: rgba(36, 72, 122, 0.1);
+}
+
 .assessment-section-compact {
   gap: 12px;
   padding-top: 0;
-}
-
-.window-shell[data-tone="light"] .assessment-section {
-  border-bottom-color: rgba(36, 72, 122, 0.1);
 }
 
 .assessment-section-summary {
@@ -2861,9 +2861,24 @@ button {
   padding-top: 2px;
 }
 
+.assessment-actions-single {
+  justify-content: flex-end;
+  padding-top: 6px;
+}
+
+.assessment-actions-single .continue-button {
+  flex: 0 0 auto;
+  min-width: 180px;
+}
+
 .assessment-actions .ghost-button,
 .assessment-actions .continue-button {
   flex: 1 1 0;
+}
+
+.assessment-upload-shell {
+  display: grid;
+  gap: 8px;
 }
 
 .assessment-hidden-cancel {

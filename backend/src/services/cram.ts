@@ -392,7 +392,8 @@ function buildTimePlan(
 ): string[] {
   const plans: Record<CramRequest["timeAvailable"], string[]> = {
     "30 minutes": [
-      `Spend 10 minutes rebuilding ${focusA} from memory without rereading the material.`,
+      `Spend 10 minutes rebuilding ${focusA
+      } from memory without rereading the material.`,
       `Spend 10 minutes locking in ${focusB} plus one concrete example, formula, or definition.`,
       `Spend 10 minutes answering likely test prompts out loud on ${focusA} and ${focusB}.`,
     ],
