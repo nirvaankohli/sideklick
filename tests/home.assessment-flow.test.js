@@ -46,6 +46,58 @@ function createFakeUploadFile(name, content, type = "text/plain") {
   };
 }
 
+function createStoredClassWithMaterial() {
+  return [
+    {
+      id: "class-1",
+      type: "class",
+      name: "AP Chemistry",
+      dbClassId: 101,
+      children: [
+        {
+          id: "material-1",
+          type: "material",
+          name: "Class Material",
+          text: "Teacher note: focus on equilibrium and entropy.",
+          uploads: [
+            {
+              name: "thermo-review.txt",
+              content: "Use Hess's law and justify every sign change.",
+              handler: "text",
+              addedAt: "2026-05-12T00:00:00.000Z",
+            },
+            {
+              name: "lab-graph-notes.txt",
+              content: "Interpret the graph before solving the calculation.",
+              handler: "text",
+              addedAt: "2026-05-12T00:01:00.000Z",
+            },
+          ],
+          createdAt: "2026-05-12T00:00:00.000Z",
+          updatedAt: "2026-05-12T00:01:00.000Z",
+        },
+      ],
+    },
+  ];
+}
+
+function clickMaterialCheckbox(containerSelector, labelText) {
+  const option = Array.from(
+    document.querySelectorAll(`${containerSelector} .material-reference-option`),
+  ).find((label) => label.textContent.includes(labelText));
+  option.querySelector('input[type="checkbox"]').click();
+}
+
+function createDeferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
+}
+
 test("class configure flow opens the assessment page and still saves the class", async () => {
   const dom = createHomeDom();
   installAnimationFrameStub(dom);
@@ -575,6 +627,372 @@ test("assessment profile analysis can reference saved class material uploads", a
       ),
       true,
     );
+  });
+
+  dom.window.close();
+});
+
+test("quiz, cram, and assessment UI can target specific saved class material", async () => {
+  const dom = createHomeDom();
+  installAnimationFrameStub(dom);
+
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.HTMLElement = dom.window.HTMLElement;
+  global.HTMLSelectElement = dom.window.HTMLSelectElement;
+  global.Node = dom.window.Node;
+  global.Element = dom.window.Element;
+  global.Event = dom.window.Event;
+  global.CustomEvent = dom.window.CustomEvent;
+  global.File = dom.window.File;
+  global.navigator = dom.window.navigator;
+  global.FileReader = class FakeFileReader {};
+
+  window.matchMedia = () => ({
+    matches: false,
+    addEventListener() {},
+    removeEventListener() {},
+  });
+
+  const storedFolders = createStoredClassWithMaterial();
+  let quizPayload = null;
+  let cramPayload = null;
+  let assessmentPayload = null;
+
+  window.overlayApi = {
+    getClassFolders: async () => storedFolders,
+    getPreferences: async () => ({
+      themeSource: "light",
+      classFolders: storedFolders,
+      currentSession: null,
+    }),
+    getPrivacySettings: async () => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+    }),
+    getAuthSession: async () => ({
+      user: {
+        email: "student@example.com",
+        displayName: "Student",
+      },
+    }),
+    updateClassFolders: async (folders) => folders,
+    saveClassProfile: async (payload) => ({
+      classProfile: {
+        id: 101,
+        ...payload,
+      },
+    }),
+    analyzeAssessmentProfile: async (payload) => {
+      assessmentPayload = payload;
+      return {
+        profileId: null,
+        profileName: payload.profileName || "Template",
+        testFormat: "Free response",
+        conciseSummary: "References only selected saved material.",
+        genericDifferences: [],
+        exampleQuestions: [],
+        gradingSignals: [],
+        wordingPatterns: [],
+        likelyQuestionMoves: [],
+        quizAdjustments: [],
+        cramAdjustments: [],
+        sourceMaterialNames: payload.uploadedMaterials.map((material) => material.name),
+      };
+    },
+    setThemeSource: async () => ({
+      themeSource: "light",
+      shouldUseDarkColors: false,
+    }),
+    onThemeChanged: () => {},
+    onWindowMode: () => {},
+    onClassFoldersChanged: () => {},
+    onSessionChanged: () => {},
+    updatePrivacySettings: async (patch) => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+      ...patch,
+    }),
+    setPrivacySettings: async (settings) => settings,
+    resetPrivacySettings: async () => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+    }),
+    logoutAccount: async () => null,
+    exportAccount: async () => ({}),
+    deleteAccount: async () => ({}),
+    extractStudyMaterial: async () => [],
+    generateCramPlan: async (payload) => {
+      cramPayload = payload;
+      return {
+        subtitle: "Targeted cram plan",
+        studyFirst: ["Review Hess's law first."],
+        studyNext: ["Then rehearse the matching graph logic."],
+        skipIfNeeded: ["Skip low-yield memorization."],
+        timePlan: ["20 minutes on Hess's law.", "20 minutes on graph interpretation."],
+        likelyQuestions: ["Justify a sign change from a graph."],
+        quickSelfTest: ["Explain why the sign flips."],
+      };
+    },
+    generateQuiz: async (payload) => {
+      quizPayload = payload;
+      return {
+        title: "Targeted Quiz",
+        subtitle: "Uses selected class material only.",
+        questions: [],
+      };
+    },
+  };
+
+  const homePath = path.join(__dirname, "..", "src", "home.js");
+  delete require.cache[require.resolve(homePath)];
+  require(homePath);
+
+  await new Promise((resolve) => {
+    window.dispatchEvent(new dom.window.Event("DOMContentLoaded"));
+    setTimeout(resolve, 0);
+  });
+
+  document.querySelector(".folder-open-button").click();
+
+  document.querySelector("#new-folder").click();
+  Array.from(document.querySelectorAll(".folder-action-menu-item"))
+    .find((button) => button.textContent.includes("Quiz"))
+    .click();
+
+  await waitFor(() => {
+    assert.equal(document.querySelector("#quiz-backdrop").hidden, false);
+    assert.equal(
+      document.querySelectorAll("#quiz-class-material-picker input[type=\"checkbox\"]").length,
+      3,
+    );
+  });
+
+  clickMaterialCheckbox("#quiz-class-material-picker", "lab-graph-notes.txt");
+  clickMaterialCheckbox("#quiz-class-material-picker", "Class Material Notes");
+  document.querySelector('input[name="quiz-question-count"][value="8"]').click();
+  document.querySelector("#generate-quiz-button").click();
+
+  await waitFor(() => {
+    assert.equal(Boolean(quizPayload), true);
+    assert.equal(quizPayload.questionCount, 8);
+    assert.match(quizPayload.uploadedMaterial, /thermo-review\.txt/i);
+    assert.doesNotMatch(quizPayload.uploadedMaterial, /lab-graph-notes\.txt/i);
+    assert.doesNotMatch(quizPayload.uploadedMaterial, /Teacher note: focus on equilibrium and entropy\./i);
+  });
+
+  document.querySelector("#close-quiz-modal").click();
+
+  document.querySelector("#new-folder").click();
+  Array.from(document.querySelectorAll(".folder-action-menu-item"))
+    .find((button) => button.textContent.includes("Cram Mode"))
+    .click();
+
+  await waitFor(() => {
+    assert.equal(document.querySelector("#cram-backdrop").hidden, false);
+    assert.equal(
+      document.querySelectorAll("#cram-class-material-picker input[type=\"checkbox\"]").length,
+      3,
+    );
+  });
+
+  clickMaterialCheckbox("#cram-class-material-picker", "lab-graph-notes.txt");
+  clickMaterialCheckbox("#cram-class-material-picker", "Class Material Notes");
+  document.querySelector("#cram-exam-name").value = "Unit 5 Test";
+  document.querySelector("#generate-cram-button").click();
+
+  await waitFor(() => {
+    assert.equal(Boolean(cramPayload), true);
+    assert.match(cramPayload.examMaterial, /thermo-review\.txt/i);
+    assert.doesNotMatch(cramPayload.examMaterial, /lab-graph-notes\.txt/i);
+    assert.doesNotMatch(cramPayload.examMaterial, /Teacher note: focus on equilibrium and entropy\./i);
+  });
+
+  document.querySelector("#close-cram-modal").click();
+
+  document.querySelector("#edit-current-class-button").click();
+  document.querySelector("#open-assessment-config-button").click();
+
+  await waitFor(() => {
+    assert.equal(document.querySelector("#home-assessment-view").hidden, false);
+    assert.equal(
+      document.querySelectorAll("#assessment-class-material-picker input[type=\"checkbox\"]")
+        .length,
+      3,
+    );
+  });
+
+  document.querySelector("#assessment-manager-create-button").click();
+  clickMaterialCheckbox("#assessment-class-material-picker", "lab-graph-notes.txt");
+  clickMaterialCheckbox("#assessment-class-material-picker", "Class Material Notes");
+  document.querySelector("#assessment-profile-name").value = "Selected Sources Only";
+  document
+    .querySelector("#assessment-profile-name")
+    .dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+  document.querySelector("#assessment-save-button").click();
+
+  await waitFor(() => {
+    assert.equal(Boolean(assessmentPayload), true);
+    assert.equal(
+      assessmentPayload.uploadedMaterials.some((material) =>
+        material.name === "thermo-review.txt",
+      ),
+      true,
+    );
+    assert.equal(
+      assessmentPayload.uploadedMaterials.some((material) =>
+        material.name === "lab-graph-notes.txt",
+      ),
+      false,
+    );
+    assert.equal(
+      assessmentPayload.uploadedMaterials.some((material) =>
+        material.name === "Class Material Notes",
+      ),
+      false,
+    );
+  });
+
+  dom.window.close();
+});
+
+test("quiz generation autosaves a processing item and replaces it with the finished quiz", async () => {
+  const dom = createHomeDom();
+  installAnimationFrameStub(dom);
+
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.HTMLElement = dom.window.HTMLElement;
+  global.HTMLSelectElement = dom.window.HTMLSelectElement;
+  global.Node = dom.window.Node;
+  global.Element = dom.window.Element;
+  global.Event = dom.window.Event;
+  global.CustomEvent = dom.window.CustomEvent;
+  global.File = dom.window.File;
+  global.navigator = dom.window.navigator;
+  global.FileReader = class FakeFileReader {};
+
+  window.matchMedia = () => ({
+    matches: false,
+    addEventListener() {},
+    removeEventListener() {},
+  });
+
+  let persistedFolders = createStoredClassWithMaterial();
+  const deferredQuiz = createDeferred();
+
+  window.overlayApi = {
+    getClassFolders: async () => persistedFolders,
+    getPreferences: async () => ({
+      themeSource: "light",
+      classFolders: persistedFolders,
+      currentSession: null,
+    }),
+    getPrivacySettings: async () => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+    }),
+    getAuthSession: async () => ({
+      user: {
+        email: "student@example.com",
+        displayName: "Student",
+      },
+    }),
+    updateClassFolders: async (folders) => {
+      persistedFolders = folders;
+      return folders;
+    },
+    saveClassProfile: async (payload) => ({
+      classProfile: {
+        id: 101,
+        ...payload,
+      },
+    }),
+    setThemeSource: async () => ({
+      themeSource: "light",
+      shouldUseDarkColors: false,
+    }),
+    onThemeChanged: () => {},
+    onWindowMode: () => {},
+    onClassFoldersChanged: () => {},
+    onSessionChanged: () => {},
+    updatePrivacySettings: async (patch) => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+      ...patch,
+    }),
+    setPrivacySettings: async (settings) => settings,
+    resetPrivacySettings: async () => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+    }),
+    logoutAccount: async () => null,
+    exportAccount: async () => ({}),
+    deleteAccount: async () => ({}),
+    extractStudyMaterial: async () => [],
+    generateCramPlan: async () => ({}),
+    generateQuiz: async () => deferredQuiz.promise,
+  };
+
+  const homePath = path.join(__dirname, "..", "src", "home.js");
+  delete require.cache[require.resolve(homePath)];
+  require(homePath);
+
+  await new Promise((resolve) => {
+    window.dispatchEvent(new dom.window.Event("DOMContentLoaded"));
+    setTimeout(resolve, 0);
+  });
+
+  document.querySelector(".folder-open-button").click();
+  document.querySelector("#new-folder").click();
+  Array.from(document.querySelectorAll(".folder-action-menu-item"))
+    .find((button) => button.textContent.includes("Quiz"))
+    .click();
+
+  await waitFor(() => {
+    assert.equal(document.querySelector("#quiz-backdrop").hidden, false);
+  });
+
+  document.querySelector("#generate-quiz-button").click();
+
+  await waitFor(() => {
+    const processingQuiz = persistedFolders[0].children.find(
+      (child) => child.type === "quiz" && child.status === "processing",
+    );
+    assert.equal(processingQuiz.name, "Quiz - Processing");
+    assert.equal(
+      document.querySelector(".folder-card-title-processing .jumping-dots") !== null,
+      true,
+    );
+  });
+
+  deferredQuiz.resolve({
+    title: "Thermo Check",
+    subtitle: "Saved automatically.",
+    questions: [
+      {
+        prompt: "What does Hess's law preserve?",
+        options: ["Total enthalpy", "Mass only"],
+        correctIndex: 0,
+        explanation: "Hess's law tracks total enthalpy across equivalent paths.",
+      },
+    ],
+  });
+
+  await waitFor(() => {
+    const savedQuiz = persistedFolders[0].children.find(
+      (child) => child.type === "quiz" && child.status === "ready",
+    );
+    assert.equal(savedQuiz.name, "Thermo Check");
+    assert.equal(savedQuiz.questionCount, 1);
+    assert.equal(savedQuiz.quizData.title, "Thermo Check");
+    assert.equal(document.querySelector("#save-quiz-button").hidden, true);
   });
 
   dom.window.close();

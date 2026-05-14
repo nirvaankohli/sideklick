@@ -204,6 +204,7 @@ export const quizRequestSchema = z.object({
   includeUploadedMaterial: z.boolean(),
   uploadedMaterial: nullableTrimmedString,
   gapFocus: z.number().min(0).max(100),
+  questionCount: z.number().int().min(3).max(8).default(5),
 }).strict();
 
 export const quizResponseSchema = z.object({

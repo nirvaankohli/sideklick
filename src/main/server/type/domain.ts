@@ -169,6 +169,7 @@ export type QuizRequest = {
   includeUploadedMaterial: boolean;
   uploadedMaterial?: string | null;
   gapFocus: number;
+  questionCount: number;
 };
 
 export type QuizResponse = {

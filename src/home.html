@@ -272,7 +272,6 @@
                           </svg>
                         </span>
                         <span class="assessment-upload-title">Upload material</span>
-                        <span class="assessment-upload-copy">Tests, quizzes, photos, PDFs. Multiple allowed.</span>
                       </label>
                       <p id="assessment-upload-status" class="panel-help assessment-upload-status">
                         No files yet.
@@ -280,12 +279,18 @@
                     </div>
                     <div id="assessment-upload-rollup" class="assessment-upload-rollup"></div>
 
+                    <div class="material-reference-section">
+                      <span class="material-reference-label">Class material</span>
+                      <span id="assessment-class-material-status" class="material-reference-status"></span>
+                      <div id="assessment-class-material-picker" class="material-reference-picker"></div>
+                    </div>
+
                     <label class="assessment-inline-field" for="assessment-grading-notes">
                       <span>Additional Notes</span>
                       <textarea
                         id="assessment-grading-notes"
-                        rows="4"
-                        placeholder="Anything special about wording, grading, partial credit, diagrams, units, or pacing"
+                        rows="3"
+                        placeholder="Grading style, partial credit, emphasis areas"
                       ></textarea>
                     </label>
 
@@ -953,7 +958,7 @@
 
             <div class="quiz-setup-form">
               <p id="class-material-meta" class="panel-help">
-                Upload or paste material that all quizzes, cram plans, and assessment formats can reference.
+                Shared material for quizzes, cram plans, and assessments.
               </p>
 
               <div class="quiz-material-section">
@@ -982,8 +987,8 @@
                   <span>Or paste notes</span>
                   <textarea
                     id="class-material-text"
-                    rows="5"
-                    placeholder="Paste class notes, textbook excerpts, or study guides"
+                    rows="4"
+                    placeholder="Paste notes or study material"
                   ></textarea>
                 </label>
               </div>
@@ -1069,7 +1074,33 @@
                 </p>
               </label>
 
+              <fieldset class="quiz-question-count-control">
+                <legend>Question amount</legend>
+                <div class="quiz-question-count-options">
+                  <label class="quiz-question-count-option">
+                    <input type="radio" name="quiz-question-count" value="3" />
+                    <span>Less</span>
+                    <small>3 focused</small>
+                  </label>
+                  <label class="quiz-question-count-option">
+                    <input type="radio" name="quiz-question-count" value="5" checked />
+                    <span>Default</span>
+                    <small>5 balanced</small>
+                  </label>
+                  <label class="quiz-question-count-option">
+                    <input type="radio" name="quiz-question-count" value="8" />
+                    <span>More</span>
+                    <small>8 thorough</small>
+                  </label>
+                </div>
+              </fieldset>
+
               <div class="quiz-material-section">
+                <div class="material-reference-section">
+                  <span class="material-reference-label">Class material</span>
+                  <span id="quiz-class-material-status" class="material-reference-status"></span>
+                  <div id="quiz-class-material-picker" class="material-reference-picker"></div>
+                </div>
                 <label class="modal-field">
                   <span>Material</span>
                   <div class="assessment-upload-drop">
@@ -1271,6 +1302,11 @@
               </p>
 
               <div class="quiz-material-section">
+                <div class="material-reference-section">
+                  <span class="material-reference-label">Class material</span>
+                  <span id="cram-class-material-status" class="material-reference-status"></span>
+                  <div id="cram-class-material-picker" class="material-reference-picker"></div>
+                </div>
                 <label class="modal-field">
                   <span>Material</span>
                   <div class="assessment-upload-drop">

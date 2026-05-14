@@ -82,6 +82,12 @@ const assessmentCustomFormat = document.querySelector("#assessment-custom-format
 const assessmentMaterialFile = document.querySelector("#assessment-material-file");
 const assessmentUploadStatus = document.querySelector("#assessment-upload-status");
 const assessmentUploadRollup = document.querySelector("#assessment-upload-rollup");
+const assessmentClassMaterialStatus = document.querySelector(
+  "#assessment-class-material-status",
+);
+const assessmentClassMaterialPicker = document.querySelector(
+  "#assessment-class-material-picker",
+);
 const assessmentExampleQuestions = document.querySelector(
   "#assessment-example-questions",
 );
@@ -122,6 +128,11 @@ const quizAssessmentProfileSelect = document.querySelector(
 const quizAssessmentProfileMeta = document.querySelector(
   "#quiz-assessment-profile-meta",
 );
+const quizClassMaterialStatus = document.querySelector("#quiz-class-material-status");
+const quizClassMaterialPicker = document.querySelector("#quiz-class-material-picker");
+const quizQuestionCountInputs = Array.from(
+  document.querySelectorAll('input[name="quiz-question-count"]'),
+);
 const quizMaterialFile = document.querySelector("#quiz-material-file");
 const quizFileName = document.querySelector("#quiz-file-name");
 const quizMaterialText = document.querySelector("#quiz-material-text");
@@ -157,6 +168,8 @@ const cramAssessmentProfileSelect = document.querySelector(
 const cramAssessmentProfileMeta = document.querySelector(
   "#cram-assessment-profile-meta",
 );
+const cramClassMaterialStatus = document.querySelector("#cram-class-material-status");
+const cramClassMaterialPicker = document.querySelector("#cram-class-material-picker");
 const cramMaterialFile = document.querySelector("#cram-material-file");
 const cramFileName = document.querySelector("#cram-file-name");
 const cramUploadRollup = document.querySelector("#cram-upload-rollup");
@@ -280,10 +293,14 @@ let fitTextFrame = null;
 let activeQuizClassFolder = null;
 let uploadedQuizMaterial = "";
 let uploadedQuizMaterialSummary = "";
+let selectedQuizClassMaterialKeys = new Set();
+let quizClassMaterialSelectionInitialized = false;
 let activeQuiz = null;
 let quizHasBeenChecked = false;
 let activeCramPlan = null;
 let uploadedCramMaterials = [];
+let selectedCramClassMaterialKeys = new Set();
+let cramClassMaterialSelectionInitialized = false;
 let cramMaterialUploadError = "";
 let cramMaterialUploadSummary = "";
 let isGeneratingCramPlan = false;
@@ -293,6 +310,8 @@ let activeAssessmentProfiles = [];
 let activeAssessmentProfileId = "";
 let activeAssessmentSource = null;
 let assessmentUploadError = "";
+let selectedAssessmentClassMaterialKeys = new Set();
+let assessmentClassMaterialSelectionInitialized = false;
 let isAnalyzingAssessmentProfile = false;
 let activeAssessmentPanel = "manager";
 let currentModalAssessmentProfiles = [];
@@ -1564,6 +1583,7 @@ function setAssessmentProfileCollection(collection) {
   renderAssessmentProfileSelector();
   renderAssessmentPresetGrid();
   renderAssessmentUploadRollup();
+  renderAssessmentClassMaterialPicker();
   renderAssessmentManager();
   renderAssessmentSummary();
 }
@@ -1770,6 +1790,7 @@ function renderAssessmentUploadRollup() {
 function renderAssessmentSummary() {
   const draft = getAssessmentDraft();
   const summary = summarizeAssessmentProfile(draft);
+  const selectedClassMaterialCount = getClassMaterialAssessmentSources().length;
   const currentClassFolder = activeAssessmentClassPath
     ? getFolderAtPath(activeAssessmentClassPath)
     : null;
@@ -1812,9 +1833,9 @@ function renderAssessmentSummary() {
     assessmentAnalysisStatus.textContent = isAnalyzingAssessmentProfile
       ? "Processing..."
       : summary.analysis.conciseSummary ||
-        (draft.uploads.length > 0
-          ? "Material uploaded. Ready to save."
-          : "Upload material and save to process automatically.");
+        (draft.uploads.length > 0 || selectedClassMaterialCount > 0
+          ? "Ready to save."
+          : "Upload material or select class material.");
   }
 
   if (assessmentSaveButton) {
@@ -1907,6 +1928,8 @@ function openAssessmentProfileForClassPath(classPath) {
   activeAssessmentSource = "class";
   activeAssessmentClassPath = [...resolvedPath];
   assessmentUploadError = "";
+  selectedAssessmentClassMaterialKeys = new Set();
+  assessmentClassMaterialSelectionInitialized = false;
   if (assessmentMaterialFile) {
     assessmentMaterialFile.value = "";
   }
@@ -1920,9 +1943,15 @@ function openAssessmentProfileFromModalDraft() {
     return;
   }
 
-  activeAssessmentSource = "modal";
-  activeAssessmentClassPath = null;
+  const classPath =
+    currentModalAction === "edit" && Array.isArray(currentModalTargetPath)
+      ? [...currentModalTargetPath]
+      : null;
+  activeAssessmentSource = classPath ? "class" : "modal";
+  activeAssessmentClassPath = classPath;
   assessmentUploadError = "";
+  selectedAssessmentClassMaterialKeys = new Set();
+  assessmentClassMaterialSelectionInitialized = false;
   if (assessmentMaterialFile) {
     assessmentMaterialFile.value = "";
   }
@@ -1942,6 +1971,8 @@ function closeAssessmentProfileView() {
   activeAssessmentProfileId = "";
   activeAssessmentSource = null;
   assessmentUploadError = "";
+  selectedAssessmentClassMaterialKeys = new Set();
+  assessmentClassMaterialSelectionInitialized = false;
   isAnalyzingAssessmentProfile = false;
   activeAssessmentPanel = "manager";
   if (assessmentMaterialFile) {
@@ -1989,6 +2020,7 @@ function switchActiveAssessmentProfile(profileId) {
   renderAssessmentProfileSelector();
   renderAssessmentPresetGrid();
   renderAssessmentUploadRollup();
+  renderAssessmentClassMaterialPicker();
   renderAssessmentSummary();
 }
 
@@ -2027,7 +2059,7 @@ async function analyzeActiveAssessmentProfile() {
   ].slice(0, 12);
   if (uploadedMaterials.length === 0) {
     assessmentUploadError =
-      "Upload at least one teacher assessment or save class material before processing.";
+      "Upload material or select class material before processing.";
     renderAssessmentSummary();
     return;
   }
@@ -2208,7 +2240,10 @@ function getCombinedUploadedCramMaterial() {
 }
 
 function getCombinedCramMaterialInput() {
-  const classMatl = getClassMaterialText();
+  const classMatl = formatSelectedClassMaterialText(
+    selectedCramClassMaterialKeys,
+    getCurrentClassFolder(),
+  );
   return [classMatl, getCombinedUploadedCramMaterial().trim(), cramMaterialText.value.trim()]
     .filter(Boolean)
     .join("\n\n");
@@ -2311,6 +2346,8 @@ function resetQuizModalState() {
   activeQuiz = null;
   uploadedQuizMaterial = "";
   uploadedQuizMaterialSummary = "";
+  selectedQuizClassMaterialKeys = new Set();
+  quizClassMaterialSelectionInitialized = false;
   quizHasBeenChecked = false;
   quizSetupView.hidden = false;
   quizView.hidden = true;
@@ -2346,6 +2383,7 @@ function resetQuizModalState() {
     quizExplainHint.textContent =
       "Answer explanations unlock after you check answers.";
   }
+  renderQuizClassMaterialPicker();
 }
 
 function summarizeQuestionTopic(question) {
@@ -2543,9 +2581,8 @@ function getClassMaterialUploadStatusText(uploadCount) {
     : `${uploadCount} file${uploadCount === 1 ? "" : "s"} loaded`;
 }
 
-function getClassMaterialItemForCurrentClass() {
-  const classFolder = getCurrentClassFolder();
-  if (!classFolder) {
+function getClassMaterialItemForClassFolder(classFolder) {
+  if (!classFolder || typeof classFolder !== "object") {
     return null;
   }
 
@@ -2563,14 +2600,27 @@ function getClassMaterialItemForCurrentClass() {
   return null;
 }
 
-function getClassMaterialForCurrentClass() {
-  const materialItem = getClassMaterialItemForCurrentClass();
+function getClassMaterialItemForCurrentClass() {
+  const classFolder = getCurrentClassFolder();
+  if (!classFolder) {
+    return null;
+  }
+
+  return getClassMaterialItemForClassFolder(classFolder);
+}
+
+function getClassMaterialForClassFolder(classFolder) {
+  const materialItem = getClassMaterialItemForClassFolder(classFolder);
   return materialItem
     ? {
         text: materialItem.text,
         uploads: materialItem.uploads,
       }
     : { text: "", uploads: [] };
+}
+
+function getClassMaterialForCurrentClass() {
+  return getClassMaterialForClassFolder(getCurrentClassFolder());
 }
 
 function getClassMaterialText() {
@@ -2587,23 +2637,217 @@ function getClassMaterialText() {
   return [uploadedText, pastedText].filter(Boolean).join("\n\n");
 }
 
-function getClassMaterialAssessmentSources() {
-  const material = getClassMaterialForCurrentClass();
-  const uploadedSources = material.uploads.map((upload) => ({
+function buildClassMaterialReferenceKey(sourceType, name, stableId) {
+  return `${sourceType}:${stableId || name}`;
+}
+
+function getClassMaterialReferenceOptions(classFolder = getCurrentClassFolder()) {
+  const material = getClassMaterialForClassFolder(classFolder);
+  const options = material.uploads.map((upload, index) => ({
+    key: buildClassMaterialReferenceKey(
+      "upload",
+      upload.name,
+      upload.addedAt || `${upload.name}-${index}`,
+    ),
     name: upload.name,
     content: upload.content,
     handler: upload.handler || "text",
+    meta: `${(upload.handler || "text").toUpperCase()} • ${upload.content.length.toLocaleString()} chars`,
   }));
   const pastedText = material.text.trim();
   if (pastedText) {
-    uploadedSources.push({
+    options.push({
+      key: buildClassMaterialReferenceKey("notes", "Class Material Notes", "notes"),
       name: "Class Material Notes",
       content: pastedText,
       handler: "text",
+      meta: `${pastedText.length.toLocaleString()} chars`,
     });
   }
 
-  return uploadedSources;
+  return options;
+}
+
+function syncClassMaterialSelection(selectionSet, options, shouldInitializeAll) {
+  const validKeys = new Set(options.map((option) => option.key));
+  const nextSelection = new Set(
+    [...selectionSet].filter((key) => validKeys.has(key)),
+  );
+  if (shouldInitializeAll) {
+    options.forEach((option) => nextSelection.add(option.key));
+  }
+  return nextSelection;
+}
+
+function getSelectedClassMaterialSources(
+  selectionSet,
+  classFolder = getCurrentClassFolder(),
+) {
+  const options = getClassMaterialReferenceOptions(classFolder);
+  const activeKeys =
+    selectionSet instanceof Set
+      ? selectionSet
+      : new Set(options.map((option) => option.key));
+  return options
+    .filter((option) => activeKeys.has(option.key))
+    .map(({ name, content, handler }) => ({
+      name,
+      content,
+      handler,
+    }));
+}
+
+function formatSelectedClassMaterialText(
+  selectionSet,
+  classFolder = getCurrentClassFolder(),
+) {
+  return getSelectedClassMaterialSources(selectionSet, classFolder)
+    .map((source) => `--- ${source.name} ---\n${source.content}`)
+    .join("\n\n");
+}
+
+function renderClassMaterialReferencePicker({
+  container,
+  statusElement,
+  options,
+  selectionSet,
+  onToggle,
+}) {
+  if (!container) {
+    return;
+  }
+
+  container.replaceChildren();
+
+  if (options.length === 0) {
+    if (statusElement) {
+      statusElement.textContent = "None saved yet.";
+    }
+    return;
+  }
+
+  if (statusElement) {
+    statusElement.textContent = `${selectionSet.size}/${options.length} selected`;
+  }
+
+  options.forEach((option) => {
+    const label = document.createElement("label");
+    label.className = "material-reference-option";
+    label.classList.toggle("is-selected", selectionSet.has(option.key));
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.className = "material-reference-input";
+    input.checked = selectionSet.has(option.key);
+    input.addEventListener("change", () => {
+      onToggle(option.key, input.checked);
+    });
+
+    const check = document.createElement("span");
+    check.className = "material-reference-check";
+    check.setAttribute("aria-hidden", "true");
+
+    const copy = document.createElement("span");
+    copy.className = "material-reference-option-copy";
+
+    const title = document.createElement("span");
+    title.className = "material-reference-option-title";
+    title.textContent = option.name;
+
+    const meta = document.createElement("span");
+    meta.className = "material-reference-option-meta";
+    meta.textContent = option.meta || "Saved class material";
+
+    copy.append(title, meta);
+    label.append(input, check, copy);
+    container.appendChild(label);
+  });
+}
+
+function getClassMaterialAssessmentSources(
+  selectionSet = selectedAssessmentClassMaterialKeys,
+  classFolder =
+    activeAssessmentSource === "class" && activeAssessmentClassPath
+      ? getFolderAtPath(activeAssessmentClassPath)
+      : null,
+) {
+  return getSelectedClassMaterialSources(selectionSet, classFolder);
+}
+
+function renderQuizClassMaterialPicker() {
+  const options = getClassMaterialReferenceOptions(activeQuizClassFolder);
+  selectedQuizClassMaterialKeys = syncClassMaterialSelection(
+    selectedQuizClassMaterialKeys,
+    options,
+    !quizClassMaterialSelectionInitialized,
+  );
+  quizClassMaterialSelectionInitialized = true;
+  renderClassMaterialReferencePicker({
+    container: quizClassMaterialPicker,
+    statusElement: quizClassMaterialStatus,
+    options,
+    selectionSet: selectedQuizClassMaterialKeys,
+    onToggle(key, isChecked) {
+      if (isChecked) {
+        selectedQuizClassMaterialKeys.add(key);
+      } else {
+        selectedQuizClassMaterialKeys.delete(key);
+      }
+      renderQuizClassMaterialPicker();
+    },
+  });
+}
+
+function renderCramClassMaterialPicker() {
+  const options = getClassMaterialReferenceOptions(getCurrentClassFolder());
+  selectedCramClassMaterialKeys = syncClassMaterialSelection(
+    selectedCramClassMaterialKeys,
+    options,
+    !cramClassMaterialSelectionInitialized,
+  );
+  cramClassMaterialSelectionInitialized = true;
+  renderClassMaterialReferencePicker({
+    container: cramClassMaterialPicker,
+    statusElement: cramClassMaterialStatus,
+    options,
+    selectionSet: selectedCramClassMaterialKeys,
+    onToggle(key, isChecked) {
+      if (isChecked) {
+        selectedCramClassMaterialKeys.add(key);
+      } else {
+        selectedCramClassMaterialKeys.delete(key);
+      }
+      renderCramClassMaterialPicker();
+      updateCramMaterialCount();
+    },
+  });
+}
+
+function renderAssessmentClassMaterialPicker() {
+  const classFolder = activeAssessmentClassPath
+    ? getFolderAtPath(activeAssessmentClassPath)
+    : null;
+  const options = getClassMaterialReferenceOptions(classFolder);
+  selectedAssessmentClassMaterialKeys = syncClassMaterialSelection(
+    selectedAssessmentClassMaterialKeys,
+    options,
+    !assessmentClassMaterialSelectionInitialized,
+  );
+  assessmentClassMaterialSelectionInitialized = true;
+  renderClassMaterialReferencePicker({
+    container: assessmentClassMaterialPicker,
+    statusElement: assessmentClassMaterialStatus,
+    options,
+    selectionSet: selectedAssessmentClassMaterialKeys,
+    onToggle(key, isChecked) {
+      if (isChecked) {
+        selectedAssessmentClassMaterialKeys.add(key);
+      } else {
+        selectedAssessmentClassMaterialKeys.delete(key);
+      }
+      renderAssessmentClassMaterialPicker();
+    },
+  });
 }
 
 function openClassMaterialModal() {
@@ -2789,9 +3033,18 @@ function updateCramMaterialCount() {
     (total, file) => total + file.content.length,
     0,
   );
-  const combinedLength = pastedLength + uploadedLength;
+  const selectedClassMaterialLength = getSelectedClassMaterialSources(
+    selectedCramClassMaterialKeys,
+    getCurrentClassFolder(),
+  ).reduce((total, source) => total + source.content.length, 0);
+  const selectedClassMaterialCount = getSelectedClassMaterialSources(
+    selectedCramClassMaterialKeys,
+    getCurrentClassFolder(),
+  ).length;
+  const combinedLength = pastedLength + uploadedLength + selectedClassMaterialLength;
   const approxTokens = Math.ceil(combinedLength / 4);
   const hasUploadedMaterial = uploadedCramMaterials.length > 0;
+  const hasSelectedClassMaterial = selectedClassMaterialCount > 0;
   const hasUploadError = Boolean(cramMaterialUploadError);
   const overLimit = combinedLength > cramConstraintsConfig.maxMaterialCharacters;
 
@@ -2799,11 +3052,13 @@ function updateCramMaterialCount() {
   cramMaterialStatus.textContent = hasUploadError
       ? cramMaterialUploadError
       : overLimit
-        ? `Too much material loaded for one pass. Keep it under ${cramConstraintsConfig.maxMaterialCharacters.toLocaleString()} characters by trimming to the most testable notes.`
+        ? `Too much material. Keep under ${cramConstraintsConfig.maxMaterialCharacters.toLocaleString()} chars.`
       : cramMaterialUploadSummary
         ? cramMaterialUploadSummary
+      : hasSelectedClassMaterial
+        ? `${selectedClassMaterialCount} class source${selectedClassMaterialCount === 1 ? "" : "s"} selected.`
       : hasUploadedMaterial
-        ? `Using ${uploadedCramMaterials.length} uploaded file${uploadedCramMaterials.length === 1 ? "" : "s"} together with any pasted material.`
+        ? `${uploadedCramMaterials.length} file${uploadedCramMaterials.length === 1 ? "" : "s"} loaded.`
         : "Paste or upload material.";
   cramMaterialStatus.dataset.tone =
     hasUploadError || overLimit ? "danger" : "neutral";
@@ -2817,6 +3072,8 @@ function updateCramMaterialCount() {
 function resetCramModalState() {
   activeCramPlan = null;
   uploadedCramMaterials = [];
+  selectedCramClassMaterialKeys = new Set();
+  cramClassMaterialSelectionInitialized = false;
   cramMaterialUploadError = "";
   cramMaterialUploadSummary = "";
   renderCramUploadRollup();
@@ -2857,6 +3114,7 @@ function resetCramModalState() {
   isGeneratingCramPlan = false;
   generateCramButton.disabled = false;
   generateCramButton.textContent = "Build My Study Plan";
+  renderCramClassMaterialPicker();
   updateCramMaterialCount();
 }
 
@@ -3011,6 +3269,9 @@ function openSavedQuiz(quizItem) {
   if (!requireSignedIn("open saved quizzes")) {
     return;
   }
+  if (quizItem.status === "processing" || quizItem.status === "failed") {
+    return;
+  }
   activeQuizClassFolder = getCurrentClassFolder();
   resetQuizModalState();
   quizModalTitle.textContent = quizItem.name || "Saved Quiz";
@@ -3020,6 +3281,37 @@ function openSavedQuiz(quizItem) {
     hideSave: true,
   });
   quizBackdrop.hidden = false;
+}
+
+function buildProcessingQuizEntry() {
+  return {
+    id: makeId(),
+    type: "quiz",
+    name: "Quiz - Processing",
+    status: "processing",
+    createdAt: new Date().toISOString(),
+    questionCount: 0,
+    summary: "Generating quiz",
+    quizData: null,
+  };
+}
+
+async function addQuizEntryToExplorer(entry, targetPath = currentPath) {
+  const targetNode = getFolderAtPath(targetPath);
+  const targetChildren = targetNode ? targetNode.children || [] : folders;
+  const nextChildren = [entry, ...targetChildren];
+  const nextFolders = replaceChildrenAtPath(targetPath, nextChildren);
+  await persistFolders(nextFolders);
+}
+
+async function updateQuizEntryInExplorer(entryId, transform, targetPath = currentPath) {
+  const targetNode = getFolderAtPath(targetPath);
+  const targetChildren = targetNode ? targetNode.children || [] : folders;
+  const nextChildren = targetChildren.map((item) =>
+    item.id === entryId ? transform(item) : item,
+  );
+  const nextFolders = replaceChildrenAtPath(targetPath, nextChildren);
+  await persistFolders(nextFolders);
 }
 
 async function saveActiveQuizToExplorer() {
@@ -3040,9 +3332,7 @@ async function saveActiveQuizToExplorer() {
     quizData: activeQuiz,
   };
 
-  const nextChildren = [nextQuizEntry, ...getCurrentClassItems()];
-  const nextFolders = replaceChildrenAtPath(currentPath, nextChildren);
-  await persistFolders(nextFolders);
+  await addQuizEntryToExplorer(nextQuizEntry);
   saveQuizButton.hidden = true;
 }
 
@@ -3059,11 +3349,12 @@ function renderQuizQuestions(quiz) {
 
     const statusDot = document.createElement("span");
     statusDot.className = "quiz-question-status";
-    statusDot.setAttribute("aria-hidden", "true");
+    statusDot.textContent = String(index + 1);
+    statusDot.setAttribute("aria-label", `Question ${index + 1}`);
 
     const prompt = document.createElement("h3");
     prompt.className = "quiz-question-title";
-    prompt.textContent = `${index + 1}. ${question.prompt}`;
+    prompt.textContent = question.prompt;
 
     const explainButton = document.createElement("button");
     explainButton.type = "button";
@@ -3089,10 +3380,16 @@ function renderQuizQuestions(quiz) {
       input.name = `quiz-question-${index}`;
       input.value = String(optionIndex);
 
+      const letter = document.createElement("span");
+      letter.className = "quiz-option-letter";
+      letter.setAttribute("aria-hidden", "true");
+      letter.textContent = String.fromCharCode(65 + optionIndex);
+
       const text = document.createElement("span");
+      text.className = "quiz-option-copy";
       text.textContent = option;
 
-      label.append(input, text);
+      label.append(input, letter, text);
       options.appendChild(label);
     });
 
@@ -3107,6 +3404,12 @@ function renderQuizQuestions(quiz) {
   updateExplainButtons();
 }
 
+function getSelectedQuizQuestionCount() {
+  const selected = quizQuestionCountInputs.find((input) => input.checked);
+  const parsed = selected ? Number(selected.value) : 5;
+  return [3, 5, 8].includes(parsed) ? parsed : 5;
+}
+
 async function generateQuizForActiveSession() {
   if (!requireSignedIn("generate quizzes")) {
     return;
@@ -3116,7 +3419,10 @@ async function generateQuizForActiveSession() {
   }
 
   const pastedMaterial = quizMaterialText.value.trim();
-  const classMatl = getClassMaterialText();
+  const classMatl = formatSelectedClassMaterialText(
+    selectedQuizClassMaterialKeys,
+    activeQuizClassFolder,
+  );
   const uploadedMaterial = [classMatl, uploadedQuizMaterial, pastedMaterial]
     .filter(Boolean)
     .join("\n\n");
@@ -3136,6 +3442,7 @@ async function generateQuizForActiveSession() {
     includeUploadedMaterial: quizSourceUploaded.checked,
     uploadedMaterial: uploadedMaterial || null,
     gapFocus: Number(quizGapFocus.value),
+    questionCount: getSelectedQuizQuestionCount(),
     teacherAssessmentProfile: quizAssessmentProfileSelect?.value
       ? getTeacherAssessmentProfilePayload(
           getSelectedClassAssessmentProfile(
@@ -3146,15 +3453,48 @@ async function generateQuizForActiveSession() {
       : null,
   };
 
+  const targetPath = [...currentPath];
+  const processingEntry = buildProcessingQuizEntry();
+
   generateQuizButton.disabled = true;
   generateQuizButton.textContent = "Generating...";
 
   try {
+    await addQuizEntryToExplorer(processingEntry, targetPath);
     const quiz = await window.overlayApi.generateQuiz(payload);
+    await updateQuizEntryInExplorer(
+      processingEntry.id,
+      (item) => ({
+        ...item,
+        name: quiz.title || "Saved Quiz",
+        status: "ready",
+        completedAt: new Date().toISOString(),
+        questionCount: quiz.questions.length,
+        summary: quiz.subtitle,
+        quizData: quiz,
+      }),
+      targetPath,
+    );
     loadQuizIntoView(quiz, {
       readOnly: false,
-      hideSave: false,
+      hideSave: true,
     });
+  } catch (error) {
+    await updateQuizEntryInExplorer(
+      processingEntry.id,
+      (item) => ({
+        ...item,
+        name: "Quiz - Failed",
+        status: "failed",
+        completedAt: new Date().toISOString(),
+        summary:
+          error instanceof Error
+            ? error.message
+            : "Quiz generation failed. Try again.",
+      }),
+      targetPath,
+    );
+    throw error;
   } finally {
     generateQuizButton.disabled = false;
     generateQuizButton.textContent = "Generate Quiz";
@@ -3317,10 +3657,10 @@ function renderFolders() {
           : "Nothing in this lesson yet.";
     emptyCopy.textContent =
       currentType === "class"
-        ? "Add a unit, save class material, start a session, open Cram Mode, or build a quiz from this class."
+        ? "Use the + button to add units, sessions, material, or quizzes."
         : currentType === "unit"
-          ? "Add a lesson, open the shared class material, start a session, open Cram Mode, or build a quiz inside this unit."
-          : "Open the shared class material, start a session, open Cram Mode, or build a quiz inside this lesson.";
+          ? "Add a lesson, session, or quiz inside this unit."
+          : "Start a session or quiz inside this lesson.";
   }
 
   for (const folder of visibleChildren) {
@@ -3334,6 +3674,10 @@ function renderFolders() {
     const isQuizItem = folder.type === "quiz";
     const isMaterialItem = folder.type === "material";
     const isClassItem = folder.type === "class";
+    const isProcessingQuiz = isQuizItem && folder.status === "processing";
+    const isFailedQuiz = isQuizItem && folder.status === "failed";
+    article.classList.toggle("folder-card-processing", isProcessingQuiz);
+    article.classList.toggle("folder-card-failed", isFailedQuiz);
     const materialUploadCount = Array.isArray(folder.uploads) ? folder.uploads.length : 0;
     const materialSnippet = isMaterialItem
       ? String(folder.text || "")
@@ -3342,7 +3686,11 @@ function renderFolders() {
       : "";
     const metaText = !isSessionItem
       ? isQuizItem
-        ? `${folder.questionCount || 0} questions • ${formatSessionDate(folder.createdAt)}`
+        ? isProcessingQuiz
+          ? `Started ${formatSessionDate(folder.createdAt)}`
+          : isFailedQuiz
+            ? `Failed ${formatSessionDate(folder.completedAt || folder.createdAt)}`
+            : `${folder.questionCount || 0} questions • ${formatSessionDate(folder.createdAt)}`
         : isMaterialItem
           ? [
               `${materialUploadCount} upload${materialUploadCount === 1 ? "" : "s"}`,
@@ -3365,7 +3713,9 @@ function renderFolders() {
             ? "Shared uploaded material for quizzes, cram plans, and assessments."
             : "Shared class material for quizzes, cram plans, and assessments.")
       : isQuizItem
-        ? typeof folder.summary === "string" && folder.summary.trim()
+        ? isProcessingQuiz
+          ? '<span class="quiz-processing-label">Building quiz<span class="jumping-dots" aria-hidden="true"><span></span><span></span><span></span></span></span>'
+          : typeof folder.summary === "string" && folder.summary.trim()
           ? folder.summary.trim()
           : "Saved quiz"
         : "";
@@ -3399,6 +3749,11 @@ function renderFolders() {
     const statsNode = openButton.querySelector(".folder-card-session-stats");
     if (titleNode instanceof HTMLElement) {
       titleNode.dataset.fitText = "true";
+      if (isProcessingQuiz) {
+        titleNode.innerHTML =
+          'Quiz - Processing<span class="jumping-dots" aria-hidden="true"><span></span><span></span><span></span></span>';
+        titleNode.classList.add("folder-card-title-processing");
+      }
     }
     if (metaNode instanceof HTMLElement) {
       if (!isSessionItem) {

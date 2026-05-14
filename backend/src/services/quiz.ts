@@ -104,6 +104,7 @@ export function buildQuizSystemInstructions(
     "You are generating a study quiz for a desktop learning product.",
     "Return clean structured JSON only.",
     "Make the quiz concise, useful, and grounded in the provided material.",
+    "Generate exactly the requested number of questions from the quiz constraints.",
     "Use the gap focus slider as a weighting signal: higher values should target weak spots more aggressively.",
     "Every question must have four plausible options, exactly one correct answer, and a short explanation.",
     "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
@@ -219,7 +220,7 @@ export function buildQuizPromptPacket({
       ended_at: session.ended_at,
     })),
     quiz_constraints: {
-      question_count: 5,
+      question_count: input.questionCount,
       question_type: "multiple choice",
       options_per_question: 4,
       focus_on_gaps_percent: input.gapFocus,

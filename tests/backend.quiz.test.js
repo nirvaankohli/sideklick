@@ -46,6 +46,7 @@ test("quiz prompt packet carries teacher assessment profile for generation", asy
       includeUploadedMaterial: false,
       uploadedMaterial: null,
       gapFocus: 70,
+      questionCount: 8,
     },
     classProfile: {
       id: 1,
@@ -91,5 +92,6 @@ test("quiz prompt packet carries teacher assessment profile for generation", asy
     "Label the cell membrane and justify each transport choice.",
     "Which graph best shows enzyme saturation under inhibitor pressure?",
   ]);
+  assert.equal(packet.quiz_constraints.question_count, 8);
   assert.match(JSON.stringify(packet.included_sources), /Reviewed membrane transport/);
 });
