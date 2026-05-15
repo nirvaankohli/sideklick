@@ -8,8 +8,12 @@ const compactCloseWindow = document.querySelector("#compact-close-window");
 const restoreWindow = document.querySelector("#restore-window");
 const homeDashboardView = document.querySelector("#home-dashboard-view");
 <<<<<<< HEAD
+<<<<<<< HEAD
 const homeQuizView = document.querySelector("#home-quiz-view");
 const homeAssessmentView = document.querySelector("#home-assessment-view");
+=======
+const homeCramView = document.querySelector("#home-cram-view");
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
 const homeCramView = document.querySelector("#home-cram-view");
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
@@ -158,6 +162,7 @@ const quizExplanationText = document.querySelector("#quiz-explanation-text");
 const saveQuizButton = document.querySelector("#save-quiz-button");
 const quizSubmitButton = document.querySelector("#quiz-submit-button");
 <<<<<<< HEAD
+<<<<<<< HEAD
 const cramBackdrop = document.querySelector("#cram-backdrop");
 const closeCramModalButton = document.querySelector("#close-cram-modal");
 const cramThemeToggle = document.querySelector("#cram-theme-toggle");
@@ -224,6 +229,8 @@ const validateCramMaterialPayload =
     normalizedMaterial: String(value ?? "").trim(),
   }));
 =======
+=======
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 const cramBackButton = document.querySelector("#cram-back-button");
 const cramScreenTitle = document.querySelector("#cram-screen-title");
 const cramScreenMeta = document.querySelector("#cram-screen-meta");
@@ -248,6 +255,9 @@ const cramSaveProgressButton = document.querySelector("#cram-save-progress");
 const cramQuizBackButton = document.querySelector("#cram-quiz-back-button");
 const cramQuizMeta = document.querySelector("#cram-quiz-meta");
 const cramQuizMount = document.querySelector("#cram-quiz-mount");
+<<<<<<< HEAD
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
+=======
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 const resizeHandle = document.querySelector("#resize-handle");
 const settingsThemeStatus = document.querySelector("#settings-theme-status");
@@ -329,6 +339,7 @@ let quizClassMaterialSelectionInitialized = false;
 let activeQuiz = null;
 let quizHasBeenChecked = false;
 <<<<<<< HEAD
+<<<<<<< HEAD
 let activeCramPlan = null;
 let uploadedCramMaterials = [];
 let selectedCramClassMaterialKeys = new Set();
@@ -337,6 +348,8 @@ let cramMaterialUploadError = "";
 let cramMaterialUploadSummary = "";
 let isGeneratingCramPlan = false;
 =======
+=======
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 let activeQuizContext = "modal";
 let quizViewModalParent = null;
 let quizViewModalNextSibling = null;
@@ -345,6 +358,9 @@ let activeCramPath = [];
 let activeCramTaskIndex = 0;
 let uploadedCramMaterial = "";
 let cramReturnPath = [];
+<<<<<<< HEAD
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
+=======
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 let activeHomeView = "dashboard";
 let quizReturnView = "dashboard";
@@ -382,10 +398,16 @@ const MUI_CREATE_ACTION_ICON_PATHS = {
   quiz:
     "M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5.99 13H12v-2h2.01v2zm1.54-5.07-.9.92c-.65.66-.86 1.16-.86 2.15h-1.8v-.45c0-1 .41-1.91 1.07-2.57l1.24-1.26c.37-.36.58-.86.58-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H9.08c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.26z",
 <<<<<<< HEAD
+<<<<<<< HEAD
   cram:
     "M4 5h16v2H4zm2 4h12v2H6zm-1 4h14v2H5zm2 4h8v2H7z",
   material:
     "M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z",
+=======
+
+  cram:
+    "M4 4h16v2H4V4zm0 5h10v2H4V9zm0 5h16v2H4v-2zm0 5h10v2H4v-2zm14-10h2v2h-2V9zm0 10h2v2h-2v-2z",
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
 
   cram:
@@ -653,10 +675,15 @@ function setHomeView(nextView) {
     nextView === "settings"
       ? "settings"
 <<<<<<< HEAD
+<<<<<<< HEAD
       : nextView === "quiz"
         ? "quiz"
       : nextView === "assessment"
         ? "assessment"
+=======
+      : nextView === "cram"
+        ? "cram"
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
       : nextView === "cram"
         ? "cram"
@@ -672,12 +699,20 @@ function setHomeView(nextView) {
       : activeHomeView === "settings"
         ? "Settings"
 <<<<<<< HEAD
+<<<<<<< HEAD
         : activeHomeView === "assessment"
           ? "Assessment"
         : "Sign In";
   homeDashboardView.hidden = activeHomeView !== "dashboard";
   homeQuizView.hidden = activeHomeView !== "quiz";
   homeAssessmentView.hidden = activeHomeView !== "assessment";
+=======
+        : activeHomeView === "cram"
+          ? "Cram Mode"
+          : "Sign In";
+  homeDashboardView.hidden = activeHomeView !== "dashboard";
+  homeCramView.hidden = activeHomeView !== "cram";
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
         : activeHomeView === "cram"
           ? "Cram Mode"
@@ -692,11 +727,15 @@ function setHomeView(nextView) {
     activeHomeView === "dashboard",
   );
 <<<<<<< HEAD
+<<<<<<< HEAD
   homeQuizView.classList.toggle("home-view-active", activeHomeView === "quiz");
   homeAssessmentView.classList.toggle(
     "home-view-active",
     activeHomeView === "assessment",
   );
+=======
+  homeCramView.classList.toggle("home-view-active", activeHomeView === "cram");
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
   homeCramView.classList.toggle("home-view-active", activeHomeView === "cram");
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
@@ -1048,8 +1087,12 @@ function normalizeFolders(source) {
           child.type === "session" ||
           child.type === "quiz" ||
 <<<<<<< HEAD
+<<<<<<< HEAD
           child.type === "cram" ||
           child.type === "material"
+=======
+          child.type === "cramPlan"
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
           child.type === "cramPlan"
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
@@ -2578,6 +2621,7 @@ function renderQuizSessionPicker(sessions) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 function renderClassAssessmentProfileSelect(selectElement, classFolder, emptyLabel) {
   if (!selectElement) {
     return;
@@ -3027,6 +3071,359 @@ function openCramSetupForCurrentClass() {
     return;
   }
 
+=======
+function renderCramSessionPicker(sessions) {
+  cramSessionPicker.replaceChildren();
+
+  if (sessions.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "quiz-picker-empty";
+    empty.textContent = "No saved sessions here yet.";
+    cramSessionPicker.appendChild(empty);
+    return;
+  }
+
+  sessions.forEach((session) => {
+    const label = document.createElement("label");
+    label.className = "quiz-session-option";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = String(session.dbSessionId);
+    input.checked = true;
+
+    const textWrap = document.createElement("div");
+    textWrap.className = "quiz-session-option-copy";
+
+    const title = document.createElement("span");
+    title.className = "quiz-session-option-title";
+    title.textContent = session.name || "Saved Session";
+
+    const meta = document.createElement("span");
+    meta.className = "quiz-session-option-meta";
+    meta.textContent = buildSessionCardStats(session);
+
+    textWrap.append(title, meta);
+    label.append(input, textWrap);
+    cramSessionPicker.appendChild(label);
+  });
+}
+
+function getDefaultCramDeadlineValue() {
+  const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  deadline.setMinutes(0, 0, 0);
+  return deadline.toISOString().slice(0, 16);
+}
+
+function resetCramSetupState() {
+  uploadedCramMaterial = "";
+  activeCramPlan = null;
+  activeCramTaskIndex = 0;
+  cramPlanName.value = "";
+  cramDeadline.value = getDefaultCramDeadlineValue();
+  cramAvailableMinutes.value = "90";
+  cramGapFocus.value = "50";
+  cramMaterialText.value = "";
+  cramMaterialFile.value = "";
+  cramFileName.textContent = "No file selected";
+  cramStatus.textContent = "";
+  cramSetupPanel.hidden = false;
+  cramActivePanel.hidden = true;
+  cramQuizPanel.hidden = true;
+  cramScreenTitle.textContent = "Cram Mode";
+  cramScreenMeta.textContent = "";
+}
+
+function openCramSetupForCurrentClass() {
+  if (!requireSignedIn("create a cram plan")) {
+    return;
+  }
+
+  const currentClassFolder = getCurrentClassFolder();
+  if (!currentClassFolder || currentClassFolder.type !== "class") {
+    return;
+  }
+
+  activeQuizClassFolder = currentClassFolder;
+  activeCramPath = [...currentPath];
+  cramReturnPath = [...currentPath];
+  resetCramSetupState();
+  cramScreenMeta.textContent = currentClassFolder.name || "Class";
+  renderCramSessionPicker(getCurrentClassSessions());
+  setHomeView("cram");
+}
+
+function openSavedCramPlan(plan) {
+  if (!requireSignedIn("open cram plans")) {
+    return;
+  }
+  activeQuizClassFolder = getCurrentClassFolder();
+  activeCramPlan = plan;
+  activeCramTaskIndex = Math.max(
+    0,
+    (plan.tasks || []).findIndex((task) => task.status !== "done"),
+  );
+  activeCramPath = [...currentPath, plan.id];
+  cramReturnPath = [...currentPath];
+  restoreQuizViewToModal();
+  activeQuizContext = "modal";
+  renderCramPlan(plan);
+  setHomeView("cram");
+}
+
+function getCramProgress(plan) {
+  const tasks = Array.isArray(plan?.tasks) ? plan.tasks : [];
+  if (tasks.length === 0) {
+    return { done: 0, total: 0, percent: 0 };
+  }
+  const done = tasks.filter((task) => task.status === "done").length;
+  return {
+    done,
+    total: tasks.length,
+    percent: Math.round((done / tasks.length) * 100),
+  };
+}
+
+function getNextCramTask(plan) {
+  return (plan?.tasks || []).find((task) => task.status !== "done") || null;
+}
+
+function formatCramDeadline(value) {
+  if (!value) {
+    return "No deadline";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function priorityLabel(priority) {
+  if (priority === "quick-win") {
+    return "Quick win";
+  }
+  if (priority === "if-time") {
+    return "If time";
+  }
+  return "Must review";
+}
+
+function statusLabel(status) {
+  if (status === "done") {
+    return "Done";
+  }
+  if (status === "reviewing") {
+    return "Reviewing";
+  }
+  if (status === "quiz") {
+    return "Quiz";
+  }
+  return "Not started";
+}
+
+function buildCramProgress(plan) {
+  const progress = getCramProgress(plan);
+  return {
+    ...progress,
+    nextTaskTitle: getNextCramTask(plan)?.title || "Plan complete",
+  };
+}
+
+function renderCramPlan(plan) {
+  activeCramPlan = plan;
+  cramSetupPanel.hidden = true;
+  cramActivePanel.hidden = false;
+  cramQuizPanel.hidden = true;
+  cramScreenTitle.textContent = "Cram Mode";
+  cramScreenMeta.textContent = [
+    plan.name || "Cram Plan",
+    formatCramDeadline(plan.deadline),
+    `${plan.availableMinutes || 0} min`,
+  ].join(" - ");
+
+  const progress = getCramProgress(plan);
+  cramProgressValue.textContent = `${progress.percent}%`;
+  cramProgressCopy.textContent = `${progress.done}/${progress.total} tasks done - ${getNextCramTask(plan)?.title || "Review complete"}`;
+  cramTaskList.replaceChildren();
+
+  (plan.tasks || []).forEach((task, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "cram-task-button";
+    button.dataset.active = index === activeCramTaskIndex ? "true" : "false";
+    button.innerHTML = `
+      <span class="cram-task-row-main">
+        <span class="cram-task-name">${index + 1}. ${task.title}</span>
+        <span class="cram-task-meta">${task.estimatedMinutes || 0} min - ${priorityLabel(task.priority)} - ${statusLabel(task.status)}</span>
+      </span>
+      <span class="cram-task-row-quiz">${task.quizId ? "Quiz saved" : "Quiz ready"}</span>
+    `;
+    button.addEventListener("click", () => {
+      activeCramTaskIndex = index;
+      renderCramPlan(activeCramPlan);
+    });
+    cramTaskList.appendChild(button);
+  });
+
+  renderCramTaskDetail(plan.tasks?.[activeCramTaskIndex] || plan.tasks?.[0]);
+}
+
+function renderCramTaskDetail(task) {
+  cramTaskDetail.replaceChildren();
+  if (!task) {
+    cramTaskDetail.textContent = "No task selected.";
+    return;
+  }
+
+  const scoreText = task.lastScore
+    ? `Last quiz: ${task.lastScore.correct}/${task.lastScore.total}`
+    : "Quiz not taken yet";
+  const sourceText =
+    Array.isArray(task.sourceLabels) && task.sourceLabels.length > 0
+      ? task.sourceLabels.join(", ")
+      : "Plan material";
+
+  cramTaskDetail.innerHTML = `
+    <div class="cram-task-detail-header">
+      <div>
+        <h3 class="cram-task-detail-title">${task.title}</h3>
+        <p class="panel-help">${task.topic} - ${task.estimatedMinutes || 0} min</p>
+      </div>
+      <span class="cram-priority">${priorityLabel(task.priority)}</span>
+    </div>
+    <p class="cram-task-source">${sourceText}</p>
+    <div class="cram-quiz-checkpoint">
+      <div>
+        <strong>Quiz checkpoint</strong>
+        <p class="panel-help">${scoreText}</p>
+      </div>
+      <button id="cram-task-quiz" class="continue-button" type="button">Start Quiz</button>
+    </div>
+    <div class="cram-task-actions">
+      <button id="cram-mark-reviewing" class="ghost-button" type="button">Reviewing</button>
+      <button id="cram-mark-done" class="continue-button" type="button">Done</button>
+    </div>
+  `;
+
+  cramTaskDetail
+    .querySelector("#cram-mark-reviewing")
+    ?.addEventListener("click", async () => {
+      await updateActiveCramTask({ status: "reviewing" });
+    });
+  cramTaskDetail
+    .querySelector("#cram-mark-done")
+    ?.addEventListener("click", async () => {
+      await updateActiveCramTask({ status: "done" });
+    });
+  cramTaskDetail
+    .querySelector("#cram-task-quiz")
+    ?.addEventListener("click", async () => {
+      await launchCramTaskQuiz(task);
+    });
+}
+
+function buildCramPlanEntry(response, values) {
+  const tasks = response.tasks.map((task) => ({
+    ...task,
+    status: task.status || "not-started",
+    quizEnabled: task.quizEnabled !== false,
+  }));
+  const plan = {
+    id: makeId(),
+    type: "cramPlan",
+    name: values.name || "Cram Plan",
+    createdAt: new Date().toISOString(),
+    deadline: values.deadline,
+    availableMinutes: values.availableMinutes,
+    sourceSummary: response.sourceSummary || response.summary,
+    summary: response.summary,
+    estimatedTotalMinutes: response.estimatedTotalMinutes,
+    recommendedFirstTask: response.recommendedFirstTask,
+    sessionIds: values.sessionIds,
+    uploadedMaterial: values.uploadedMaterial,
+    currentUnit: values.currentUnit,
+    gapFocus: values.gapFocus,
+    tasks,
+    progress: buildCramProgress({ tasks }),
+    linkedQuizIds: [],
+  };
+  plan.progress = buildCramProgress(plan);
+  return plan;
+}
+
+async function generateCramPlanForCurrentClass() {
+  if (!requireSignedIn("generate cram plans")) {
+    return;
+  }
+  const classFolder = getCurrentClassFolder();
+  if (!classFolder) {
+    return;
+  }
+
+  const dbClassId = await ensureBackendClassId(classFolder);
+  const pastedMaterial = cramMaterialText.value.trim();
+  const uploadedMaterial = [uploadedCramMaterial, pastedMaterial]
+    .filter(Boolean)
+    .join("\n\n");
+  const sessionIds = Array.from(
+    cramSessionPicker.querySelectorAll('input[type="checkbox"]:checked'),
+  )
+    .map((input) => Number(input.value))
+    .filter((value) => Number.isFinite(value));
+  const values = {
+    name: cramPlanName.value.trim(),
+    deadline: cramDeadline.value || getDefaultCramDeadlineValue(),
+    availableMinutes: Number(cramAvailableMinutes.value) || 90,
+    uploadedMaterial: uploadedMaterial || null,
+    currentUnit: buildCurrentUnitPathLabel(),
+    gapFocus: Number(cramGapFocus.value) || 50,
+    sessionIds,
+  };
+
+  generateCramButton.disabled = true;
+  generateCramButton.textContent = "Generating...";
+  cramStatus.textContent = "Building plan...";
+
+  try {
+    const response = await window.overlayApi.generateCramPlan({
+      classId: dbClassId,
+      sessionIds,
+      deadline: values.deadline,
+      availableMinutes: values.availableMinutes,
+      uploadedMaterial: values.uploadedMaterial,
+      currentUnit: values.currentUnit,
+      gapFocus: values.gapFocus,
+    });
+    const plan = buildCramPlanEntry(response, values);
+    const nextChildren = [plan, ...getCurrentClassItems()];
+    const nextFolders = replaceChildrenAtPath(activeCramPath, nextChildren);
+    await persistFolders(nextFolders);
+    activeCramTaskIndex = 0;
+    activeCramPath = [...activeCramPath, plan.id];
+    activeCramPlan = plan;
+    renderCramPlan(plan);
+  } catch (error) {
+    cramStatus.textContent =
+      error instanceof Error ? error.message : "Cram plan failed.";
+  } finally {
+    generateCramButton.disabled = false;
+    generateCramButton.textContent = "Generate Plan";
+  }
+}
+
+function openQuizModalForCurrentClass() {
+  if (!requireSignedIn("start a quiz")) {
+    return;
+  }
+  restoreQuizViewToModal();
+  activeQuizContext = "modal";
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
   const currentClassFolder = getCurrentClassFolder();
   if (!currentClassFolder || currentClassFolder.type !== "class") {
     return;
@@ -3836,9 +4233,14 @@ function openSavedQuiz(quizItem) {
     return;
   }
 <<<<<<< HEAD
+<<<<<<< HEAD
   if (quizItem.status === "processing" || quizItem.status === "failed") {
     return;
   }
+=======
+  restoreQuizViewToModal();
+  activeQuizContext = "modal";
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
   restoreQuizViewToModal();
   activeQuizContext = "modal";
@@ -3913,9 +4315,12 @@ async function saveQuizToExplorer(quiz, targetPath) {
   };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   await addQuizEntryToExplorer(nextQuizEntry);
   saveQuizButton.hidden = true;
 =======
+=======
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
   const targetNode = getFolderAtPath(targetPath);
   const targetChildren = targetNode ? targetNode.children || [] : folders;
   const nextChildren = [nextQuizEntry, ...targetChildren];
@@ -4020,6 +4425,9 @@ async function launchCramTaskQuiz(task) {
     quizSubmitButton.textContent = "Check Answers";
     quizSubmitButton.disabled = false;
   }
+<<<<<<< HEAD
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
+=======
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 }
 
@@ -4351,6 +4759,9 @@ function renderFolders() {
 =======
         ? "Search units, lessons, sessions, or quizzes"
         : "Search lessons, sessions, quizzes, or cram plans";
+<<<<<<< HEAD
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
+=======
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
     emptyTitle.textContent =
       currentType === "class"
@@ -4361,10 +4772,17 @@ function renderFolders() {
     emptyCopy.textContent =
       currentType === "class"
 <<<<<<< HEAD
+<<<<<<< HEAD
         ? "Use the + button to add units, sessions, material, or quizzes."
         : currentType === "unit"
           ? "Add a lesson, session, or quiz inside this unit."
           : "Start a session or quiz inside this lesson.";
+=======
+        ? "Add a unit, start a session, build a quiz, or make a cram plan."
+        : currentType === "unit"
+          ? "Add a lesson, start a session, build a quiz, or make a cram plan."
+          : "Start a session, build a quiz, or make a cram plan.";
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
         ? "Add a unit, start a session, build a quiz, or make a cram plan."
         : currentType === "unit"
@@ -4382,6 +4800,7 @@ function renderFolders() {
     openButton.className = "folder-open-button";
     const isSessionItem = folder.type === "session";
     const isQuizItem = folder.type === "quiz";
+<<<<<<< HEAD
 <<<<<<< HEAD
     const isCramItem = folder.type === "cram";
     const isMaterialItem = folder.type === "material";
@@ -4427,6 +4846,8 @@ function renderFolders() {
             .filter(Boolean)
             .join(" • ")
 =======
+=======
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
     const isCramItem = folder.type === "cramPlan";
     const cramProgress = isCramItem ? getCramProgress(folder) : null;
     const nextCramTask = isCramItem ? getNextCramTask(folder) : null;
@@ -4436,6 +4857,9 @@ function renderFolders() {
         : isCramItem
           ? `${cramProgress.percent}% complete • ${formatCramDeadline(folder.deadline)}`
           : `${(folder.children || []).length} item${(folder.children || []).length === 1 ? "" : "s"}`
+<<<<<<< HEAD
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
+=======
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
       : "";
     const sessionSummaryText = isSessionItem
@@ -4453,11 +4877,17 @@ function renderFolders() {
           : "Saved quiz"
         : isCramItem
 <<<<<<< HEAD
+<<<<<<< HEAD
           ? isProcessingCram
             ? '<span class="quiz-processing-label">Building cram plan<span class="jumping-dots" aria-hidden="true"><span></span><span></span><span></span></span></span>'
             : typeof folder.summary === "string" && folder.summary.trim()
               ? folder.summary.trim()
               : "Saved cram plan"
+=======
+          ? nextCramTask
+            ? `Next: ${nextCramTask.title}`
+            : "Cram plan complete"
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
           ? nextCramTask
             ? `Next: ${nextCramTask.title}`
@@ -4476,9 +4906,13 @@ function renderFolders() {
                 ? '<path d="M9 2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v10a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2zm0 6H7v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8h-2v2h-2V8h-4v2H9V8zm2-4v2h4V4h-4z"></path>'
                 : isCramItem
 <<<<<<< HEAD
+<<<<<<< HEAD
                   ? `<path d="${MUI_CREATE_ACTION_ICON_PATHS.cram}"></path>`
                 : isMaterialItem
                   ? `<path d="${MUI_CREATE_ACTION_ICON_PATHS.material}"></path>`
+=======
+                  ? '<path d="M4 4h16v2H4V4zm0 5h10v2H4V9zm0 5h16v2H4v-2zm0 5h10v2H4v-2zm14-10h2v2h-2V9zm0 10h2v2h-2v-2z"></path>'
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
                   ? '<path d="M4 4h16v2H4V4zm0 5h10v2H4V9zm0 5h16v2H4v-2zm0 5h10v2H4v-2zm14-10h2v2h-2V9zm0 10h2v2h-2v-2z"></path>'
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
@@ -4489,7 +4923,11 @@ function renderFolders() {
       <span class="folder-card-title">${folder.name}</span>
       ${
 <<<<<<< HEAD
+<<<<<<< HEAD
         isSessionItem || isQuizItem || isCramItem || isMaterialItem
+=======
+        isSessionItem || isQuizItem || isCramItem
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
         isSessionItem || isQuizItem || isCramItem
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
@@ -5254,6 +5692,17 @@ cramMaterialFile.addEventListener("change", async () => {
   uploadedCramMaterial = await readQuizMaterialFile(file);
   cramFileName.textContent = file.name;
 });
+cramMaterialFile.addEventListener("change", async () => {
+  const file = cramMaterialFile.files?.[0];
+  if (!file) {
+    uploadedCramMaterial = "";
+    cramFileName.textContent = "No file selected";
+    return;
+  }
+
+  uploadedCramMaterial = await readQuizMaterialFile(file);
+  cramFileName.textContent = file.name;
+});
 
 for (const button of settingsThemeButtons) {
   button.addEventListener("click", async () => {
@@ -5308,9 +5757,13 @@ function openFolderActionMenu() {
         openQuizModalForCurrentClass();
       } else if (action.key === "cram") {
 <<<<<<< HEAD
+<<<<<<< HEAD
         openCramModalForCurrentClass();
       } else if (action.key === "material") {
         openClassMaterialModal();
+=======
+        openCramSetupForCurrentClass();
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
         openCramSetupForCurrentClass();
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)

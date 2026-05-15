@@ -251,6 +251,7 @@ export const quizResponseSchema = z.object({
 }).strict();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 export const cramTimeAvailableSchema = z.enum([
   "30 minutes",
   "1 hour",
@@ -320,6 +321,8 @@ export const cramResponseSchema = z.object({
   quickSelfTest: z.array(z.string().trim().min(1)).min(3).max(6),
   timePlan: z.array(z.string().trim().min(1)).min(3).max(5),
 =======
+=======
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 export const cramTaskSchema = z.object({
   title: z.string().trim().min(1),
   topic: z.string().trim().min(1),
@@ -355,6 +358,9 @@ export const cramPlanResponseSchema = z.object({
   estimatedTotalMinutes: z.number().int().min(1),
   recommendedFirstTask: z.string().trim().min(1),
   tasks: z.array(cramTaskSchema).min(3).max(8),
+<<<<<<< HEAD
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
+=======
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 }).strict();
 
@@ -412,6 +418,7 @@ export type QuizQuestionInput = z.infer<typeof quizQuestionSchema>;
 export type QuizRequestInput = z.infer<typeof quizRequestSchema>;
 export type QuizResponseInput = z.infer<typeof quizResponseSchema>;
 <<<<<<< HEAD
+<<<<<<< HEAD
 export type CramTimeAvailableInput = z.infer<typeof cramTimeAvailableSchema>;
 export type CramRequestInput = z.infer<typeof cramRequestSchema>;
 export type CramTopicImportanceInput = z.infer<typeof cramTopicImportanceSchema>;
@@ -420,6 +427,11 @@ export type CramChunkInsightInput = z.infer<typeof cramChunkInsightSchema>;
 export type CramExamMapTopicInput = z.infer<typeof cramExamMapTopicSchema>;
 export type CramExamMapInput = z.infer<typeof cramExamMapSchema>;
 export type CramResponseInput = z.infer<typeof cramResponseSchema>;
+=======
+export type CramTaskInput = z.infer<typeof cramTaskSchema>;
+export type CramPlanRequestInput = z.infer<typeof cramPlanRequestSchema>;
+export type CramPlanResponseInput = z.infer<typeof cramPlanResponseSchema>;
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
 export type CramTaskInput = z.infer<typeof cramTaskSchema>;
 export type CramPlanRequestInput = z.infer<typeof cramPlanRequestSchema>;

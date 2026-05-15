@@ -5382,6 +5382,7 @@ button {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 .cram-modal {
   width: min(920px, 100%);
   overflow: auto;
@@ -6009,6 +6010,8 @@ button {
   border-color: rgba(90, 126, 176, 0.16);
   background: rgba(226, 237, 255, 0.68);
 =======
+=======
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 .cram-screen {
   display: grid;
   align-content: start;
@@ -6287,6 +6290,9 @@ button {
 .window-shell[data-tone="light"] .cram-task-button[data-active="true"] {
   border-color: rgba(92, 181, 255, 0.24);
   background: rgba(92, 181, 255, 0.1);
+<<<<<<< HEAD
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
+=======
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 }
 
@@ -6430,6 +6436,7 @@ button {
   .session-layout,
   .chat-compose,
 <<<<<<< HEAD
+<<<<<<< HEAD
   .assessment-layout,
   .assessment-profile-bar,
   .assessment-section-split,
@@ -6438,6 +6445,10 @@ button {
   .cram-dashboard-grid,
   .quiz-page-grid-setup,
   .quiz-page-grid-results,
+=======
+  .cram-form-grid,
+  .cram-active,
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
   .cram-form-grid,
   .cram-active,

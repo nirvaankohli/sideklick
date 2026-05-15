@@ -22,7 +22,11 @@ import { authRouter } from "./routes/auth";
 import { assistRouter } from "./routes/assist";
 import { classesRouter } from "./routes/classes";
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { cramRouter } from "./routes/cram";
+=======
+import { cramPlanRouter } from "./routes/cram-plan";
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
 import { cramPlanRouter } from "./routes/cram-plan";
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)
@@ -124,7 +128,11 @@ export function createServer(): Express {
   app.use("/api/assist", assistRouter);
   app.use("/api/classes", classesRouter);
 <<<<<<< HEAD
+<<<<<<< HEAD
   app.use("/api/cram", cramRouter);
+=======
+  app.use("/api/cram-plan", cramPlanRouter);
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 =======
   app.use("/api/cram-plan", cramPlanRouter);
 >>>>>>> 69d616b (Add full-page cram mode with quiz integration)

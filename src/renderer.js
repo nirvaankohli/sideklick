@@ -875,7 +875,10 @@ restoreWindow.addEventListener("click", async () => {
 });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 compactStarButton?.addEventListener("click", async () => {
   const nextSource = currentTone === "dark" ? "light" : "dark";
   const result = await window.overlayApi.setThemeSource(nextSource);
