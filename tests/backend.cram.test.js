@@ -13,6 +13,47 @@ async function loadCramModule() {
   );
 }
 
+async function loadFreshCramModule(suffix) {
+  return import(
+    `${pathToFileURL(
+      path.join(__dirname, "..", "backend", "src", "services", "cram.ts"),
+    ).href}?${suffix}`
+  );
+}
+
+test("generateCramPlan requires OpenAI credentials unless explicitly disabled", async () => {
+  const originalDisableOpenAiCram = process.env.DISABLE_OPENAI_CRAM;
+  const originalOpenAiApiKey = process.env.OPENAI_API_KEY;
+
+  try {
+    delete process.env.DISABLE_OPENAI_CRAM;
+    process.env.OPENAI_API_KEY = "";
+
+    const { generateCramPlan } = await loadFreshCramModule("openai-required");
+
+    await assert.rejects(
+      () =>
+        generateCramPlan({
+          examName: "Biology Midterm",
+          timeAvailable: "1 hour",
+          examMaterial: [
+            "Cell respiration produces ATP through glycolysis and oxidative phosphorylation.",
+            "The electron transport chain uses a proton gradient to power ATP synthase.",
+            "Fermentation allows glycolysis to continue when oxygen is unavailable.",
+          ].join("\n\n"),
+        }),
+      /Missing OPENAI_API_KEY for Cram Mode generation/,
+    );
+  } finally {
+    process.env.DISABLE_OPENAI_CRAM = originalDisableOpenAiCram ?? "1";
+    if (originalOpenAiApiKey === undefined) {
+      delete process.env.OPENAI_API_KEY;
+    } else {
+      process.env.OPENAI_API_KEY = originalOpenAiApiKey;
+    }
+  }
+});
+
 test("generateCramPlan returns a structured cram plan for valid input", async () => {
   const { generateCramPlan } = await loadCramModule();
 

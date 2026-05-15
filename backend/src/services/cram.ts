@@ -109,18 +109,22 @@ function loadEnvironment(): void {
 
 loadEnvironment();
 
+function isOpenAICramDisabled(): boolean {
+  return /^(1|true)$/i.test(process.env.DISABLE_OPENAI_CRAM ?? "");
+}
+
 function getOpenAIClient(): OpenAI | null {
   if (cachedClient) {
     return cachedClient;
   }
 
-  if (/^(1|true)$/i.test(process.env.DISABLE_OPENAI_CRAM ?? "")) {
+  if (isOpenAICramDisabled()) {
     return null;
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return null;
+    throw new Error("Missing OPENAI_API_KEY for Cram Mode generation.");
   }
 
   cachedClient = new OpenAI({ apiKey });

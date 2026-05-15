@@ -764,7 +764,7 @@ test("quiz, cram, and assessment UI can target specific saved class material", a
     .click();
 
   await waitFor(() => {
-    assert.equal(document.querySelector("#quiz-backdrop").hidden, false);
+    assert.equal(document.querySelector("#home-quiz-view").hidden, false);
     assert.equal(
       document.querySelectorAll("#quiz-class-material-picker input[type=\"checkbox\"]").length,
       3,
@@ -784,7 +784,11 @@ test("quiz, cram, and assessment UI can target specific saved class material", a
     assert.doesNotMatch(quizPayload.uploadedMaterial, /Teacher note: focus on equilibrium and entropy\./i);
   });
 
-  document.querySelector("#close-quiz-modal").click();
+  document.querySelector("#open-settings").click();
+
+  await waitFor(() => {
+    assert.equal(document.querySelector("#home-quiz-view").hidden, true);
+  });
 
   document.querySelector("#new-folder").click();
   Array.from(document.querySelectorAll(".folder-action-menu-item"))
@@ -956,7 +960,7 @@ test("quiz generation autosaves a processing item and replaces it with the finis
     .click();
 
   await waitFor(() => {
-    assert.equal(document.querySelector("#quiz-backdrop").hidden, false);
+    assert.equal(document.querySelector("#home-quiz-view").hidden, false);
   });
 
   document.querySelector("#generate-quiz-button").click();
@@ -993,6 +997,143 @@ test("quiz generation autosaves a processing item and replaces it with the finis
     assert.equal(savedQuiz.questionCount, 1);
     assert.equal(savedQuiz.quizData.title, "Thermo Check");
     assert.equal(document.querySelector("#save-quiz-button").hidden, true);
+  });
+
+  dom.window.close();
+});
+
+test("cram generation autosaves a processing item and replaces it with the finished plan", async () => {
+  const dom = createHomeDom();
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.HTMLElement = dom.window.HTMLElement;
+  global.HTMLSelectElement = dom.window.HTMLSelectElement;
+  global.File = dom.window.File;
+  global.Event = dom.window.Event;
+  installAnimationFrameStub(dom);
+
+  window.matchMedia = () => ({
+    matches: false,
+    addEventListener() {},
+    removeEventListener() {},
+  });
+
+  let persistedFolders = createStoredClassWithMaterial();
+  const deferredCram = createDeferred();
+
+  window.overlayApi = {
+    getClassFolders: async () => persistedFolders,
+    getPreferences: async () => ({
+      themeSource: "light",
+      classFolders: persistedFolders,
+      currentSession: null,
+    }),
+    getPrivacySettings: async () => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+    }),
+    getAuthSession: async () => ({
+      user: {
+        email: "student@example.com",
+        displayName: "Student",
+      },
+    }),
+    updateClassFolders: async (folders) => {
+      persistedFolders = folders;
+      return folders;
+    },
+    saveClassProfile: async (payload) => ({
+      classProfile: {
+        id: 101,
+        ...payload,
+      },
+    }),
+    setThemeSource: async () => ({
+      themeSource: "light",
+      shouldUseDarkColors: false,
+    }),
+    onThemeChanged: () => {},
+    onWindowMode: () => {},
+    onClassFoldersChanged: () => {},
+    onSessionChanged: () => {},
+    updatePrivacySettings: async (patch) => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+      ...patch,
+    }),
+    setPrivacySettings: async (settings) => settings,
+    resetPrivacySettings: async () => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+    }),
+    logoutAccount: async () => null,
+    exportAccount: async () => ({}),
+    deleteAccount: async () => ({}),
+    extractStudyMaterial: async () => [],
+    generateCramPlan: async () => deferredCram.promise,
+    generateQuiz: async () => ({}),
+  };
+
+  const homePath = path.join(__dirname, "..", "src", "home.js");
+  delete require.cache[require.resolve(homePath)];
+  require(homePath);
+
+  await new Promise((resolve) => {
+    window.dispatchEvent(new dom.window.Event("DOMContentLoaded"));
+    setTimeout(resolve, 0);
+  });
+
+  document.querySelector(".folder-open-button").click();
+  document.querySelector("#new-folder").click();
+  Array.from(document.querySelectorAll(".folder-action-menu-item"))
+    .find((button) => button.textContent.includes("Cram Mode"))
+    .click();
+
+  await waitFor(() => {
+    assert.equal(document.querySelector("#cram-backdrop").hidden, false);
+  });
+
+  document.querySelector("#cram-exam-name").value = "Thermo Final";
+  document.querySelector("#cram-material-text").value = [
+    "Hess's law preserves total enthalpy across equivalent reaction paths.",
+    "Entropy increases when particles spread into more possible arrangements.",
+    "Equilibrium questions require explaining how stress changes reaction direction.",
+  ].join("\n\n");
+  document.querySelector("#generate-cram-button").click();
+
+  await waitFor(() => {
+    const processingCram = persistedFolders[0].children.find(
+      (child) => child.type === "cram" && child.status === "processing",
+    );
+    assert.equal(processingCram.name, "Thermo Final - Processing");
+    assert.equal(
+      document.querySelector(".folder-card-title-processing .jumping-dots") !== null,
+      true,
+    );
+  });
+
+  deferredCram.resolve({
+    title: "Thermo Final Cram Plan",
+    subtitle: "1 hour left for AP Chemistry.",
+    studyFirst: ["Hess's law sign changes."],
+    studyNext: ["Entropy comparison prompts."],
+    skipIfNeeded: ["Low-signal examples."],
+    likelyQuestions: ["Explain Hess's law."],
+    quickSelfTest: ["Can you justify every sign change?"],
+    timePlan: ["20 min Hess's law", "20 min entropy", "20 min self-test"],
+  });
+
+  await waitFor(() => {
+    const savedCram = persistedFolders[0].children.find(
+      (child) => child.type === "cram" && child.status === "ready",
+    );
+    assert.equal(savedCram.name, "Thermo Final Cram Plan");
+    assert.equal(savedCram.cramData.title, "Thermo Final Cram Plan");
+    assert.equal(document.querySelector("#cram-setup-view").hidden, true);
+    assert.equal(document.querySelector("#cram-view").hidden, false);
   });
 
   dom.window.close();
