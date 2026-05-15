@@ -214,6 +214,7 @@ export type QuizResponse = {
   questions: QuizQuestion[];
 };
 
+<<<<<<< HEAD
 export type CramTimeAvailable =
   | "30 minutes"
   | "1 hour"
@@ -281,6 +282,40 @@ export type CramResponse = {
   likelyQuestions: string[];
   quickSelfTest: string[];
   timePlan: string[];
+=======
+export type CramTask = {
+  title: string;
+  topic: string;
+  estimatedMinutes: number;
+  priority: "must-review" | "quick-win" | "if-time";
+  sourceLabels: string[];
+  status: "not-started" | "reviewing" | "done" | "quiz";
+  quizEnabled: boolean;
+  quizId?: string;
+  lastScore?: {
+    correct: number;
+    total: number;
+  };
+};
+
+export type CramPlanRequest = {
+  classId: number;
+  sessionIds: number[];
+  deadline: string;
+  availableMinutes: number;
+  uploadedMaterial?: string | null;
+  currentUnit?: string | null;
+  gapFocus: number;
+};
+
+export type CramPlanResponse = {
+  title: string;
+  summary: string;
+  sourceSummary: string;
+  estimatedTotalMinutes: number;
+  recommendedFirstTask: string;
+  tasks: CramTask[];
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 };
 
 export type PrivacySettings = {

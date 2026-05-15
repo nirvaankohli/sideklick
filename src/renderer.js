@@ -874,6 +874,15 @@ restoreWindow.addEventListener("click", async () => {
   await window.overlayApi.expandWindow();
 });
 
+<<<<<<< HEAD
+=======
+compactStarButton?.addEventListener("click", async () => {
+  const nextSource = currentTone === "dark" ? "light" : "dark";
+  const result = await window.overlayApi.setThemeSource(nextSource);
+  applyThemeState(result);
+});
+
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 chatInput.addEventListener("paste", async (event) => {
   const items = Array.from(event.clipboardData?.items || []);
   const imageItem = items.find((item) => item.type.startsWith("image/"));

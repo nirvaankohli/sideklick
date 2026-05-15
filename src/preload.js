@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld("overlayApi", {
   submitFeedback: (payload) => ipcRenderer.invoke("backend:feedback", payload),
   generateCramPlan: (payload) => ipcRenderer.invoke("backend:cram", payload),
   generateQuiz: (payload) => ipcRenderer.invoke("backend:quiz", payload),
+  generateCramPlan: (payload) => ipcRenderer.invoke("backend:cramPlan", payload),
   registerAccount: (payload) => ipcRenderer.invoke("backend:authRegister", payload),
   loginAccount: (payload) => ipcRenderer.invoke("backend:authLogin", payload),
   logoutAccount: () => ipcRenderer.invoke("backend:authLogout"),

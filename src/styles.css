@@ -5381,6 +5381,7 @@ button {
   color: var(--light-muted);
 }
 
+<<<<<<< HEAD
 .cram-modal {
   width: min(920px, 100%);
   overflow: auto;
@@ -6007,6 +6008,286 @@ button {
 .window-shell[data-tone="light"] .cram-hero-badge {
   border-color: rgba(90, 126, 176, 0.16);
   background: rgba(226, 237, 255, 0.68);
+=======
+.cram-screen {
+  display: grid;
+  align-content: start;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding: 0;
+  border-radius: 28px;
+  border: 1px solid rgba(143, 211, 255, 0.2);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: #142033;
+}
+
+.cram-toolbar,
+.cram-actions,
+.cram-quiz-toolbar {
+  display: grid;
+  gap: 10px;
+  align-items: start;
+  justify-items: start;
+}
+
+.cram-toolbar {
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid rgba(20, 32, 51, 0.08);
+}
+
+.cram-quiz-toolbar {
+  padding: 0 0 18px;
+  border-bottom: 1px solid rgba(20, 32, 51, 0.08);
+}
+
+.cram-screen .ghost-button,
+.cram-screen .continue-button,
+.cram-screen .quiz-file-button {
+  border-radius: 8px;
+  box-shadow: none;
+  transform: none;
+}
+
+.cram-screen .ghost-button {
+  background: rgba(20, 32, 51, 0.035);
+  border-color: rgba(20, 32, 51, 0.06);
+}
+
+.cram-screen .continue-button,
+.cram-screen .quiz-file-button {
+  background: #142033;
+  border-color: #142033;
+  color: #fff;
+}
+
+.cram-back-button,
+.cram-quiz-toolbar .ghost-button {
+  width: fit-content;
+  min-width: 0;
+}
+
+.cram-actions .continue-button,
+.cram-task-actions .ghost-button,
+.cram-task-actions .continue-button,
+.cram-quiz-checkpoint .continue-button {
+  width: 100%;
+}
+
+.cram-title,
+.cram-section-title,
+.cram-task-detail-title {
+  margin: 0;
+}
+
+.cram-title {
+  font-size: 1.85rem;
+  line-height: 1.1;
+}
+
+.cram-section-title {
+  margin-bottom: 12px;
+  font-size: 0.98rem;
+}
+
+.cram-panel,
+.cram-progress-panel,
+.cram-task-list-shell {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.cram-panel {
+  padding: 22px 24px;
+  border-bottom: 1px solid rgba(20, 32, 51, 0.08);
+}
+
+.cram-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.cram-source-stack {
+  display: grid;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.cram-screen .quiz-file-shell {
+  grid-template-columns: 1fr;
+  align-items: stretch;
+}
+
+.cram-screen .quiz-file-button {
+  width: 100%;
+}
+
+.cram-active {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  min-height: 0;
+}
+
+.cram-task-list-shell,
+.cram-progress-panel {
+  padding: 22px 24px;
+  border-bottom: 1px solid rgba(20, 32, 51, 0.08);
+}
+
+.cram-task-list {
+  display: grid;
+  gap: 8px;
+}
+
+.cram-task-button {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 0;
+  border: 0;
+  border-bottom: 1px solid rgba(20, 32, 51, 0.08);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cram-task-button:hover,
+.cram-task-button[data-active="true"] {
+  background: rgba(20, 32, 51, 0.035);
+}
+
+.cram-task-row-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cram-task-name {
+  font-weight: 650;
+}
+
+.cram-task-row-quiz {
+  color: #155f98;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.cram-task-meta,
+.cram-task-source {
+  color: rgba(20, 32, 51, 0.64);
+  font-size: 0.88rem;
+}
+
+.cram-task-detail-header {
+  display: grid;
+  gap: 12px;
+}
+
+.cram-priority {
+  width: fit-content;
+  padding: 4px 7px;
+  border-radius: 7px;
+  border: 1px solid rgba(20, 32, 51, 0.12);
+  color: rgba(20, 32, 51, 0.68);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.cram-quiz-checkpoint {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid rgba(20, 32, 51, 0.1);
+  border-radius: 8px;
+  background: rgba(20, 32, 51, 0.025);
+}
+
+.cram-quiz-checkpoint strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.cram-task-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cram-progress-value {
+  margin: 0 0 6px;
+  font-size: 1.8rem;
+  font-weight: 750;
+}
+
+.cram-quiz-panel .quiz-stack {
+  margin-top: 12px;
+}
+
+.cram-quiz-panel {
+  padding: 22px 24px;
+  border: 0;
+  background: transparent;
+}
+
+.cram-quiz-panel .quiz-results-bar,
+.cram-quiz-panel .quiz-insight-card,
+.cram-quiz-panel .quiz-question-card,
+.cram-quiz-panel .quiz-explanation-panel {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.cram-quiz-panel .quiz-results-bar,
+.cram-quiz-panel .quiz-question-header {
+  display: grid;
+}
+
+.cram-quiz-panel .quiz-insights,
+.cram-quiz-panel .quiz-layout,
+.cram-quiz-panel .quiz-layout.has-explanation {
+  grid-template-columns: 1fr;
+}
+
+.cram-quiz-panel .quiz-explanation-panel {
+  position: static;
+}
+
+.window-shell[data-tone="light"] .cram-panel,
+.window-shell[data-tone="light"] .cram-progress-panel,
+.window-shell[data-tone="light"] .cram-task-list-shell {
+  background: transparent;
+}
+
+.window-shell[data-tone="light"] .cram-screen {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(36, 72, 122, 0.14);
+}
+
+.window-shell[data-tone="light"] .cram-task-meta,
+.window-shell[data-tone="light"] .cram-task-source {
+  color: var(--light-muted);
+}
+
+.window-shell[data-tone="light"] .cram-quiz-checkpoint {
+  border-color: rgba(92, 181, 255, 0.18);
+  background: rgba(92, 181, 255, 0.08);
+}
+
+.window-shell[data-tone="light"] .cram-task-button:hover,
+.window-shell[data-tone="light"] .cram-task-button[data-active="true"] {
+  border-color: rgba(92, 181, 255, 0.24);
+  background: rgba(92, 181, 255, 0.1);
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 }
 
 @keyframes bubble-in {
@@ -6148,6 +6429,7 @@ button {
   .folder-create-row,
   .session-layout,
   .chat-compose,
+<<<<<<< HEAD
   .assessment-layout,
   .assessment-profile-bar,
   .assessment-section-split,
@@ -6156,6 +6438,10 @@ button {
   .cram-dashboard-grid,
   .quiz-page-grid-setup,
   .quiz-page-grid-results,
+=======
+  .cram-form-grid,
+  .cram-active,
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
   .quiz-source-grid,
   .quiz-insights,
   .quiz-layout {

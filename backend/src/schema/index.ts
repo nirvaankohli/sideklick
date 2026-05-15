@@ -250,6 +250,7 @@ export const quizResponseSchema = z.object({
   questions: z.array(quizQuestionSchema).min(3).max(8),
 }).strict();
 
+<<<<<<< HEAD
 export const cramTimeAvailableSchema = z.enum([
   "30 minutes",
   "1 hour",
@@ -318,6 +319,43 @@ export const cramResponseSchema = z.object({
   likelyQuestions: z.array(z.string().trim().min(1)).min(3).max(6),
   quickSelfTest: z.array(z.string().trim().min(1)).min(3).max(6),
   timePlan: z.array(z.string().trim().min(1)).min(3).max(5),
+=======
+export const cramTaskSchema = z.object({
+  title: z.string().trim().min(1),
+  topic: z.string().trim().min(1),
+  estimatedMinutes: z.number().int().min(5).max(180),
+  priority: z.enum(["must-review", "quick-win", "if-time"]),
+  sourceLabels: z.array(z.string().trim().min(1)).default([]),
+  status: z.enum(["not-started", "reviewing", "done", "quiz"]).default("not-started"),
+  quizEnabled: z.boolean().default(true),
+  quizId: z.string().trim().min(1).optional(),
+  lastScore: z
+    .object({
+      correct: z.number().int().min(0),
+      total: z.number().int().positive(),
+    })
+    .strict()
+    .optional(),
+}).strict();
+
+export const cramPlanRequestSchema = z.object({
+  classId: z.number().int().positive(),
+  sessionIds: z.array(z.number().int().positive()).default([]),
+  deadline: z.string().trim().min(1),
+  availableMinutes: z.number().int().min(15).max(1440),
+  uploadedMaterial: nullableTrimmedString,
+  currentUnit: nullableTrimmedString,
+  gapFocus: z.number().min(0).max(100).default(50),
+}).strict();
+
+export const cramPlanResponseSchema = z.object({
+  title: z.string().trim().min(1),
+  summary: z.string().trim().min(1),
+  sourceSummary: z.string().trim().min(1),
+  estimatedTotalMinutes: z.number().int().min(1),
+  recommendedFirstTask: z.string().trim().min(1),
+  tasks: z.array(cramTaskSchema).min(3).max(8),
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 }).strict();
 
 export const privacySettingsSchema = z.object({
@@ -373,6 +411,7 @@ export type AssessmentProfileAnalysisResponseInput = z.infer<
 export type QuizQuestionInput = z.infer<typeof quizQuestionSchema>;
 export type QuizRequestInput = z.infer<typeof quizRequestSchema>;
 export type QuizResponseInput = z.infer<typeof quizResponseSchema>;
+<<<<<<< HEAD
 export type CramTimeAvailableInput = z.infer<typeof cramTimeAvailableSchema>;
 export type CramRequestInput = z.infer<typeof cramRequestSchema>;
 export type CramTopicImportanceInput = z.infer<typeof cramTopicImportanceSchema>;
@@ -381,6 +420,11 @@ export type CramChunkInsightInput = z.infer<typeof cramChunkInsightSchema>;
 export type CramExamMapTopicInput = z.infer<typeof cramExamMapTopicSchema>;
 export type CramExamMapInput = z.infer<typeof cramExamMapSchema>;
 export type CramResponseInput = z.infer<typeof cramResponseSchema>;
+=======
+export type CramTaskInput = z.infer<typeof cramTaskSchema>;
+export type CramPlanRequestInput = z.infer<typeof cramPlanRequestSchema>;
+export type CramPlanResponseInput = z.infer<typeof cramPlanResponseSchema>;
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 export type PrivacySettingsInput = z.infer<typeof privacySettingsSchema>;
 export type PrivacySettingsPatchInput = z.infer<typeof privacySettingsPatchSchema>;
 export type DeleteAccountRequestInput = z.infer<typeof deleteAccountRequestSchema>;

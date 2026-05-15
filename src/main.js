@@ -977,6 +977,13 @@ ipcMain.handle("backend:quiz", async (_event, payload) => {
   });
 });
 
+ipcMain.handle("backend:cramPlan", async (_event, payload) => {
+  return callManagedBackend("/api/cram-plan", {
+    method: "POST",
+    body: payload,
+  });
+});
+
 ipcMain.handle("backend:authRegister", async (_event, payload) => {
   const session = await callManagedBackend("/api/auth/register", {
     method: "POST",

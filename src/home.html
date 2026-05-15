@@ -168,6 +168,7 @@
               </section>
             </div>
 
+<<<<<<< HEAD
             <div id="home-quiz-view" class="home-view" hidden>
               <section class="quiz-page-shell">
                 <div class="quiz-page-header">
@@ -560,6 +561,148 @@
                 <div id="assessment-preset-grid" hidden></div>
                 <button id="assessment-analyze-button" type="button" hidden></button>
                 <button id="assessment-cancel-button" class="assessment-hidden-cancel" type="button" hidden>Back</button>
+=======
+            <div id="home-cram-view" class="home-view" hidden>
+              <section class="cram-screen">
+                <div class="cram-toolbar">
+                  <button
+                    id="cram-back-button"
+                    class="ghost-button cram-back-button"
+                    type="button"
+                  >
+                    Back
+                  </button>
+                  <div>
+                    <h2 id="cram-screen-title" class="cram-title">
+                      Cram Mode
+                    </h2>
+                    <p id="cram-screen-meta" class="panel-help"></p>
+                  </div>
+                </div>
+
+                <section id="cram-setup-panel" class="cram-panel">
+                  <div class="cram-form-grid">
+                    <label class="modal-field">
+                      <span>Plan name</span>
+                      <input
+                        id="cram-plan-name"
+                        type="text"
+                        placeholder="Unit 3 cram"
+                      />
+                    </label>
+                    <label class="modal-field">
+                      <span>Deadline</span>
+                      <input id="cram-deadline" type="datetime-local" />
+                    </label>
+                    <label class="modal-field">
+                      <span>Available time</span>
+                      <input
+                        id="cram-available-minutes"
+                        type="number"
+                        min="15"
+                        max="1440"
+                        step="15"
+                        value="90"
+                      />
+                    </label>
+                    <label class="modal-field">
+                      <span>Gap focus</span>
+                      <input
+                        id="cram-gap-focus"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value="50"
+                      />
+                    </label>
+                  </div>
+
+                  <div class="cram-source-stack">
+                    <section class="cram-section">
+                      <h3 class="cram-section-title">Sessions</h3>
+                      <div
+                        id="cram-session-picker"
+                        class="quiz-session-picker"
+                      ></div>
+                    </section>
+                    <section class="cram-section">
+                      <h3 class="cram-section-title">Material</h3>
+                      <label class="modal-field">
+                        <span>Upload material</span>
+                        <div class="quiz-file-shell">
+                          <input
+                            id="cram-material-file"
+                            class="quiz-file-input"
+                            type="file"
+                            accept=".txt,.md,.csv,.json,text/plain,text/markdown"
+                          />
+                          <label
+                            for="cram-material-file"
+                            class="quiz-file-button"
+                            >Choose file</label
+                          >
+                          <span id="cram-file-name" class="quiz-file-name"
+                            >No file selected</span
+                          >
+                        </div>
+                      </label>
+                      <label class="modal-field">
+                        <span>Or paste material</span>
+                        <textarea
+                          id="cram-material-text"
+                          rows="5"
+                          placeholder="Paste study material here"
+                        ></textarea>
+                      </label>
+                    </section>
+                  </div>
+
+                  <div class="cram-actions">
+                    <p id="cram-status" class="panel-help"></p>
+                    <button
+                      id="generate-cram-button"
+                      class="continue-button"
+                      type="button"
+                    >
+                      Generate Plan
+                    </button>
+                  </div>
+                </section>
+
+                <section id="cram-active-panel" class="cram-active" hidden>
+                  <aside class="cram-progress-panel">
+                    <p id="cram-progress-value" class="cram-progress-value">
+                      0%
+                    </p>
+                    <p id="cram-progress-copy" class="panel-help"></p>
+                    <button
+                      id="cram-save-progress"
+                      class="ghost-button"
+                      type="button"
+                    >
+                      Save Progress
+                    </button>
+                  </aside>
+                  <article id="cram-task-detail" class="cram-panel"></article>
+                  <aside class="cram-task-list-shell">
+                    <div id="cram-task-list" class="cram-task-list"></div>
+                  </aside>
+                </section>
+
+                <section id="cram-quiz-panel" class="cram-panel" hidden>
+                  <div class="cram-quiz-toolbar">
+                    <button
+                      id="cram-quiz-back-button"
+                      class="ghost-button"
+                      type="button"
+                    >
+                      Back to Plan
+                    </button>
+                    <p id="cram-quiz-meta" class="panel-help"></p>
+                  </div>
+                  <div id="cram-quiz-mount"></div>
+                </section>
+>>>>>>> 69d616b (Add full-page cram mode with quiz integration)
               </section>
             </div>
 
