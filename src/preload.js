@@ -12,25 +12,32 @@ contextBridge.exposeInMainWorld("overlayApi", {
   updateClassFolders: (folders) =>
     ipcRenderer.invoke("class-folders:update", folders),
   getPrivacySettings: () => ipcRenderer.invoke("privacy-settings:get"),
-  setPrivacySettings: (settings) => ipcRenderer.invoke("privacy-settings:set", settings),
-  updatePrivacySettings: (patch) => ipcRenderer.invoke("privacy-settings:update", patch),
+  setPrivacySettings: (settings) =>
+    ipcRenderer.invoke("privacy-settings:set", settings),
+  updatePrivacySettings: (patch) =>
+    ipcRenderer.invoke("privacy-settings:update", patch),
   resetPrivacySettings: () => ipcRenderer.invoke("privacy-settings:reset"),
   captureScreenshotAttachment: () => ipcRenderer.invoke("capture:screenshot"),
   readClipboardAttachment: () => ipcRenderer.invoke("clipboard:readAttachment"),
-  extractStudyMaterial: (payload) => ipcRenderer.invoke("study-material:extract", payload),
-  saveClassProfile: (classProfile) => ipcRenderer.invoke("backend:saveClassProfile", classProfile),
+  extractStudyMaterial: (payload) =>
+    ipcRenderer.invoke("study-material:extract", payload),
+  saveClassProfile: (classProfile) =>
+    ipcRenderer.invoke("backend:saveClassProfile", classProfile),
   analyzeAssessmentProfile: (payload) =>
     ipcRenderer.invoke("backend:assessmentProfileAnalyze", payload),
   assist: (payload) => ipcRenderer.invoke("backend:assist", payload),
   submitFeedback: (payload) => ipcRenderer.invoke("backend:feedback", payload),
   generateCramPlan: (payload) => ipcRenderer.invoke("backend:cram", payload),
+  generateCramPlanFromSessions: (payload) =>
+    ipcRenderer.invoke("backend:cramPlan", payload),
   generateQuiz: (payload) => ipcRenderer.invoke("backend:quiz", payload),
-  generateCramPlan: (payload) => ipcRenderer.invoke("backend:cramPlan", payload),
-  registerAccount: (payload) => ipcRenderer.invoke("backend:authRegister", payload),
+  registerAccount: (payload) =>
+    ipcRenderer.invoke("backend:authRegister", payload),
   loginAccount: (payload) => ipcRenderer.invoke("backend:authLogin", payload),
   logoutAccount: () => ipcRenderer.invoke("backend:authLogout"),
   getAuthSession: () => ipcRenderer.invoke("backend:authSession"),
-  exportAccountData: (options) => ipcRenderer.invoke("backend:exportAccount", options),
+  exportAccountData: (options) =>
+    ipcRenderer.invoke("backend:exportAccount", options),
   deleteAccount: () => ipcRenderer.invoke("backend:deleteAccount"),
   completeOnboarding: () => ipcRenderer.invoke("onboarding:complete"),
   getCurrentSession: () => ipcRenderer.invoke("session:getCurrent"),
@@ -45,7 +52,9 @@ contextBridge.exposeInMainWorld("overlayApi", {
   onSessionChanged: (callback) =>
     ipcRenderer.on("session:changed", (_event, payload) => callback(payload)),
   onClassFoldersChanged: (callback) =>
-    ipcRenderer.on("class-folders:changed", (_event, payload) => callback(payload)),
+    ipcRenderer.on("class-folders:changed", (_event, payload) =>
+      callback(payload),
+    ),
   onIncomingPayload: (callback) =>
     ipcRenderer.on("incoming:payload", (_event, payload) => callback(payload)),
 });

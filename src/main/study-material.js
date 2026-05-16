@@ -4,7 +4,6 @@ const JSZip = require("jszip");
 const OpenAI = require("openai");
 const { z } = require("zod");
 const { zodTextFormat } = require("openai/helpers/zod");
-const { PDFParse } = require("pdf-parse");
 
 const IMAGE_SUMMARY_MODEL =
   process.env.OPENAI_UPLOAD_VISION_MODEL ||
@@ -195,7 +194,57 @@ function compressStudyMaterialText(rawText, options = {}) {
   return compressed.trim();
 }
 
+function ensurePdfDomStubs() {
+  if (typeof global.DOMMatrix === "undefined") {
+    global.DOMMatrix = class DOMMatrix {
+      constructor(init = {}) {
+        this.a = typeof init.a === "number" ? init.a : 1;
+        this.b = typeof init.b === "number" ? init.b : 0;
+        this.c = typeof init.c === "number" ? init.c : 0;
+        this.d = typeof init.d === "number" ? init.d : 1;
+        this.e = typeof init.e === "number" ? init.e : 0;
+        this.f = typeof init.f === "number" ? init.f : 0;
+        this.is2D = true;
+      }
+
+      multiply() {
+        return new global.DOMMatrix();
+      }
+
+      translate() {
+        return new global.DOMMatrix();
+      }
+
+      scale() {
+        return new global.DOMMatrix();
+      }
+
+      rotate() {
+        return new global.DOMMatrix();
+      }
+    };
+  }
+
+  if (typeof global.ImageData === "undefined") {
+    global.ImageData = class ImageData {
+      constructor(data = new Uint8ClampedArray(), width = 0, height = 0) {
+        this.data = data;
+        this.width = width;
+        this.height = height;
+      }
+    };
+  }
+
+  if (typeof global.Path2D === "undefined") {
+    global.Path2D = class Path2D {
+      constructor() {}
+    };
+  }
+}
+
 async function extractTextFromPdfBuffer(buffer) {
+  ensurePdfDomStubs();
+  const { PDFParse } = require("pdf-parse");
   const parser = new PDFParse({ data: buffer });
   try {
     const result = await parser.getText();
@@ -347,9 +396,7 @@ async function extractStudyMaterialFromFile(file, options = {}) {
   }
 
   const content =
-    handler === "image"
-      ? rawText
-      : compressStudyMaterialText(rawText, budgets);
+    handler === "image" ? rawText : compressStudyMaterialText(rawText, budgets);
 
   if (!content) {
     throw new Error(`Couldn't condense useful study text from ${file.name}.`);

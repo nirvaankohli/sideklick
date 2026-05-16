@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -168,8 +168,6 @@
               </section>
             </div>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
             <div id="home-quiz-view" class="home-view" hidden>
               <section class="quiz-page-shell">
                 <div class="quiz-page-header">
@@ -562,9 +560,6 @@
                 <div id="assessment-preset-grid" hidden></div>
                 <button id="assessment-analyze-button" type="button" hidden></button>
                 <button id="assessment-cancel-button" class="assessment-hidden-cancel" type="button" hidden>Back</button>
-=======
-=======
->>>>>>> 69d616b (Add full-page cram mode with quiz integration)
             <div id="home-cram-view" class="home-view" hidden>
               <section class="cram-screen">
                 <div class="cram-toolbar">
@@ -634,17 +629,17 @@
                         <span>Upload material</span>
                         <div class="quiz-file-shell">
                           <input
-                            id="cram-material-file"
+                            id="cram-setup-material-file"
                             class="quiz-file-input"
                             type="file"
                             accept=".txt,.md,.csv,.json,text/plain,text/markdown"
                           />
                           <label
-                            for="cram-material-file"
+                            for="cram-setup-material-file"
                             class="quiz-file-button"
                             >Choose file</label
                           >
-                          <span id="cram-file-name" class="quiz-file-name"
+                          <span id="cram-setup-file-name" class="quiz-file-name"
                             >No file selected</span
                           >
                         </div>
@@ -652,7 +647,7 @@
                       <label class="modal-field">
                         <span>Or paste material</span>
                         <textarea
-                          id="cram-material-text"
+                          id="cram-setup-material-text"
                           rows="5"
                           placeholder="Paste study material here"
                         ></textarea>
@@ -663,7 +658,7 @@
                   <div class="cram-actions">
                     <p id="cram-status" class="panel-help"></p>
                     <button
-                      id="generate-cram-button"
+                      id="generate-cram-plan-button"
                       class="continue-button"
                       type="button"
                     >
@@ -705,10 +700,6 @@
                   </div>
                   <div id="cram-quiz-mount"></div>
                 </section>
-<<<<<<< HEAD
->>>>>>> 69d616b (Add full-page cram mode with quiz integration)
-=======
->>>>>>> 69d616b (Add full-page cram mode with quiz integration)
               </section>
             </div>
 
@@ -1409,7 +1400,7 @@
               <div>
                 <p class="panel-label">Cram Mode</p>
                 <h2 id="cram-modal-title" class="modal-title">
-                  Build a Study Plan
+                  Create Cram Plan
                 </h2>
               </div>
               <div class="window-actions no-drag quiz-window-actions">
@@ -1581,7 +1572,7 @@
                 </div>
                 <div class="cram-results-sidecar">
                   <p id="cram-priority-hint" class="cram-results-hint">
-                    Do this first.
+                    Start here.
                   </p>
                   <div class="cram-coach-card">
                     <p class="panel-label">Coach</p>
@@ -1633,7 +1624,7 @@
                         <div class="cram-step-header">
                           <div>
                             <p class="panel-label">Start Here</p>
-                            <h4 class="cram-step-title">Study First</h4>
+                            <h4 class="cram-step-title">First Priority</h4>
                           </div>
                           <p id="cram-step-now" class="cram-step-kicker">
                             Lock in the highest-yield idea first.

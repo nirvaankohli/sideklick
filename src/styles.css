@@ -89,55 +89,30 @@ button {
       rgba(255, 255, 255, 0.66),
       rgba(255, 255, 255, 0.24)
     ),
-    var(--light-shell);
-  box-shadow:
-    0 22px 56px var(--light-shadow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
-  color: var(--light-strong);
-}
 
-.glow {
-  position: absolute;
-  border-radius: 999px;
-  filter: blur(36px);
-  opacity: 0.55;
-  pointer-events: none;
-  z-index: 0;
-}
+    .cram-screen {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: start;
+    gap: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+    border-radius: 28px;
+    border: 1px solid rgba(143, 211, 255, 0.2);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    color: #142033;
+  }
 
-.glow-one {
-  top: -36px;
-  right: -32px;
-  width: 160px;
-  height: 160px;
-  background: rgba(92, 181, 255, 0.26);
-}
-
-.glow-two {
-  left: -18px;
-  bottom: -42px;
-  width: 180px;
-  height: 180px;
-  background: rgba(162, 116, 255, 0.16);
-}
-
-.glow-three {
-  top: 34%;
-  left: 32%;
-  width: 240px;
-  height: 240px;
-  background: rgba(143, 211, 255, 0.1);
-}
-
-.topbar,
-.content,
-.compact-strip {
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-}
-
-.topbar {
+  #cram-setup-panel,
+  #cram-active-panel,
+  #cram-quiz-panel {
+    min-height: 0;
+    overflow: auto;
+  }
   display: flex;
   align-items: start;
   justify-content: space-between;
@@ -1736,7 +1711,7 @@ button {
   font-size: 0.95rem;
   text-align: left;
   cursor: pointer;
-  transition: 
+  transition:
     border-color 160ms ease,
     background-color 160ms ease,
     box-shadow 160ms ease;
@@ -1765,7 +1740,9 @@ button {
   border-color: rgba(36, 72, 122, 0.3);
 }
 
-.window-shell[data-tone="light"] .settings-select-wrap[data-open="true"] .settings-select-button {
+.window-shell[data-tone="light"]
+  .settings-select-wrap[data-open="true"]
+  .settings-select-button {
   background: #fff;
   border-color: rgba(36, 72, 122, 0.45);
   box-shadow: 0 0 0 3px rgba(36, 72, 122, 0.06);
@@ -1791,13 +1768,13 @@ button {
   padding: 6px;
   border-radius: 18px;
   border: 1px solid rgba(143, 211, 255, 0.22);
-  box-shadow: 
+  box-shadow:
     0 24px 54px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   opacity: 0;
   transform: translateY(-8px) scale(0.98);
   visibility: hidden;
-  transition: 
+  transition:
     opacity 140ms cubic-bezier(0.2, 0, 0, 1),
     transform 140ms cubic-bezier(0.2, 0, 0, 1),
     visibility 140ms ease;
@@ -1820,7 +1797,7 @@ button {
 .window-shell[data-tone="light"] .settings-select-menu {
   border-color: rgba(36, 72, 122, 0.18);
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 
+  box-shadow:
     0 18px 42px rgba(18, 40, 71, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
@@ -1841,7 +1818,7 @@ button {
   text-align: left;
   padding: 10px 14px;
   cursor: pointer;
-  transition: 
+  transition:
     background-color 100ms ease,
     color 100ms ease,
     transform 100ms ease;
@@ -1865,7 +1842,7 @@ button {
   height: 16px;
   opacity: 0;
   transform: scale(0.7);
-  transition: 
+  transition:
     opacity 120ms ease,
     transform 140ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -2611,14 +2588,26 @@ button {
   border-radius: 22px;
   border: 1px solid rgba(143, 211, 255, 0.26);
   background:
-    radial-gradient(circle at top left, rgba(143, 211, 255, 0.18), transparent 56%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+    radial-gradient(
+      circle at top left,
+      rgba(143, 211, 255, 0.18),
+      transparent 56%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.03)
+    );
 }
 
 .window-shell[data-tone="light"] .assessment-config-card {
   border-color: rgba(84, 151, 214, 0.22);
   background:
-    radial-gradient(circle at top left, rgba(143, 211, 255, 0.28), transparent 52%),
+    radial-gradient(
+      circle at top left,
+      rgba(143, 211, 255, 0.28),
+      transparent 52%
+    ),
     linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(242, 247, 255, 0.9));
 }
 
@@ -2760,7 +2749,11 @@ button {
   border: 1px dashed rgba(143, 211, 255, 0.34);
   border-radius: 26px;
   background:
-    linear-gradient(180deg, rgba(143, 211, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    linear-gradient(
+      180deg,
+      rgba(143, 211, 255, 0.06),
+      rgba(255, 255, 255, 0.02)
+    ),
     rgba(255, 255, 255, 0.02);
   text-align: center;
 }
@@ -2768,7 +2761,11 @@ button {
 .window-shell[data-tone="light"] .assessment-empty-state {
   border-color: rgba(84, 151, 214, 0.28);
   background:
-    linear-gradient(180deg, rgba(143, 211, 255, 0.1), rgba(255, 255, 255, 0.88)),
+    linear-gradient(
+      180deg,
+      rgba(143, 211, 255, 0.1),
+      rgba(255, 255, 255, 0.88)
+    ),
     rgba(255, 255, 255, 0.82);
 }
 
@@ -2927,7 +2924,8 @@ button {
   border-color: rgba(36, 72, 122, 0.1);
 }
 
-.window-shell[data-tone="light"] .assessment-preset-button[data-selected="true"] {
+.window-shell[data-tone="light"]
+  .assessment-preset-button[data-selected="true"] {
   border-color: rgba(84, 151, 214, 0.3);
   background: rgba(143, 211, 255, 0.18);
 }
@@ -3024,7 +3022,11 @@ button {
   border: 1px dashed rgba(143, 211, 255, 0.34);
   border-radius: 22px;
   background:
-    linear-gradient(180deg, rgba(143, 211, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    linear-gradient(
+      180deg,
+      rgba(143, 211, 255, 0.08),
+      rgba(255, 255, 255, 0.02)
+    ),
     rgba(255, 255, 255, 0.02);
   color: inherit;
   cursor: pointer;
@@ -3034,7 +3036,11 @@ button {
 .window-shell[data-tone="light"] .assessment-upload-drop-label {
   border-color: rgba(84, 151, 214, 0.28);
   background:
-    linear-gradient(180deg, rgba(143, 211, 255, 0.14), rgba(255, 255, 255, 0.88)),
+    linear-gradient(
+      180deg,
+      rgba(143, 211, 255, 0.14),
+      rgba(255, 255, 255, 0.88)
+    ),
     rgba(255, 255, 255, 0.84);
 }
 
@@ -3573,7 +3579,11 @@ button {
   border: 1px solid rgba(143, 211, 255, 0.52);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(143, 211, 255, 0.94), rgba(92, 181, 255, 0.78)),
+    linear-gradient(
+      180deg,
+      rgba(143, 211, 255, 0.94),
+      rgba(92, 181, 255, 0.78)
+    ),
     var(--accent-strong);
   color: #07121f;
   font-weight: 700;
@@ -5024,7 +5034,11 @@ button {
   padding: 11px 12px;
   border-radius: 11px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.035),
+      rgba(255, 255, 255, 0.012)
+    ),
     rgba(8, 14, 24, 0.34);
   border: 1px solid rgba(216, 226, 238, 0.1);
   box-shadow: none;
@@ -5039,14 +5053,22 @@ button {
 .quiz-option:hover {
   border-color: rgba(216, 226, 238, 0.2);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.055),
+      rgba(255, 255, 255, 0.018)
+    ),
     rgba(10, 18, 30, 0.48);
 }
 
 .quiz-option:has(input:checked) {
   border-color: rgba(143, 211, 255, 0.46);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.035),
+      rgba(255, 255, 255, 0.012)
+    ),
     rgba(8, 14, 24, 0.34);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
@@ -5111,7 +5133,11 @@ button {
 }
 
 .quiz-option:has(input:checked) .quiz-option-letter {
-  background: linear-gradient(180deg, rgba(143, 211, 255, 0.96), rgba(92, 181, 255, 0.84));
+  background: linear-gradient(
+    180deg,
+    rgba(143, 211, 255, 0.96),
+    rgba(92, 181, 255, 0.84)
+  );
   color: #07121f;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.18),
@@ -5277,7 +5303,8 @@ button {
   color: rgba(42, 55, 74, 0.62);
 }
 
-.window-shell[data-tone="light"] .quiz-question-count-option:has(input:checked) {
+.window-shell[data-tone="light"]
+  .quiz-question-count-option:has(input:checked) {
   background: rgba(255, 255, 255, 0.88);
   color: rgba(17, 24, 39, 0.9);
   box-shadow:
@@ -5296,14 +5323,19 @@ button {
   box-shadow: inset 0 0 0 1px rgba(54, 154, 83, 0.34);
 }
 
-.window-shell[data-tone="light"] .quiz-question-status[data-result="incorrect"] {
+.window-shell[data-tone="light"]
+  .quiz-question-status[data-result="incorrect"] {
   color: #b72f3a;
   box-shadow: inset 0 0 0 1px rgba(202, 62, 73, 0.34);
 }
 
 .window-shell[data-tone="light"] .quiz-option {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.72)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(255, 255, 255, 0.72)
+    ),
     rgba(255, 255, 255, 0.62);
   border-color: rgba(42, 55, 74, 0.1);
   box-shadow: none;
@@ -5312,14 +5344,22 @@ button {
 .window-shell[data-tone="light"] .quiz-option:hover {
   border-color: rgba(42, 55, 74, 0.18);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.84)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.98),
+      rgba(255, 255, 255, 0.84)
+    ),
     rgba(255, 255, 255, 0.82);
 }
 
 .window-shell[data-tone="light"] .quiz-option:has(input:checked) {
   border-color: rgba(21, 95, 152, 0.32);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.72)),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.94),
+      rgba(255, 255, 255, 0.72)
+    ),
     rgba(255, 255, 255, 0.62);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
@@ -5342,7 +5382,9 @@ button {
   color: rgba(14, 27, 46, 0.68);
 }
 
-.window-shell[data-tone="light"] .quiz-option:has(input:checked) .quiz-option-letter {
+.window-shell[data-tone="light"]
+  .quiz-option:has(input:checked)
+  .quiz-option-letter {
   background: linear-gradient(180deg, #84cdff, #369bea);
   color: #07121f;
   box-shadow:
@@ -5381,8 +5423,6 @@ button {
   color: var(--light-muted);
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 .cram-modal {
   width: min(920px, 100%);
   overflow: auto;
@@ -5959,25 +5999,31 @@ button {
 .window-shell[data-tone="light"] .cram-step-body {
   border-color: rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: none;
 }
 
-.window-shell[data-tone="light"] .cram-timeline::before {
-  background: rgba(0, 0, 0, 0.1);
+.cram-screen {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: start;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  border-radius: 28px;
+  border: 1px solid rgba(143, 211, 255, 0.2);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: #142033;
 }
 
-.window-shell[data-tone="light"] .cram-step-marker {
-  border-color: rgba(0, 0, 0, 0.1);
-  background: rgba(0, 0, 0, 0.04);
-  color: #333;
+#cram-setup-panel,
+#cram-active-panel,
+#cram-quiz-panel {
+  min-height: 0;
+  overflow: auto;
 }
-
-.window-shell[data-tone="light"] .cram-timeline-step-primary .cram-step-body {
-  border-color: rgba(0, 0, 0, 0.15);
-  background: rgba(255, 255, 255, 1);
-}
-
-.window-shell[data-tone="light"] .cram-upload-chip,
 .window-shell[data-tone="light"] .cram-upload-rollup-chip {
   border-color: rgba(70, 104, 150, 0.12);
   background: rgba(255, 255, 255, 0.7);
@@ -5993,11 +6039,15 @@ button {
   background: rgba(255, 255, 255, 0.8);
 }
 
-.window-shell[data-tone="light"] .cram-results-grid .cram-results-card:nth-child(odd) {
+.window-shell[data-tone="light"]
+  .cram-results-grid
+  .cram-results-card:nth-child(odd) {
   border-right-color: rgba(70, 104, 150, 0.1);
 }
 
-.window-shell[data-tone="light"] .cram-results-grid:first-of-type .cram-results-card:nth-child(-n + 2) {
+.window-shell[data-tone="light"]
+  .cram-results-grid:first-of-type
+  .cram-results-card:nth-child(-n + 2) {
   border-bottom-color: rgba(70, 104, 150, 0.1);
 }
 
@@ -6009,17 +6059,16 @@ button {
 .window-shell[data-tone="light"] .cram-hero-badge {
   border-color: rgba(90, 126, 176, 0.16);
   background: rgba(226, 237, 255, 0.68);
-=======
-=======
->>>>>>> 69d616b (Add full-page cram mode with quiz integration)
+}
 .cram-screen {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   align-content: start;
   gap: 0;
   width: 100%;
   height: 100%;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   padding: 0;
   border-radius: 28px;
   border: 1px solid rgba(143, 211, 255, 0.2);
@@ -6290,10 +6339,6 @@ button {
 .window-shell[data-tone="light"] .cram-task-button[data-active="true"] {
   border-color: rgba(92, 181, 255, 0.24);
   background: rgba(92, 181, 255, 0.1);
-<<<<<<< HEAD
->>>>>>> 69d616b (Add full-page cram mode with quiz integration)
-=======
->>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 }
 
 @keyframes bubble-in {
@@ -6435,8 +6480,6 @@ button {
   .folder-create-row,
   .session-layout,
   .chat-compose,
-<<<<<<< HEAD
-<<<<<<< HEAD
   .assessment-layout,
   .assessment-profile-bar,
   .assessment-section-split,
@@ -6445,14 +6488,8 @@ button {
   .cram-dashboard-grid,
   .quiz-page-grid-setup,
   .quiz-page-grid-results,
-=======
   .cram-form-grid,
   .cram-active,
->>>>>>> 69d616b (Add full-page cram mode with quiz integration)
-=======
-  .cram-form-grid,
-  .cram-active,
->>>>>>> 69d616b (Add full-page cram mode with quiz integration)
   .quiz-source-grid,
   .quiz-insights,
   .quiz-layout {
@@ -6598,7 +6635,10 @@ button {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .window-shell[data-tone="light"] .cram-results-grid .cram-results-card + .cram-results-card {
+  .window-shell[data-tone="light"]
+    .cram-results-grid
+    .cram-results-card
+    + .cram-results-card {
     border-top-color: rgba(70, 104, 150, 0.1);
   }
 }

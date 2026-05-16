@@ -1,10 +1,11 @@
-const root = document.querySelector(".window-shell");
+﻿const root = document.querySelector(".window-shell");
 const themeIconToggle = document.querySelector("#theme-icon-toggle");
 const shrinkWindow = document.querySelector("#shrink-window");
 const stopSessionButton = document.querySelector("#stop-session");
 const closeWindow = document.querySelector("#close-window");
 const compactCloseWindow = document.querySelector("#compact-close-window");
 const restoreWindow = document.querySelector("#restore-window");
+const compactStarButton = document.querySelector("#compact-star-button");
 const sessionClassLabel = document.querySelector("#session-class-label");
 const sessionNameLabel = document.querySelector("#session-name-label");
 const chatThread = document.querySelector("#chat-thread");
@@ -874,18 +875,12 @@ restoreWindow.addEventListener("click", async () => {
   await window.overlayApi.expandWindow();
 });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 compactStarButton?.addEventListener("click", async () => {
   const nextSource = currentTone === "dark" ? "light" : "dark";
   const result = await window.overlayApi.setThemeSource(nextSource);
   applyThemeState(result);
 });
 
->>>>>>> 69d616b (Add full-page cram mode with quiz integration)
 chatInput.addEventListener("paste", async (event) => {
   const items = Array.from(event.clipboardData?.items || []);
   const imageItem = items.find((item) => item.type.startsWith("image/"));
