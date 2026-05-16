@@ -13,9 +13,6 @@ build/
 out/
 release-builds/
 
-Uncodixfy/
-
-
 # Log files
 *.log
 npm-debug.log*

@@ -11,6 +11,4 @@ export type {
   QuizQuestion,
   QuizRequest,
   QuizResponse,
-  CramRequest,
-  CramResponse,
 } from "./domain";

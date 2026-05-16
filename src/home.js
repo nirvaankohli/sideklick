@@ -7,7 +7,6 @@ const closeWindow = document.querySelector("#close-window");
 const compactCloseWindow = document.querySelector("#compact-close-window");
 const restoreWindow = document.querySelector("#restore-window");
 const homeDashboardView = document.querySelector("#home-dashboard-view");
-const homeQuizView = document.querySelector("#home-quiz-view");
 const homeAssessmentView = document.querySelector("#home-assessment-view");
 const homeCramView = document.querySelector("#home-cram-view");
 const homeSettingsView = document.querySelector("#home-settings-view");
@@ -147,6 +146,7 @@ const closeSessionSummaryButton = document.querySelector(
 const sessionSummaryTitle = document.querySelector("#session-summary-title");
 const sessionSummaryMeta = document.querySelector("#session-summary-meta");
 const sessionSummaryText = document.querySelector("#session-summary-text");
+const quizBackdrop = document.querySelector("#quiz-backdrop");
 const closeQuizModalButton = document.querySelector("#close-quiz-modal");
 const quizThemeToggle = document.querySelector("#quiz-theme-toggle");
 const quizMinimizeNative = document.querySelector("#quiz-minimize-native");
@@ -407,7 +407,6 @@ let activeCramTaskIndex = 0;
 let uploadedCramSetupMaterial = "";
 let cramReturnPath = [];
 let activeHomeView = "dashboard";
-let quizReturnView = "dashboard";
 let activeAssessmentClassPath = null;
 let activeAssessmentProfiles = [];
 let activeAssessmentProfileId = "";
@@ -747,6 +746,7 @@ function setHomeView(nextView) {
   activeHomeView =
     nextView === "settings"
       ? "settings"
+<<<<<<< HEAD
       : nextView === "quiz"
         ? "quiz"
         : nextView === "assessment"
@@ -761,6 +761,18 @@ function setHomeView(nextView) {
       ? "Home"
       : activeHomeView === "quiz"
         ? "Quiz"
+=======
+      : nextView === "assessment"
+        ? "assessment"
+      : nextView === "auth"
+        ? "auth"
+        : "dashboard";
+  homeHeader.textContent =
+    activeHomeView === "dashboard"
+      ? "Home"
+      : activeHomeView === "settings"
+        ? "Settings"
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
         : activeHomeView === "assessment"
           ? "Assessment"
           : activeHomeView === "cram"
@@ -769,7 +781,6 @@ function setHomeView(nextView) {
               ? "Settings"
               : "Sign In";
   homeDashboardView.hidden = activeHomeView !== "dashboard";
-  homeQuizView.hidden = activeHomeView !== "quiz";
   homeAssessmentView.hidden = activeHomeView !== "assessment";
   homeCramView.hidden = activeHomeView !== "cram";
   homeSettingsView.hidden = activeHomeView !== "settings";
@@ -778,7 +789,6 @@ function setHomeView(nextView) {
     "home-view-active",
     activeHomeView === "dashboard",
   );
-  homeQuizView.classList.toggle("home-view-active", activeHomeView === "quiz");
   homeAssessmentView.classList.toggle(
     "home-view-active",
     activeHomeView === "assessment",
@@ -799,9 +809,7 @@ function setHomeView(nextView) {
   }
   if (openSettingsButton) {
     const shouldGoHome =
-      activeHomeView === "settings" ||
-      activeHomeView === "assessment" ||
-      activeHomeView === "quiz";
+      activeHomeView === "settings" || activeHomeView === "assessment";
     openSettingsButton.setAttribute(
       "aria-label",
       shouldGoHome ? "Back to home" : "Open settings",
@@ -838,51 +846,43 @@ function initCustomSettingsDropdown(select) {
 
   const menu = document.createElement("div");
   menu.className = "settings-select-menu";
+<<<<<<< HEAD
 
   const panel = document.createElement("div");
   panel.className = "settings-select-panel";
   menu.appendChild(panel);
+=======
+  menu.hidden = true;
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 
-  let optionButtons = [];
-
-  function rebuild() {
-    panel.replaceChildren();
-    optionButtons = [];
-    for (const option of Array.from(select.options)) {
-      const optionButton = document.createElement("button");
-      optionButton.type = "button";
-      optionButton.className = "settings-select-option";
-      optionButton.innerHTML = `
-        <span>${option.textContent || ""}</span>
-        <svg class="icon-svg select-checkmark-icon" viewBox="0 0 24 24">
-          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"></path>
-        </svg>
-      `;
-      optionButton.dataset.value = option.value;
-      optionButton.setAttribute("role", "option");
-      optionButton.addEventListener("mousedown", (event) => {
-        event.stopPropagation();
-        setValue(option.value, true);
-        close();
-      });
-      optionButtons.push(optionButton);
-      panel.appendChild(optionButton);
-    }
-    setValue(select.value);
+  const optionButtons = [];
+  for (const option of Array.from(select.options)) {
+    const optionButton = document.createElement("button");
+    optionButton.type = "button";
+    optionButton.className = "settings-select-option";
+    optionButton.textContent = option.textContent || "";
+    optionButton.dataset.value = option.value;
+    optionButton.setAttribute("role", "option");
+    optionButton.addEventListener("click", () => {
+      setValue(option.value, true);
+      close();
+    });
+    optionButtons.push(optionButton);
+    menu.appendChild(optionButton);
   }
 
   function close() {
-    if (wrap.dataset.open === "false") return;
     wrap.dataset.open = "false";
+    menu.hidden = true;
     trigger.setAttribute("aria-expanded", "false");
   }
 
   function open() {
-    if (wrap.dataset.open === "true") return;
     for (const controller of customSettingsDropdowns.values()) {
       controller.close();
     }
     wrap.dataset.open = "true";
+    menu.hidden = false;
     trigger.setAttribute("aria-expanded", "true");
   }
 
@@ -890,12 +890,17 @@ function initCustomSettingsDropdown(select) {
     const nextOption = Array.from(select.options).find(
       (option) => option.value === nextValue,
     );
-    if (!nextOption) return;
+    if (!nextOption) {
+      return;
+    }
 
     const didChange = select.value !== nextOption.value;
     select.value = nextOption.value;
     trigger.textContent = nextOption.textContent || "";
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
     optionButtons.forEach((optionButton) => {
       optionButton.dataset.selected =
         optionButton.dataset.value === select.value ? "true" : "false";
@@ -906,18 +911,11 @@ function initCustomSettingsDropdown(select) {
     }
   }
 
-  trigger.addEventListener("mousedown", (event) => {
+  trigger.addEventListener("click", (event) => {
     event.stopPropagation();
-    event.preventDefault();
-    if (wrap.dataset.open === "true") {
-      close();
-    } else {
+    if (menu.hidden) {
       open();
-    }
-  });
-
-  menu.addEventListener("mousedown", (event) => {
-    if (event.target === menu) {
+    } else {
       close();
     }
   });
@@ -926,8 +924,8 @@ function initCustomSettingsDropdown(select) {
   wrap.append(trigger, menu);
   select.hidden = true;
   select.tabIndex = -1;
-  rebuild();
-  customSettingsDropdowns.set(select, { close, setValue, rebuild });
+  setValue(select.value);
+  customSettingsDropdowns.set(select, { close, setValue });
 }
 
 function syncCustomSettingsDropdown(select) {
@@ -1133,9 +1131,13 @@ function normalizeFolders(source) {
         if (
           child.type === "session" ||
           child.type === "quiz" ||
+<<<<<<< HEAD
           child.type === "cram" ||
           child.type === "material" ||
           child.type === "cramPlan"
+=======
+          child.type === "material"
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
         ) {
           return true;
         }
@@ -1869,7 +1871,7 @@ function renderAssessmentManager() {
     editButton.setAttribute("aria-label", `Edit ${profile.name || "template"}`);
     editButton.innerHTML = `
       <svg class="icon-svg" viewBox="0 0 24 24">
-        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path>
+        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.13z"></path>
       </svg>
     `;
     editButton.addEventListener("click", () => {
@@ -2734,10 +2736,6 @@ function renderClassAssessmentProfileSelect(
   });
 
   selectElement.value = collection.activeProfileId || "";
-  const controller = customSettingsDropdowns.get(selectElement);
-  if (controller && typeof controller.rebuild === "function") {
-    controller.rebuild();
-  }
 }
 
 function updateQuizAssessmentProfileMeta() {
@@ -3255,13 +3253,14 @@ function openQuizModalForCurrentClass() {
   }
 
   activeQuizClassFolder = currentClassFolder;
-  quizReturnView =
-    activeHomeView === "settings" || activeHomeView === "assessment"
-      ? "dashboard"
-      : activeHomeView;
   resetQuizModalState();
   const assessmentSummary = summarizeAssessmentProfile(
     currentClassFolder.assessmentProfile,
+  );
+  renderClassAssessmentProfileSelect(
+    cramAssessmentProfileSelect,
+    currentClassFolder,
+    "Generic cram mode",
   );
   quizModalTitle.textContent = `Quiz: ${currentClassFolder.name || "Class"}`;
   quizSessionMeta.textContent = assessmentSummary.testFormat
@@ -3274,15 +3273,15 @@ function openQuizModalForCurrentClass() {
     "Generic practice",
   );
   updateQuizAssessmentProfileMeta();
-  setHomeView("quiz");
+  quizBackdrop.hidden = false;
 }
 
 function closeQuizModal() {
+  quizBackdrop.hidden = true;
   activeQuizClassFolder = null;
   activeQuiz = null;
   quizHasBeenChecked = false;
   quizQuestions.parentElement?.classList.remove("has-explanation");
-  setHomeView(quizReturnView);
 }
 
 function updateCramMaterialCount() {
@@ -3398,11 +3397,6 @@ function openCramModalForCurrentClass() {
   cramSessionMeta.textContent = unitPathLabel
     ? `${currentClassFolder.name || "Class"} • ${unitPathLabel}${assessmentSummary.testFormat ? ` • ${assessmentSummary.testFormat}` : ""}`
     : `${currentClassFolder.name || "Class"} • Exam rescue mode${assessmentSummary.testFormat ? ` • ${assessmentSummary.testFormat}` : ""}`;
-  renderClassAssessmentProfileSelect(
-    cramAssessmentProfileSelect,
-    currentClassFolder,
-    "Generic cram mode",
-  );
   updateCramAssessmentProfileMeta(currentClassFolder);
   cramBackdrop.hidden = false;
   cramExamNameInput.focus();
@@ -3411,8 +3405,9 @@ function openCramModalForCurrentClass() {
 function renderCramList(container, items) {
   container.replaceChildren();
 
-  items.forEach((item, index) => {
+  items.forEach((item) => {
     const entry = document.createElement("li");
+<<<<<<< HEAD
     entry.className = "cram-list-item interactive-cram-item";
 
     const label = document.createElement("label");
@@ -3440,10 +3435,15 @@ function renderCramList(container, items) {
     label.appendChild(text);
     entry.appendChild(label);
 
+=======
+    entry.className = "cram-list-item";
+    entry.textContent = item;
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
     container.appendChild(entry);
   });
 }
 
+<<<<<<< HEAD
 function loadCramPlanIntoView(plan) {
   activeCramPlan = plan;
   cramSubtitle.textContent = activeCramPlan.subtitle;
@@ -3512,6 +3512,8 @@ async function updateCramEntryInExplorer(
   await persistFolders(nextFolders);
 }
 
+=======
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 async function generateCramPlan() {
   if (!requireSignedIn("build a cram plan")) {
     return;
@@ -3540,8 +3542,6 @@ async function generateCramPlan() {
   isGeneratingCramPlan = true;
   generateCramButton.disabled = true;
   generateCramButton.textContent = "Building plan...";
-  const targetPath = [...currentPath];
-  const processingEntry = buildProcessingCramEntry(examName);
 
   try {
     const classId = await ensureBackendClassId(currentClassFolder);
@@ -3551,8 +3551,7 @@ async function generateCramPlan() {
           cramAssessmentProfileSelect.value,
         )
       : null;
-    await addCramEntryToExplorer(processingEntry, targetPath);
-    const cramPlan = await window.overlayApi.generateCramPlan({
+    activeCramPlan = await window.overlayApi.generateCramPlan({
       classId,
       courseName: currentClassFolder.name,
       unitPathLabel: buildCurrentUnitPathLabel(),
@@ -3564,34 +3563,19 @@ async function generateCramPlan() {
         ? getTeacherAssessmentProfilePayload(selectedAssessmentProfile)
         : null,
     });
-    await updateCramEntryInExplorer(
-      processingEntry.id,
-      (item) => ({
-        ...item,
-        name: cramPlan.title || `${examName} Cram Plan`,
-        status: "ready",
-        completedAt: new Date().toISOString(),
-        summary: cramPlan.subtitle,
-        cramData: cramPlan,
-      }),
-      targetPath,
-    );
-    loadCramPlanIntoView(cramPlan);
+
+    cramSubtitle.textContent = activeCramPlan.subtitle;
+    renderCramList(cramStudyFirst, activeCramPlan.studyFirst);
+    renderCramList(cramStudyNext, activeCramPlan.studyNext);
+    renderCramList(cramSkipList, activeCramPlan.skipIfNeeded);
+    renderCramList(cramTimePlan, activeCramPlan.timePlan);
+    renderCramList(cramLikelyQuestions, activeCramPlan.likelyQuestions);
+    renderCramList(cramQuickSelfTest, activeCramPlan.quickSelfTest);
+    renderCramTimelineCopy(activeCramPlan);
+
+    cramSetupView.hidden = true;
+    cramView.hidden = false;
   } catch (error) {
-    await updateCramEntryInExplorer(
-      processingEntry.id,
-      (item) => ({
-        ...item,
-        name: `${examName} - Failed`,
-        status: "failed",
-        completedAt: new Date().toISOString(),
-        summary:
-          error instanceof Error
-            ? error.message
-            : "Cram plan generation failed. Try again.",
-      }),
-      targetPath,
-    );
     cramMaterialStatus.dataset.tone = "danger";
     cramMaterialStatus.textContent =
       error instanceof Error
@@ -3975,9 +3959,6 @@ function showQuizExplanation(question, index) {
 function loadQuizIntoView(quiz, options = {}) {
   activeQuiz = quiz;
   quizHasBeenChecked = false;
-  if (quiz?.title) {
-    quizModalTitle.textContent = quiz.title;
-  }
   quizSubtitle.textContent = quiz.subtitle;
   renderQuizQuestions(quiz);
   quizSetupView.hidden = true;
@@ -4006,10 +3987,6 @@ function openSavedQuiz(quizItem) {
   restoreQuizViewToModal();
   activeQuizContext = "modal";
   activeQuizClassFolder = getCurrentClassFolder();
-  quizReturnView =
-    activeHomeView === "settings" || activeHomeView === "assessment"
-      ? "dashboard"
-      : activeHomeView;
   resetQuizModalState();
   quizModalTitle.textContent = quizItem.name || "Saved Quiz";
   quizSessionMeta.textContent = `${quizItem.questionCount || 0} questions • Saved ${formatSessionDate(quizItem.createdAt)}`;
@@ -4017,7 +3994,7 @@ function openSavedQuiz(quizItem) {
     readOnly: false,
     hideSave: true,
   });
-  setHomeView("quiz");
+  quizBackdrop.hidden = false;
 }
 
 function buildProcessingQuizEntry() {
@@ -4536,12 +4513,16 @@ function renderFolders() {
     openButton.className = "folder-open-button";
     const isSessionItem = folder.type === "session";
     const isQuizItem = folder.type === "quiz";
+<<<<<<< HEAD
     const isCramItem = folder.type === "cram" || folder.type === "cramPlan";
     const isCramPlanItem = folder.type === "cramPlan";
+=======
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
     const isMaterialItem = folder.type === "material";
     const isClassItem = folder.type === "class";
     const isProcessingQuiz = isQuizItem && folder.status === "processing";
     const isFailedQuiz = isQuizItem && folder.status === "failed";
+<<<<<<< HEAD
     const isProcessingCram =
       folder.type === "cram" && folder.status === "processing";
     const isFailedCram = folder.type === "cram" && folder.status === "failed";
@@ -4552,6 +4533,11 @@ function renderFolders() {
     const materialUploadCount = Array.isArray(folder.uploads)
       ? folder.uploads.length
       : 0;
+=======
+    article.classList.toggle("folder-card-processing", isProcessingQuiz);
+    article.classList.toggle("folder-card-failed", isFailedQuiz);
+    const materialUploadCount = Array.isArray(folder.uploads) ? folder.uploads.length : 0;
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
     const materialSnippet = isMaterialItem
       ? String(folder.text || "")
           .replace(/\s+/g, " ")
@@ -4566,6 +4552,7 @@ function renderFolders() {
           : isFailedQuiz
             ? `Failed ${formatSessionDate(folder.completedAt || folder.createdAt)}`
             : `${folder.questionCount || 0} questions • ${formatSessionDate(folder.createdAt)}`
+<<<<<<< HEAD
         : isCramItem
           ? isProcessingCram
             ? `Started ${formatSessionDate(folder.createdAt)}`
@@ -4587,6 +4574,21 @@ function renderFolders() {
               ]
                 .filter(Boolean)
                 .join(" • ")
+=======
+        : isMaterialItem
+          ? [
+              `${materialUploadCount} upload${materialUploadCount === 1 ? "" : "s"}`,
+              folder.updatedAt ? formatSessionDate(folder.updatedAt) : null,
+            ]
+              .filter(Boolean)
+              .join(" â€¢ ")
+        : [
+            `${(folder.children || []).length} item${(folder.children || []).length === 1 ? "" : "s"}`,
+            isClassItem && folder.testFormat ? folder.testFormat : null,
+          ]
+            .filter(Boolean)
+            .join(" • ")
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
       : "";
     const sessionSummaryText = isSessionItem
       ? buildSessionCardSentence(folder)
@@ -4595,6 +4597,7 @@ function renderFolders() {
           (materialUploadCount > 0
             ? "Shared uploaded material for quizzes, cram plans, and assessments."
             : "Shared class material for quizzes, cram plans, and assessments.")
+<<<<<<< HEAD
         : isQuizItem
           ? isProcessingQuiz
             ? '<span class="quiz-processing-label">Building quiz<span class="jumping-dots" aria-hidden="true"><span></span><span></span><span></span></span></span>'
@@ -4610,6 +4613,15 @@ function renderFolders() {
                   ? `Next: ${nextCramTask.title}`
                   : "Saved cram plan"
             : "";
+=======
+      : isQuizItem
+        ? isProcessingQuiz
+          ? '<span class="quiz-processing-label">Building quiz<span class="jumping-dots" aria-hidden="true"><span></span><span></span><span></span></span></span>'
+          : typeof folder.summary === "string" && folder.summary.trim()
+          ? folder.summary.trim()
+          : "Saved quiz"
+        : "";
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
     const sessionStatsText = isSessionItem ? buildSessionCardStats(folder) : "";
 
     openButton.innerHTML = `
@@ -4620,17 +4632,23 @@ function renderFolders() {
               ? '<path d="M7 2h8l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1.5V8h4.5"></path>'
               : isQuizItem
                 ? '<path d="M9 2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v10a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2zm0 6H7v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8h-2v2h-2V8h-4v2H9V8zm2-4v2h4V4h-4z"></path>'
+<<<<<<< HEAD
                 : isCramItem
                   ? `<path d="${MUI_CREATE_ACTION_ICON_PATHS.cram}"></path>`
                   : isMaterialItem
                     ? `<path d="${MUI_CREATE_ACTION_ICON_PATHS.material}"></path>`
                     : '<path d="M10 4 12 6h8c1.1 0 2 .9 2 2v8.5c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h6z"></path>'
+=======
+                : isMaterialItem
+                  ? `<path d="${MUI_CREATE_ACTION_ICON_PATHS.material}"></path>`
+                : '<path d="M10 4 12 6h8c1.1 0 2 .9 2 2v8.5c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h6z"></path>'
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
           }
         </svg>
       </span>
       <span class="folder-card-title">${folder.name}</span>
       ${
-        isSessionItem || isQuizItem || isCramItem || isMaterialItem
+        isSessionItem || isQuizItem || isMaterialItem
           ? `<span class="folder-card-summary">${sessionSummaryText}</span>
       <span class="folder-card-session-stats">${isSessionItem ? sessionStatsText : metaText}</span>`
           : `<span class="folder-card-meta">${metaText}</span>`
@@ -4642,8 +4660,14 @@ function renderFolders() {
     const statsNode = openButton.querySelector(".folder-card-session-stats");
     if (titleNode instanceof HTMLElement) {
       titleNode.dataset.fitText = "true";
+<<<<<<< HEAD
       if (isProcessingStudyItem) {
         titleNode.innerHTML = `${isProcessingCram ? "Cram Plan" : "Quiz"} - Processing<span class="jumping-dots" aria-hidden="true"><span></span><span></span><span></span></span>`;
+=======
+      if (isProcessingQuiz) {
+        titleNode.innerHTML =
+          'Quiz - Processing<span class="jumping-dots" aria-hidden="true"><span></span><span></span><span></span></span>';
+>>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
         titleNode.classList.add("folder-card-title-processing");
       }
     }
@@ -4670,10 +4694,6 @@ function renderFolders() {
       openButton.addEventListener("click", () => {
         openSavedQuiz(folder);
       });
-    } else if (isCramItem) {
-      openButton.addEventListener("click", () => {
-        openSavedCramPlan(folder);
-      });
     } else {
       openButton.addEventListener("click", () => {
         if (!requireSignedIn("open folders")) {
@@ -4694,7 +4714,7 @@ function renderFolders() {
       editButton.setAttribute("aria-label", `Edit ${folder.name}`);
       editButton.innerHTML = `
         <svg class="icon-svg" viewBox="0 0 24 24">
-          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"></path>
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.13z"></path>
         </svg>
       `;
       editButton.addEventListener("click", () => {
@@ -5062,9 +5082,6 @@ function attachResizeHandle(handle) {
   privacyScreenshotSelect,
   privacySyncSelect,
   privacyLocalOnlySelect,
-  cramTimeAvailableSelect,
-  quizAssessmentProfileSelect,
-  cramAssessmentProfileSelect,
 ].forEach((select) => {
   initCustomSettingsDropdown(select);
 });
@@ -5095,10 +5112,6 @@ shrinkWindow.addEventListener("click", async () => {
 });
 
 openSettingsButton.addEventListener("click", () => {
-  if (activeHomeView === "quiz") {
-    closeQuizModal();
-    return;
-  }
   setHomeView(
     activeHomeView === "settings" || activeHomeView === "assessment"
       ? "dashboard"
@@ -5123,7 +5136,7 @@ minimizeNative.addEventListener("click", async () => {
   await window.overlayApi.minimizeNative();
 });
 
-quizMinimizeNative?.addEventListener("click", async () => {
+quizMinimizeNative.addEventListener("click", async () => {
   await window.overlayApi.minimizeNative();
 });
 
@@ -5204,7 +5217,12 @@ sessionSummaryBackdrop.addEventListener("click", (event) => {
     closeSessionSummary();
   }
 });
-closeQuizModalButton?.addEventListener("click", closeQuizModal);
+closeQuizModalButton.addEventListener("click", closeQuizModal);
+quizBackdrop.addEventListener("click", (event) => {
+  if (event.target === quizBackdrop) {
+    closeQuizModal();
+  }
+});
 
 closeClassMaterialModalButton?.addEventListener(
   "click",

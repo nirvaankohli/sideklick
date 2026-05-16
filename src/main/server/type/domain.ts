@@ -178,28 +178,6 @@ export type QuizResponse = {
   questions: QuizQuestion[];
 };
 
-export type CramRequest = {
-  classId?: number | null;
-  courseName?: string | null;
-  unitPathLabel?: string | null;
-  examName: string;
-  timeAvailable: string;
-  examMaterial: string;
-  additionalNotes?: string | null;
-  teacherAssessmentProfile?: any | null;
-};
-
-export type CramResponse = {
-  title?: string;
-  subtitle: string;
-  studyFirst: string[];
-  studyNext: string[];
-  skipIfNeeded: string[];
-  timePlan: string[];
-  likelyQuestions: string[];
-  quickSelfTest: string[];
-};
-
 export type PrivacySettings = {
   screenshotPolicy: "automatic" | "manual" | "disabled";
   syncConsent: "unknown" | "granted" | "denied";

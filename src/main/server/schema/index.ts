@@ -213,28 +213,6 @@ export const quizResponseSchema = z.object({
   questions: z.array(quizQuestionSchema).min(3).max(8),
 }).strict();
 
-export const cramRequestSchema = z.object({
-  classId: z.number().int().positive().nullable().optional(),
-  courseName: nullableTrimmedString,
-  unitPathLabel: nullableTrimmedString,
-  examName: z.string().trim().min(1),
-  timeAvailable: z.string().trim().min(1),
-  examMaterial: z.string().trim().min(1),
-  additionalNotes: nullableTrimmedString,
-  teacherAssessmentProfile: z.any().nullable().optional(),
-}).strict();
-
-export const cramResponseSchema = z.object({
-  title: z.string().trim().min(1).optional(),
-  subtitle: z.string().trim().min(1),
-  studyFirst: z.array(z.string().trim().min(1)),
-  studyNext: z.array(z.string().trim().min(1)),
-  skipIfNeeded: z.array(z.string().trim().min(1)),
-  timePlan: z.array(z.string().trim().min(1)),
-  likelyQuestions: z.array(z.string().trim().min(1)),
-  quickSelfTest: z.array(z.string().trim().min(1)),
-}).strict();
-
 export const privacySettingsSchema = z.object({
   screenshotPolicy: z.enum(["automatic", "manual", "disabled"]),
   syncConsent: z.enum(["unknown", "granted", "denied"]),
@@ -280,5 +258,3 @@ export type PrivacySettingsInput = z.infer<typeof privacySettingsSchema>;
 export type PrivacySettingsPatchInput = z.infer<typeof privacySettingsPatchSchema>;
 export type DeleteAccountRequestInput = z.infer<typeof deleteAccountRequestSchema>;
 export type ExportRequestQueryInput = z.infer<typeof exportRequestQuerySchema>;
-export type CramRequestInput = z.infer<typeof cramRequestSchema>;
-export type CramResponseInput = z.infer<typeof cramResponseSchema>;
