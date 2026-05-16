@@ -319,6 +319,9 @@
                 <div id="assessment-preset-grid" hidden></div>
                 <button id="assessment-analyze-button" type="button" hidden></button>
                 <button id="assessment-cancel-button" class="assessment-hidden-cancel" type="button" hidden>Back</button>
+              </section>
+            </div>
+
             <div id="home-cram-view" class="home-view" hidden>
               <section class="cram-screen">
                 <div class="cram-toolbar">
@@ -459,6 +462,188 @@
                   </div>
                   <div id="cram-quiz-mount"></div>
                 </section>
+              </section>
+            </div>
+
+            <div id="home-quiz-view" class="home-view" hidden>
+              <section class="quiz-screen">
+                <div class="quiz-page-toolbar">
+                  <button
+                    id="close-quiz-modal"
+                    class="ghost-button quiz-page-back-button"
+                    type="button"
+                    aria-label="Back to home"
+                  >
+                    Back
+                  </button>
+                  <div>
+                    <p class="panel-label">Quiz Mode</p>
+                    <h2 id="quiz-modal-title" class="cram-title">
+                      Generate Quiz
+                    </h2>
+                    <p class="panel-help">
+                      Build a quiz from sessions, class material, and saved
+                      context.
+                    </p>
+                  </div>
+                </div>
+
+                <div id="quiz-setup-view" class="quiz-setup-form quiz-page-section">
+                  <p id="quiz-session-meta" class="panel-help"></p>
+
+                  <label class="modal-field">
+                    <span>Sessions</span>
+                    <div id="quiz-session-picker" class="quiz-session-picker"></div>
+                  </label>
+
+                  <label class="modal-field">
+                    <span>Assessment format</span>
+                    <select id="quiz-assessment-profile-select" class="cram-select"></select>
+                    <p id="quiz-assessment-profile-meta" class="panel-help">
+                      Generic quiz mode.
+                    </p>
+                  </label>
+
+                  <fieldset class="quiz-question-count-control">
+                    <legend>Question amount</legend>
+                    <div class="quiz-question-count-options">
+                      <label class="quiz-question-count-option">
+                        <input type="radio" name="quiz-question-count" value="3" />
+                        <span>Less</span>
+                        <small>3 focused</small>
+                      </label>
+                      <label class="quiz-question-count-option">
+                        <input type="radio" name="quiz-question-count" value="5" checked />
+                        <span>Default</span>
+                        <small>5 balanced</small>
+                      </label>
+                      <label class="quiz-question-count-option">
+                        <input type="radio" name="quiz-question-count" value="8" />
+                        <span>More</span>
+                        <small>8 thorough</small>
+                      </label>
+                    </div>
+                  </fieldset>
+
+                  <div class="quiz-material-section">
+                    <div class="material-reference-section">
+                      <span class="material-reference-label">Class material</span>
+                      <span id="quiz-class-material-status" class="material-reference-status"></span>
+                      <div id="quiz-class-material-picker" class="material-reference-picker"></div>
+                    </div>
+                    <label class="modal-field">
+                      <span>Material</span>
+                      <div class="assessment-upload-drop">
+                        <input
+                          id="quiz-material-file"
+                          class="assessment-file-input"
+                          type="file"
+                          accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                        />
+                        <label for="quiz-material-file" class="assessment-upload-drop-label quiz-upload-drop-compact">
+                          <span class="assessment-upload-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" class="icon-svg">
+                              <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
+                            </svg>
+                          </span>
+                          <span class="assessment-upload-title">Upload or drop a file</span>
+                        </label>
+                        <span id="quiz-file-name" class="panel-help">No file selected</span>
+                      </div>
+                    </label>
+                    <label class="modal-field">
+                      <span>Or paste notes</span>
+                      <textarea
+                        id="quiz-material-text"
+                        rows="3"
+                        placeholder="Paste study material here"
+                      ></textarea>
+                    </label>
+                  </div>
+
+                  <div hidden>
+                    <input id="quiz-source-summary" type="checkbox" checked />
+                    <input id="quiz-source-notes" type="checkbox" checked />
+                    <input id="quiz-source-topics" type="checkbox" checked />
+                    <input id="quiz-source-uploaded" type="checkbox" checked />
+                    <input id="quiz-gap-focus" type="range" value="50" />
+                    <span id="quiz-gap-focus-value">50%</span>
+                  </div>
+
+                  <div class="modal-actions">
+                    <button
+                      id="generate-quiz-button"
+                      class="continue-button"
+                      type="button"
+                    >
+                      Generate Quiz
+                    </button>
+                  </div>
+                </div>
+
+                <div id="quiz-view" class="quiz-stack quiz-page-section" hidden>
+                  <div class="quiz-results-bar">
+                    <div class="quiz-results-copy">
+                      <p class="panel-label">Quiz</p>
+                      <p id="quiz-subtitle" class="panel-help"></p>
+                    </div>
+                    <p id="quiz-explain-hint" class="quiz-results-hint">
+                      Answer explanations unlock after you check answers.
+                    </p>
+                  </div>
+                  <div id="quiz-insights" class="quiz-insights" hidden>
+                    <section class="quiz-insight-card quiz-insight-strengths">
+                      <p class="panel-label">Strengths</p>
+                      <p id="quiz-strengths" class="quiz-insight-text"></p>
+                    </section>
+                    <section class="quiz-insight-card quiz-insight-gaps">
+                      <p class="panel-label">Gaps</p>
+                      <p id="quiz-gaps" class="quiz-insight-text"></p>
+                    </section>
+                  </div>
+                  <div class="quiz-layout">
+                    <div id="quiz-questions" class="quiz-question-list"></div>
+                    <aside
+                      id="quiz-explanation-panel"
+                      class="quiz-explanation-panel"
+                      hidden
+                    >
+                      <p id="quiz-explanation-kicker" class="panel-label">
+                        Answer explanation
+                      </p>
+                      <h3
+                        id="quiz-explanation-title"
+                        class="quiz-explanation-title"
+                      >
+                        Pick a question
+                      </h3>
+                      <p
+                        id="quiz-explanation-answer"
+                        class="quiz-explanation-answer"
+                      ></p>
+                      <p
+                        id="quiz-explanation-text"
+                        class="quiz-explanation-text"
+                      ></p>
+                    </aside>
+                  </div>
+                  <div class="modal-actions">
+                    <button
+                      id="save-quiz-button"
+                      class="ghost-button"
+                      type="button"
+                    >
+                      Save Quiz
+                    </button>
+                    <button
+                      id="quiz-submit-button"
+                      class="continue-button"
+                      type="button"
+                    >
+                      Check Answers
+                    </button>
+                  </div>
+                </div>
               </section>
             </div>
 
@@ -1148,216 +1333,6 @@
           </section>
         </div>
 
-        <div id="quiz-backdrop" class="modal-backdrop no-drag" hidden>
-          <section
-            class="modal-card quiz-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="quiz-modal-title"
-          >
-            <div class="modal-header quiz-modal-header">
-              <div>
-                <p class="panel-label">Session quiz</p>
-                <h2 id="quiz-modal-title" class="modal-title">Generate Quiz</h2>
-              </div>
-              <div class="window-actions no-drag quiz-window-actions">
-                <button
-                  id="quiz-theme-toggle"
-                  class="icon-button"
-                  type="button"
-                  aria-label="Toggle light or dark theme"
-                >
-                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M12.2 3.2c.5 0 .8.4.8.8 0 .2 0 .4-.1.5-1 1.8-1.3 4-.7 6.1 1 3.2 4 5.4 7.4 5.4.4 0 .8.3.8.8 0 .2-.1.4-.2.5-1.7 2.3-4.4 3.7-7.3 3.7-5 0-9-4-9-9 0-4 2.7-7.4 6.5-8.6.1-.1.3-.2.5-.2Z"
-                    ></path>
-                  </svg>
-                </button>
-                <button
-                  id="quiz-minimize-native"
-                  class="icon-button"
-                  type="button"
-                  aria-label="Minimize window"
-                >
-                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 19h12v-2H6z"></path>
-                  </svg>
-                </button>
-                <button
-                  id="close-quiz-modal"
-                  class="icon-button danger"
-                  type="button"
-                  aria-label="Close quiz modal"
-                >
-                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div id="quiz-setup-view" class="quiz-setup-form">
-              <p id="quiz-session-meta" class="panel-help"></p>
-
-              <label class="modal-field">
-                <span>Sessions</span>
-                <div id="quiz-session-picker" class="quiz-session-picker"></div>
-              </label>
-
-              <label class="modal-field">
-                <span>Assessment format</span>
-                <select id="quiz-assessment-profile-select" class="cram-select"></select>
-                <p id="quiz-assessment-profile-meta" class="panel-help">
-                  Generic quiz mode.
-                </p>
-              </label>
-
-              <fieldset class="quiz-question-count-control">
-                <legend>Question amount</legend>
-                <div class="quiz-question-count-options">
-                  <label class="quiz-question-count-option">
-                    <input type="radio" name="quiz-question-count" value="3" />
-                    <span>Less</span>
-                    <small>3 focused</small>
-                  </label>
-                  <label class="quiz-question-count-option">
-                    <input type="radio" name="quiz-question-count" value="5" checked />
-                    <span>Default</span>
-                    <small>5 balanced</small>
-                  </label>
-                  <label class="quiz-question-count-option">
-                    <input type="radio" name="quiz-question-count" value="8" />
-                    <span>More</span>
-                    <small>8 thorough</small>
-                  </label>
-                </div>
-              </fieldset>
-
-              <div class="quiz-material-section">
-                <div class="material-reference-section">
-                  <span class="material-reference-label">Class material</span>
-                  <span id="quiz-class-material-status" class="material-reference-status"></span>
-                  <div id="quiz-class-material-picker" class="material-reference-picker"></div>
-                </div>
-                <label class="modal-field">
-                  <span>Material</span>
-                  <div class="assessment-upload-drop">
-                    <input
-                      id="quiz-material-file"
-                      class="assessment-file-input"
-                      type="file"
-                      accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                    />
-                    <label for="quiz-material-file" class="assessment-upload-drop-label quiz-upload-drop-compact">
-                      <span class="assessment-upload-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" class="icon-svg">
-                          <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
-                        </svg>
-                      </span>
-                      <span class="assessment-upload-title">Upload or drop a file</span>
-                    </label>
-                    <span id="quiz-file-name" class="panel-help">No file selected</span>
-                  </div>
-                </label>
-                <label class="modal-field">
-                  <span>Or paste notes</span>
-                  <textarea
-                    id="quiz-material-text"
-                    rows="3"
-                    placeholder="Paste study material here"
-                  ></textarea>
-                </label>
-              </div>
-
-              <!-- Hidden source checkboxes (auto-enabled by default) -->
-              <div hidden>
-                <input id="quiz-source-summary" type="checkbox" checked />
-                <input id="quiz-source-notes" type="checkbox" checked />
-                <input id="quiz-source-topics" type="checkbox" checked />
-                <input id="quiz-source-uploaded" type="checkbox" checked />
-                <input id="quiz-gap-focus" type="range" value="50" />
-                <span id="quiz-gap-focus-value">50%</span>
-              </div>
-
-              <div class="modal-actions">
-                <button
-                  id="generate-quiz-button"
-                  class="continue-button"
-                  type="button"
-                >
-                  Generate Quiz
-                </button>
-              </div>
-            </div>
-
-            <div id="quiz-view" class="quiz-stack" hidden>
-              <div class="quiz-results-bar">
-                <div class="quiz-results-copy">
-                  <p class="panel-label">Quiz</p>
-                  <p id="quiz-subtitle" class="panel-help"></p>
-                </div>
-                <p id="quiz-explain-hint" class="quiz-results-hint">
-                  Answer explanations unlock after you check answers.
-                </p>
-              </div>
-              <div id="quiz-insights" class="quiz-insights" hidden>
-                <section class="quiz-insight-card quiz-insight-strengths">
-                  <p class="panel-label">Strengths</p>
-                  <p id="quiz-strengths" class="quiz-insight-text"></p>
-                </section>
-                <section class="quiz-insight-card quiz-insight-gaps">
-                  <p class="panel-label">Gaps</p>
-                  <p id="quiz-gaps" class="quiz-insight-text"></p>
-                </section>
-              </div>
-              <div class="quiz-layout">
-                <div id="quiz-questions" class="quiz-question-list"></div>
-                <aside
-                  id="quiz-explanation-panel"
-                  class="quiz-explanation-panel"
-                  hidden
-                >
-                  <p id="quiz-explanation-kicker" class="panel-label">
-                    Answer explanation
-                  </p>
-                  <h3
-                    id="quiz-explanation-title"
-                    class="quiz-explanation-title"
-                  >
-                    Pick a question
-                  </h3>
-                  <p
-                    id="quiz-explanation-answer"
-                    class="quiz-explanation-answer"
-                  ></p>
-                  <p
-                    id="quiz-explanation-text"
-                    class="quiz-explanation-text"
-                  ></p>
-                </aside>
-              </div>
-              <div class="modal-actions">
-                <button
-                  id="save-quiz-button"
-                  class="ghost-button"
-                  type="button"
-                >
-                  Save Quiz
-                </button>
-                <button
-                  id="quiz-submit-button"
-                  class="continue-button"
-                  type="button"
-                >
-                  Check Answers
-                </button>
-              </div>
-            </div>
-          </section>
-        </div>
-
         <div id="cram-backdrop" class="modal-backdrop no-drag" hidden>
           <section
             class="modal-card cram-modal"
@@ -1511,7 +1486,7 @@
                   class="continue-button"
                   type="button"
                 >
-                  Build My Study Plan
+                  Generate Plan
                 </button>
               </div>
             </div>
@@ -1564,7 +1539,7 @@
                       <div class="cram-step-header">
                         <div>
                           <p class="panel-label">Start Here</p>
-                          <h4 class="cram-step-title">Study First</h4>
+                          <h4 class="cram-step-title">First Priority</h4>
                         </div>
                         <p id="cram-step-now" class="cram-step-kicker">
                           Lock in the highest-yield idea first.
@@ -1653,7 +1628,6 @@
                     </p>
                   </section>
                 </aside>
-<<<<<<< HEAD
 
                 <!-- Right Main Content: The What -->
                 <main class="cram-dashboard-main">
@@ -1725,8 +1699,6 @@
                     </section>
                   </div>
                 </main>
-=======
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
               </div>
 
               <div class="modal-actions">

@@ -17,6 +17,8 @@ const attachScreenshotButton = document.querySelector("#attach-screenshot-button
 const attachClipboardButton = document.querySelector("#attach-clipboard-button");
 const resizeHandle = document.querySelector("#resize-handle");
 
+document.body.dataset.windowMode = root?.dataset.mode || "expanded";
+
 const ACTION_LABELS = {
   chat: "Ask SideKlick",
   explain: "Explain this",
@@ -281,6 +283,7 @@ function applyThemeState({ shouldUseDarkColors }) {
 
 function setMode(mode) {
   root.dataset.mode = mode;
+  document.body.dataset.windowMode = mode;
 }
 
 function createFeedbackRow(interactionId) {
@@ -733,6 +736,16 @@ async function executeAssistRequest(normalizedPayload) {
     addMessage(
       "assistant",
       "Start a class session from Home before sending SideKlick actions.",
+    );
+    return;
+  }
+
+  const aiStatus = await window.overlayApi.getAiBackendStatus();
+  if (aiStatus?.available === false) {
+    addMessage(
+      "assistant",
+      aiStatus.message ||
+        "Add OPENAI_API_KEY to .env and restart SideKlick to use AI assist on this device.",
     );
     return;
   }

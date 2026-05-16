@@ -8,11 +8,18 @@ const sharedWindowTemplate = {
     frame: false,
     alwaysOnTop: true,
     resizable: true,
-    roundedCorners: true,
+    roundedCorners: false,
     hasShadow: true,
     maximizable: false,
     fullscreenable: false,
     skipTaskbar: false,
+  },
+  compactBrowserWindow: {
+    transparent: false,
+    roundedCorners: true,
+    backgroundColor: "#edf2f7",
+    resizable: false,
+    hasShadow: false,
   },
   layout: {
     expanded: {

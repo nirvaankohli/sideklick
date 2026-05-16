@@ -40,6 +40,10 @@ body {
   padding: 10px;
 }
 
+body[data-window-mode="compact"] {
+  padding: 0;
+}
+
 button {
   font: inherit;
 }
@@ -50,7 +54,15 @@ button {
   min-height: 0;
   -webkit-app-region: drag;
   overflow: hidden;
+  border-radius: 28px;
   backdrop-filter: blur(18px) saturate(145%);
+}
+
+.window-shell[data-mode="compact"] {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  backdrop-filter: none;
 }
 
 .overlay-card {
@@ -89,30 +101,14 @@ button {
       rgba(255, 255, 255, 0.66),
       rgba(255, 255, 255, 0.24)
     ),
+    var(--light-shell);
+  box-shadow:
+    0 24px 64px var(--light-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: var(--light-strong);
+}
 
-    .cram-screen {
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    align-content: start;
-    gap: 0;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-    padding: 0;
-    border-radius: 28px;
-    border: 1px solid rgba(143, 211, 255, 0.2);
-    background: rgba(255, 255, 255, 0.94);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    color: #142033;
-  }
-
-  #cram-setup-panel,
-  #cram-active-panel,
-  #cram-quiz-panel {
-    min-height: 0;
-    overflow: auto;
-  }
+.topbar {
   display: flex;
   align-items: start;
   justify-content: space-between;
@@ -1588,7 +1584,6 @@ button {
   font: inherit;
   text-align: left;
   cursor: pointer;
-<<<<<<< HEAD
   transition:
     border-color 160ms ease,
     background-color 160ms ease,
@@ -1631,12 +1626,6 @@ button {
   display: flex;
   flex-direction: column;
   gap: 8px;
-=======
-}
-
-.window-shell[data-tone="light"] .settings-select-button {
-  border-color: rgba(36, 72, 122, 0.2);
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 }
 
 .settings-select-menu {
@@ -1648,7 +1637,6 @@ button {
   display: grid;
   gap: 4px;
   padding: 6px;
-<<<<<<< HEAD
   border-radius: 18px;
   border: 1px solid rgba(143, 211, 255, 0.22);
   box-shadow:
@@ -1675,25 +1663,14 @@ button {
 /* Remove the panel wrapper since we're back to absolute menu */
 .settings-select-panel {
   display: contents;
-=======
-  border-radius: 12px;
-  border: 1px solid rgba(143, 211, 255, 0.24);
-  background: rgba(10, 20, 34, 0.95);
-  box-shadow: 0 16px 30px rgba(3, 8, 20, 0.35);
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 }
 
 .window-shell[data-tone="light"] .settings-select-menu {
   border-color: rgba(36, 72, 122, 0.18);
-<<<<<<< HEAD
   background: rgba(255, 255, 255, 0.92);
   box-shadow:
     0 18px 42px rgba(18, 40, 71, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
-=======
-  background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 16px 30px rgba(18, 40, 71, 0.18);
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 }
 
 .settings-select-option {
@@ -1706,14 +1683,11 @@ button {
   text-align: left;
   padding: 9px 10px;
   cursor: pointer;
-<<<<<<< HEAD
   transition:
     background-color 100ms ease,
     color 100ms ease,
     transform 100ms ease;
   outline: none;
-=======
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 }
 
 .settings-select-option:hover {
@@ -1721,7 +1695,6 @@ button {
 }
 
 .settings-select-option[data-selected="true"] {
-<<<<<<< HEAD
   color: #fff;
   background: rgba(143, 211, 255, 0.12);
   border-color: rgba(143, 211, 255, 0.25);
@@ -1750,10 +1723,6 @@ button {
 .window-shell[data-tone="light"] .settings-select-option:hover {
   background: rgba(0, 0, 0, 0.04);
   color: var(--light-strong);
-=======
-  border-color: rgba(143, 211, 255, 0.52);
-  background: rgba(143, 211, 255, 0.1);
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 }
 
 .window-shell[data-tone="light"] .settings-select-option[data-selected="true"] {
@@ -3196,7 +3165,7 @@ button {
   padding: 0 2px;
   width: 100%;
   height: 100%;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .compact-brand {
@@ -3458,6 +3427,7 @@ button {
 
 .continue-button {
   -webkit-app-region: no-drag;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3465,7 +3435,6 @@ button {
   padding: 12px 20px;
   border: 1px solid rgba(143, 211, 255, 0.3);
   border-radius: 999px;
-<<<<<<< HEAD
   background:
     linear-gradient(
       180deg,
@@ -3476,6 +3445,7 @@ button {
   color: #07121f;
   font-weight: 700;
   cursor: pointer;
+  overflow: hidden;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.46),
     0 12px 26px rgba(92, 181, 255, 0.18);
@@ -3484,28 +3454,6 @@ button {
     border-color 140ms ease,
     box-shadow 140ms ease,
     filter 140ms ease;
-}
-
-.continue-button::after {
-  content: "";
-  position: absolute;
-  inset: -40% auto -40% -35%;
-  z-index: 0;
-  width: 42%;
-=======
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
-  background: linear-gradient(
-    180deg,
-    rgba(143, 211, 255, 0.28),
-    rgba(92, 181, 255, 0.16)
-  );
-  color: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    transform 120ms ease,
-    border-color 120ms ease,
-    background-color 120ms ease;
 }
 
 .continue-button:hover {
@@ -4981,7 +4929,6 @@ button {
   grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
   gap: 12px;
-<<<<<<< HEAD
   min-height: 48px;
   padding: 11px 12px;
   border-radius: 11px;
@@ -4992,12 +4939,6 @@ button {
       rgba(255, 255, 255, 0.012)
     ),
     rgba(8, 14, 24, 0.34);
-=======
-  min-height: 52px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.026);
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
   border: 1px solid rgba(216, 226, 238, 0.1);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
   cursor: pointer;
@@ -5012,7 +4953,6 @@ button {
 .quiz-option:hover {
   transform: translateX(2px);
   border-color: rgba(216, 226, 238, 0.2);
-<<<<<<< HEAD
   background:
     linear-gradient(
       180deg,
@@ -5020,15 +4960,11 @@ button {
       rgba(255, 255, 255, 0.018)
     ),
     rgba(10, 18, 30, 0.48);
-=======
-  background: rgba(255, 255, 255, 0.045);
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 }
 
 .quiz-option:has(input:checked) {
   border-color: rgba(143, 211, 255, 0.46);
   background:
-<<<<<<< HEAD
     linear-gradient(
       180deg,
       rgba(255, 255, 255, 0.035),
@@ -5036,14 +4972,6 @@ button {
     ),
     rgba(8, 14, 24, 0.34);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-=======
-    linear-gradient(90deg, rgba(143, 211, 255, 0.16), transparent 76%),
-    rgba(255, 255, 255, 0.04);
-  box-shadow:
-    inset 3px 0 0 rgba(143, 211, 255, 0.82),
-    0 10px 24px rgba(3, 8, 20, 0.12);
-  animation: quiz-option-select 180ms ease both;
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 }
 
 .quiz-option input[type="radio"] {
@@ -5105,15 +5033,11 @@ button {
 }
 
 .quiz-option:has(input:checked) .quiz-option-letter {
-<<<<<<< HEAD
   background: linear-gradient(
     180deg,
     rgba(143, 211, 255, 0.96),
     rgba(92, 181, 255, 0.84)
   );
-=======
-  background: var(--accent);
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
   color: #07121f;
   transform: scale(1.04);
 }
@@ -5328,7 +5252,6 @@ button {
 }
 
 .window-shell[data-tone="light"] .quiz-option {
-<<<<<<< HEAD
   background:
     linear-gradient(
       180deg,
@@ -5336,9 +5259,6 @@ button {
       rgba(255, 255, 255, 0.72)
     ),
     rgba(255, 255, 255, 0.62);
-=======
-  background: rgba(255, 255, 255, 0.62);
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
   border-color: rgba(42, 55, 74, 0.1);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
@@ -5347,7 +5267,6 @@ button {
 
 .window-shell[data-tone="light"] .quiz-option:hover {
   border-color: rgba(42, 55, 74, 0.18);
-<<<<<<< HEAD
   background:
     linear-gradient(
       180deg,
@@ -5355,15 +5274,11 @@ button {
       rgba(255, 255, 255, 0.84)
     ),
     rgba(255, 255, 255, 0.82);
-=======
-  background: rgba(255, 255, 255, 0.82);
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 }
 
 .window-shell[data-tone="light"] .quiz-option:has(input:checked) {
   border-color: rgba(92, 181, 255, 0.48);
   background:
-<<<<<<< HEAD
     linear-gradient(
       180deg,
       rgba(255, 255, 255, 0.94),
@@ -5371,13 +5286,6 @@ button {
     ),
     rgba(255, 255, 255, 0.62);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
-=======
-    linear-gradient(90deg, rgba(92, 181, 255, 0.18), transparent 76%),
-    rgba(255, 255, 255, 0.88);
-  box-shadow:
-    inset 3px 0 0 rgba(92, 181, 255, 0.82),
-    0 10px 24px rgba(17, 24, 39, 0.06);
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 }
 
 .window-shell[data-tone="light"] .quiz-option input[type="radio"] {
@@ -5396,15 +5304,10 @@ button {
   color: rgba(14, 27, 46, 0.68);
 }
 
-<<<<<<< HEAD
 .window-shell[data-tone="light"]
   .quiz-option:has(input:checked)
   .quiz-option-letter {
   background: linear-gradient(180deg, #84cdff, #369bea);
-=======
-.window-shell[data-tone="light"] .quiz-option:has(input:checked) .quiz-option-letter {
-  background: var(--accent-strong);
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
   color: #07121f;
 }
 
@@ -5908,7 +5811,6 @@ button {
 .window-shell[data-tone="light"] .cram-runway-card,
 .window-shell[data-tone="light"] .cram-guide-card,
 .window-shell[data-tone="light"] .cram-step-body {
-<<<<<<< HEAD
   border-color: rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.95);
 }
@@ -5936,37 +5838,6 @@ button {
   min-height: 0;
   overflow: auto;
 }
-=======
-  border-color: rgba(70, 104, 150, 0.12);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(247, 250, 255, 0.94)),
-    rgba(255, 255, 255, 0.86);
-  box-shadow: 0 14px 28px rgba(18, 40, 71, 0.06);
-}
-
-.window-shell[data-tone="light"] .cram-timeline::before {
-  background: linear-gradient(
-    180deg,
-    rgba(74, 140, 215, 0.82),
-    rgba(74, 140, 215, 0.14)
-  );
-}
-
-.window-shell[data-tone="light"] .cram-step-marker {
-  border-color: rgba(74, 140, 215, 0.24);
-  background: linear-gradient(180deg, rgba(74, 140, 215, 0.16), rgba(74, 140, 215, 0.06));
-  color: #2d5d97;
-}
-
-.window-shell[data-tone="light"] .cram-timeline-step-primary .cram-step-body {
-  border-color: rgba(74, 140, 215, 0.18);
-  background:
-    radial-gradient(circle at top right, rgba(74, 140, 215, 0.12), transparent 44%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(243, 248, 255, 0.96));
-}
-
-.window-shell[data-tone="light"] .cram-upload-chip,
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
 .window-shell[data-tone="light"] .cram-upload-rollup-chip {
   border-color: rgba(70, 104, 150, 0.12);
   background: rgba(255, 255, 255, 0.7);
@@ -6270,6 +6141,56 @@ button {
   border-color: rgba(36, 72, 122, 0.14);
 }
 
+.quiz-screen {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: start;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  border-radius: 28px;
+  border: 1px solid rgba(143, 211, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.quiz-page-toolbar {
+  display: grid;
+  gap: 10px;
+  align-items: start;
+  justify-items: start;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid rgba(143, 211, 255, 0.12);
+}
+
+.quiz-page-back-button {
+  width: fit-content;
+  min-width: 0;
+}
+
+.quiz-page-section {
+  min-height: 0;
+  overflow: auto;
+  padding: 22px 24px;
+}
+
+#home-quiz-view .quiz-setup-form,
+#home-quiz-view .quiz-stack {
+  margin-top: 0;
+}
+
+#home-quiz-view .modal-actions {
+  margin-top: 6px;
+}
+
+.window-shell[data-tone="light"] .quiz-screen {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(36, 72, 122, 0.14);
+}
+
 .window-shell[data-tone="light"] .cram-task-meta,
 .window-shell[data-tone="light"] .cram-task-source {
   color: var(--light-muted);
@@ -6388,9 +6309,16 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0;
-  padding: 8px 12px;
-  border-radius: 999px;
-  overflow: visible;
+  padding: 10px 12px;
+  border-radius: inherit;
+  overflow: hidden;
+  border-color: rgba(137, 156, 181, 0.14);
+  backdrop-filter: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  background:
+    linear-gradient(180deg, rgba(249, 252, 255, 0.98), rgba(235, 241, 248, 0.98)),
+    #edf2f7;
 }
 
 .window-shell[data-mode="compact"] .topbar {
@@ -6402,7 +6330,15 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  overflow: visible;
+  overflow: hidden;
+}
+
+.window-shell[data-tone="dark"][data-mode="compact"] .overlay-card {
+  border-color: rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(29, 38, 51, 0.98), rgba(20, 28, 40, 0.98)),
+    #182231;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .no-drag {
@@ -6432,14 +6368,11 @@ button {
   .assessment-section-split,
   .cram-input-grid,
   .cram-results-grid,
-<<<<<<< HEAD
   .cram-dashboard-grid,
   .quiz-page-grid-setup,
   .quiz-page-grid-results,
   .cram-form-grid,
   .cram-active,
-=======
->>>>>>> parent of c69df92 (Implement Cram Plan Generation with OpenAI Integration)
   .quiz-source-grid,
   .quiz-insights,
   .quiz-layout {

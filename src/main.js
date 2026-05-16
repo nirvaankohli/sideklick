@@ -334,52 +334,149 @@ function sendThemeState() {
   }
 }
 
-function setWindowMode(win, mode) {
-  const state = windowState.get(win.id);
-  if (!state) {
-    return;
-  }
+function getWindowOptionsForMode(config, mode) {
+  const browserWindow =
+    mode === "compact"
+      ? {
+          ...config.browserWindow,
+          ...(config.compactBrowserWindow || {}),
+        }
+      : config.browserWindow;
 
+  return browserWindow;
+}
+
+function applyCompactWindowState(win, state) {
+  const compactBounds = getAnchorBounds(state.config);
+  win.setAlwaysOnTop(true, "screen-saver");
+  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  win.setBounds(compactBounds, true);
+}
+
+function applyExpandedWindowState(win, state) {
   const { config } = state;
   const currentBounds = win.getBounds();
   const {
     expanded: { width, height, minWidth, minHeight },
     compact,
   } = config.layout;
+  const expandedBounds = getDefaultBounds(config);
+  const nextBounds = {
+    x: currentBounds.x,
+    y: currentBounds.y,
+    width: Math.max(currentBounds.width, width, minWidth),
+    height: Math.max(currentBounds.height, height, minHeight),
+  };
 
-  if (mode === "compact") {
-    const compactBounds = getAnchorBounds(config);
-    win.setAlwaysOnTop(true, "screen-saver");
-    win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-    win.setBounds(compactBounds, true);
+  win.setAlwaysOnTop(Boolean(config.browserWindow.alwaysOnTop));
+  win.setVisibleOnAllWorkspaces(false);
+
+  if (currentBounds.width <= compact.width + 8) {
+    win.setBounds(expandedBounds, true);
   } else {
-    const expandedBounds = getDefaultBounds(config);
-    const nextBounds = {
-      x: currentBounds.x,
-      y: currentBounds.y,
-      width: Math.max(currentBounds.width, width, minWidth),
-      height: Math.max(currentBounds.height, height, minHeight),
-    };
-
-    if (mode === "expanded" && currentBounds.width <= compact.width + 8) {
-      win.setBounds(expandedBounds, true);
-    } else {
-      win.setBounds(nextBounds, true);
-    }
+    win.setBounds(nextBounds, true);
   }
-
-  state.mode = mode;
-  win.webContents.send("window:mode", { mode });
 }
 
-function registerWindow(windowKey, templateKey, config, win) {
+function createCompactCompanionWindow(state) {
+  const compactWindowKey = `${state.windowKey}:compact`;
+  const existing = windowsByKey.get(compactWindowKey);
+  if (existing && !existing.isDestroyed()) {
+    return existing;
+  }
+
+  const compactWin = createManagedWindow(
+    compactWindowKey,
+    state.templateKey,
+    state.config,
+    {
+      initialMode: "compact",
+      variant: "compact",
+      primaryWindowKey: state.windowKey,
+      partnerWindowId: state.win.id,
+    },
+  );
+  state.companionWindowId = compactWin.id;
+  return compactWin;
+}
+
+function showExpandedPartnerWindow(compactState) {
+  const partner = BrowserWindow.fromId(compactState.partnerWindowId);
+  if (!partner || partner.isDestroyed()) {
+    return null;
+  }
+
+  const partnerState = windowState.get(partner.id);
+  if (!partnerState) {
+    return partner;
+  }
+
+  partnerState.companionWindowId = null;
+  partnerState.mode = "expanded";
+  applyExpandedWindowState(partner, partnerState);
+  partner.show();
+  partner.focus();
+  partner.webContents.send("window:mode", { mode: "expanded" });
+  return partner;
+}
+
+function setWindowMode(win, mode) {
+  const state = windowState.get(win.id);
+  if (!state) {
+    return;
+  }
+
+  if (mode === "compact") {
+    if (state.variant === "compact") {
+      applyCompactWindowState(win, state);
+      state.mode = "compact";
+      win.webContents.send("window:mode", { mode: "compact" });
+      return;
+    }
+
+    const compactWin = createCompactCompanionWindow(state);
+    state.mode = "compact";
+    win.hide();
+    compactWin.show();
+    compactWin.focus();
+    compactWin.webContents.send("window:mode", { mode: "compact" });
+  } else {
+    if (state.variant === "compact") {
+      win.hide();
+      showExpandedPartnerWindow(state);
+      win.close();
+      return;
+    }
+
+    if (state.companionWindowId) {
+      const companion = BrowserWindow.fromId(state.companionWindowId);
+      state.companionWindowId = null;
+      if (companion && !companion.isDestroyed()) {
+        companion.close();
+      }
+    }
+
+    applyExpandedWindowState(win, state);
+    state.mode = "expanded";
+    win.show();
+    win.focus();
+    win.webContents.send("window:mode", { mode: "expanded" });
+    return;
+  }
+}
+
+function registerWindow(windowKey, templateKey, config, win, options = {}) {
   windowsByKey.set(windowKey, win);
   windowState.set(win.id, {
     windowKey,
     templateKey,
     config,
     win,
-    mode: config.startMode,
+    mode: options.initialMode || config.startMode,
+    variant: options.variant || config.startMode,
+    primaryWindowKey: options.primaryWindowKey || windowKey,
+    partnerWindowId: options.partnerWindowId || null,
+    companionWindowId: null,
   });
 }
 
@@ -390,6 +487,22 @@ function unregisterWindow(win) {
   }
 
   windowsByKey.delete(state.windowKey);
+
+  if (state.variant === "expanded" && state.companionWindowId) {
+    const companion = BrowserWindow.fromId(state.companionWindowId);
+    if (companion && !companion.isDestroyed()) {
+      companion.close();
+    }
+  }
+
+  if (state.variant === "compact" && state.partnerWindowId) {
+    const partner = BrowserWindow.fromId(state.partnerWindowId);
+    const partnerState = partner ? windowState.get(partner.id) : null;
+    if (partnerState) {
+      partnerState.companionWindowId = null;
+    }
+  }
+
   windowState.delete(win.id);
 }
 
@@ -397,14 +510,20 @@ function createManagedWindow(
   windowKey,
   templateKey,
   config = resolveWindowTemplate(templateKey),
+  options = {},
 ) {
-  const bounds = getDefaultBounds(config);
-  const {
-    browserWindow,
-    layout: {
-      expanded: { minWidth, minHeight },
-    },
-  } = config;
+  const initialMode = options.initialMode || config.startMode;
+  const bounds =
+    initialMode === "compact" ? getAnchorBounds(config) : getDefaultBounds(config);
+  const browserWindow = getWindowOptionsForMode(config, initialMode);
+  const minWidth =
+    initialMode === "compact"
+      ? config.layout.compact.width
+      : config.layout.expanded.minWidth;
+  const minHeight =
+    initialMode === "compact"
+      ? config.layout.compact.height
+      : config.layout.expanded.minHeight;
 
   const win = new BrowserWindow({
     ...bounds,
@@ -431,13 +550,26 @@ function createManagedWindow(
     },
   });
 
-  registerWindow(windowKey, templateKey, config, win);
+  registerWindow(windowKey, templateKey, config, win, {
+    ...options,
+    initialMode,
+  });
 
   win.loadFile(path.join(__dirname, config.htmlFile));
 
   win.once("ready-to-show", () => {
     win.show();
     sendThemeState();
+    const state = windowState.get(win.id);
+    if (!state) {
+      return;
+    }
+    if (initialMode === "compact") {
+      applyCompactWindowState(win, state);
+      state.mode = "compact";
+      win.webContents.send("window:mode", { mode: "compact" });
+      return;
+    }
     setWindowMode(win, config.startMode);
   });
 
@@ -504,6 +636,36 @@ function getManagedBackendJwt() {
     return storedAuth.token;
   }
   return null;
+}
+
+function getAiBackendStatus() {
+  if (shouldUseManagedBackend()) {
+    return {
+      available: true,
+      provider: "managed",
+      message: "",
+    };
+  }
+
+  const apiKey =
+    typeof process.env.OPENAI_API_KEY === "string"
+      ? process.env.OPENAI_API_KEY.trim()
+      : "";
+
+  if (apiKey) {
+    return {
+      available: true,
+      provider: "local",
+      message: "",
+    };
+  }
+
+  return {
+    available: false,
+    provider: "local",
+    message:
+      "Add OPENAI_API_KEY to .env and restart SideKlick to use quiz, cram, and AI assist on this device.",
+  };
 }
 
 function normalizeManagedBackendBaseUrl(baseUrl) {
@@ -783,6 +945,14 @@ ipcMain.handle("window:close", (event) => {
     return null;
   }
 
+  const state = windowState.get(win.id);
+  if (state?.variant === "compact" && state.partnerWindowId) {
+    const partner = BrowserWindow.fromId(state.partnerWindowId);
+    if (partner && !partner.isDestroyed()) {
+      partner.close();
+    }
+  }
+
   win.close();
   return { ok: true };
 });
@@ -926,6 +1096,8 @@ ipcMain.handle("backend:saveClassProfile", async (_event, classProfile) => {
     body: classProfile,
   });
 });
+
+ipcMain.handle("backend:getAiStatus", async () => getAiBackendStatus());
 
 ipcMain.handle("backend:assessmentProfileAnalyze", async (_event, payload) => {
   return callManagedBackend("/api/assessment-profile/analyze", {

@@ -7,10 +7,11 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron .",
+    "kill:sideklick": "node scripts/device-specific/kill-sideklick-processes.js",
     "reset:first-launch": "node scripts/reset-first-launch.js",
     "reset:first-launch:full": "node scripts/reset-first-launch.js --full",
     "rebuild:native": "npm rebuild better-sqlite3 --runtime=electron --target=37.2.0 --dist-url=https://electronjs.org/headers --build-from-source",
-    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/home.js",
     "test": "node --experimental-strip-types --test --test-isolation=none"
   },
   "devDependencies": {

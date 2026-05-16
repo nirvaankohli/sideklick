@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld("overlayApi", {
     ipcRenderer.invoke("study-material:extract", payload),
   saveClassProfile: (classProfile) =>
     ipcRenderer.invoke("backend:saveClassProfile", classProfile),
+  getAiBackendStatus: () => ipcRenderer.invoke("backend:getAiStatus"),
   analyzeAssessmentProfile: (payload) =>
     ipcRenderer.invoke("backend:assessmentProfileAnalyze", payload),
   assist: (payload) => ipcRenderer.invoke("backend:assist", payload),
