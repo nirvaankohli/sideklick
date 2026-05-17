@@ -112,6 +112,7 @@ function buildCramPlanPrompt(input: CramPlanRequest): string {
   return JSON.stringify(
     {
       class_profile: classProfile,
+      exam_name: input.examName,
       current_unit: input.currentUnit,
       deadline: input.deadline,
       available_minutes: input.availableMinutes,
@@ -125,14 +126,22 @@ function buildCramPlanPrompt(input: CramPlanRequest): string {
         ended_at: session.ended_at,
       })),
       uploaded_material: input.uploadedMaterial,
+      additional_notes: input.additionalNotes,
+      teacher_assessment_profile: input.teacherAssessmentProfile,
       high_priority_gaps: gapRows,
       key_topics: keyTopics,
       output_requirements: {
         task_count: "3 to 8",
-        task_style: "short, practical, time-boxed study actions",
+        task_style: "short, practical, time-boxed study guide sections",
         priorities: ["must-review", "quick-win", "if-time"],
         statuses: "use not-started for every new task",
-        quiz_enabled: "true for tasks where a short quiz would validate learning",
+        task_body:
+          "each task needs body copy that explains what to study and how",
+        key_takeaways: "each task needs 2 to 5 concise bullets",
+        quiz_mix:
+          "most tasks should have quizEnabled true and a quizPreview object; only a few may set quizEnabled false",
+        null_fields:
+          "when a task does not have a quiz preview or prior score, return quizPreview, quizId, and lastScore as null",
       },
     },
     null,
@@ -156,8 +165,10 @@ export async function generateCramPlan(
           "Return clean structured JSON only.",
           "Prioritize what the student should do next with limited time.",
           "Tasks must be concise, actionable, time-boxed, and ordered by study value.",
+          "Each task should read like a study guide section, not just a label.",
           "Blend exam-sprint planning with digesting any provided material.",
           "Prefer active recall and quiz checkpoints over passive rereading.",
+          "Most tasks should include a quiz preview that can launch a fresh quiz.",
           "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
         ].join(" "),
       },

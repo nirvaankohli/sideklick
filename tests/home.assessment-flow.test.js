@@ -179,6 +179,7 @@ test("class configure flow opens the assessment page and still saves the class",
     deleteAccount: async () => ({}),
     extractStudyMaterial: async () => [],
     generateCramPlan: async () => ({}),
+    generateCramPlanFromSessions: async () => ({}),
     generateQuiz: async () => ({ questions: [] }),
   };
 
@@ -334,6 +335,7 @@ test("class material upload saves extracted content and shows saved uploads when
       ];
     },
     generateCramPlan: async () => ({}),
+    generateCramPlanFromSessions: async () => ({}),
     generateQuiz: async () => ({ questions: [] }),
   };
 
@@ -546,6 +548,7 @@ test("assessment profile analysis can reference saved class material uploads", a
       },
     ],
     generateCramPlan: async () => ({}),
+    generateCramPlanFromSessions: async () => ({}),
     generateQuiz: async () => ({ questions: [] }),
   };
 
@@ -725,16 +728,76 @@ test("quiz, cram, and assessment UI can target specific saved class material", a
     exportAccount: async () => ({}),
     deleteAccount: async () => ({}),
     extractStudyMaterial: async () => [],
-    generateCramPlan: async (payload) => {
+    generateCramPlan: async () => ({}),
+    generateCramPlanFromSessions: async (payload) => {
       cramPayload = payload;
       return {
-        subtitle: "Targeted cram plan",
-        studyFirst: ["Review Hess's law first."],
-        studyNext: ["Then rehearse the matching graph logic."],
-        skipIfNeeded: ["Skip low-yield memorization."],
-        timePlan: ["20 minutes on Hess's law.", "20 minutes on graph interpretation."],
-        likelyQuestions: ["Justify a sign change from a graph."],
-        quickSelfTest: ["Explain why the sign flips."],
+        title: "Unit 5 Guide",
+        summary: "Focus on Hess's law before graph interpretation.",
+        sourceSummary: "Uses selected class material only.",
+        estimatedTotalMinutes: 40,
+        recommendedFirstTask: "Review Hess's law first.",
+        tasks: [
+          {
+            title: "Review Hess's law first.",
+            topic: "Hess's law",
+            body: "Rebuild the equation chain and justify every sign change out loud.",
+            keyTakeaways: [
+              "Track direction changes carefully.",
+              "Match enthalpy signs before adding equations.",
+            ],
+            estimatedMinutes: 20,
+            priority: "must-review",
+            sourceLabels: ["thermo-review.txt"],
+            status: "not-started",
+            quizEnabled: true,
+            quizPreview: {
+              title: "Hess's law preview",
+              description: "Open a short quiz on sign changes and equation reversal.",
+              questionCount: 3,
+            },
+            quizId: null,
+            lastScore: null,
+          },
+          {
+            title: "Rehearse graph interpretation.",
+            topic: "Graph interpretation",
+            body: "Read the graph first, then explain what the sign or slope means before calculating.",
+            keyTakeaways: [
+              "Interpret the graph before solving.",
+              "Tie each visual change back to the concept.",
+            ],
+            estimatedMinutes: 20,
+            priority: "quick-win",
+            sourceLabels: ["thermo-review.txt"],
+            status: "not-started",
+            quizEnabled: false,
+            quizPreview: null,
+            quizId: null,
+            lastScore: null,
+          },
+          {
+            title: "Run one final recall pass.",
+            topic: "Mixed recall",
+            body: "Spend the last few minutes testing yourself from memory without looking at notes.",
+            keyTakeaways: [
+              "Answer from memory first.",
+              "Only check notes after committing to an answer.",
+            ],
+            estimatedMinutes: 10,
+            priority: "if-time",
+            sourceLabels: ["thermo-review.txt"],
+            status: "not-started",
+            quizEnabled: true,
+            quizPreview: {
+              title: "Final recall preview",
+              description: "Launch a mixed check before you stop studying.",
+              questionCount: 3,
+            },
+            quizId: null,
+            lastScore: null,
+          },
+        ],
       };
     },
     generateQuiz: async (payload) => {
@@ -764,7 +827,7 @@ test("quiz, cram, and assessment UI can target specific saved class material", a
     .click();
 
   await waitFor(() => {
-    assert.equal(document.querySelector("#quiz-backdrop").hidden, false);
+    assert.equal(document.querySelector("#home-quiz-view").hidden, false);
     assert.equal(
       document.querySelectorAll("#quiz-class-material-picker input[type=\"checkbox\"]").length,
       3,
@@ -792,7 +855,7 @@ test("quiz, cram, and assessment UI can target specific saved class material", a
     .click();
 
   await waitFor(() => {
-    assert.equal(document.querySelector("#cram-backdrop").hidden, false);
+    assert.equal(document.querySelector("#home-cram-view").hidden, false);
     assert.equal(
       document.querySelectorAll("#cram-class-material-picker input[type=\"checkbox\"]").length,
       3,
@@ -806,12 +869,12 @@ test("quiz, cram, and assessment UI can target specific saved class material", a
 
   await waitFor(() => {
     assert.equal(Boolean(cramPayload), true);
-    assert.match(cramPayload.examMaterial, /thermo-review\.txt/i);
-    assert.doesNotMatch(cramPayload.examMaterial, /lab-graph-notes\.txt/i);
-    assert.doesNotMatch(cramPayload.examMaterial, /Teacher note: focus on equilibrium and entropy\./i);
+    assert.match(cramPayload.uploadedMaterial, /thermo-review\.txt/i);
+    assert.doesNotMatch(cramPayload.uploadedMaterial, /lab-graph-notes\.txt/i);
+    assert.doesNotMatch(cramPayload.uploadedMaterial, /Teacher note: focus on equilibrium and entropy\./i);
   });
 
-  document.querySelector("#close-cram-modal").click();
+  document.querySelector("#cram-back-button").click();
 
   document.querySelector("#edit-current-class-button").click();
   document.querySelector("#open-assessment-config-button").click();
@@ -937,6 +1000,7 @@ test("quiz generation autosaves a processing item and replaces it with the finis
     deleteAccount: async () => ({}),
     extractStudyMaterial: async () => [],
     generateCramPlan: async () => ({}),
+    generateCramPlanFromSessions: async () => ({}),
     generateQuiz: async () => deferredQuiz.promise,
   };
 
@@ -956,7 +1020,7 @@ test("quiz generation autosaves a processing item and replaces it with the finis
     .click();
 
   await waitFor(() => {
-    assert.equal(document.querySelector("#quiz-backdrop").hidden, false);
+    assert.equal(document.querySelector("#home-quiz-view").hidden, false);
   });
 
   document.querySelector("#generate-quiz-button").click();

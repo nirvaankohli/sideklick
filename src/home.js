@@ -194,13 +194,13 @@ const quizExplanationAnswer = document.querySelector(
 const quizExplanationText = document.querySelector("#quiz-explanation-text");
 const saveQuizButton = document.querySelector("#save-quiz-button");
 const quizSubmitButton = document.querySelector("#quiz-submit-button");
-const cramBackdrop = document.querySelector("#cram-backdrop");
-const closeCramModalButton = document.querySelector("#close-cram-modal");
-const cramThemeToggle = document.querySelector("#cram-theme-toggle");
-const cramMinimizeNative = document.querySelector("#cram-minimize-native");
 const cramSessionMeta = document.querySelector("#cram-session-meta");
-const cramSetupView = document.querySelector("#cram-setup-view");
-const cramView = document.querySelector("#cram-view");
+const cramClassMaterialStatus = document.querySelector(
+  "#cram-class-material-status",
+);
+const cramClassMaterialPicker = document.querySelector(
+  "#cram-class-material-picker",
+);
 const cramExamNameInput = document.querySelector("#cram-exam-name");
 const cramTimeAvailableSelect = document.querySelector("#cram-time-available");
 const cramAssessmentProfileSelect = document.querySelector(
@@ -208,12 +208,6 @@ const cramAssessmentProfileSelect = document.querySelector(
 );
 const cramAssessmentProfileMeta = document.querySelector(
   "#cram-assessment-profile-meta",
-);
-const cramClassMaterialStatus = document.querySelector(
-  "#cram-class-material-status",
-);
-const cramClassMaterialPicker = document.querySelector(
-  "#cram-class-material-picker",
 );
 const cramMaterialFile = document.querySelector("#cram-material-file");
 const cramFileName = document.querySelector("#cram-file-name");
@@ -223,37 +217,6 @@ const cramAdditionalNotes = document.querySelector("#cram-additional-notes");
 const cramMaterialCount = document.querySelector("#cram-material-count");
 const cramMaterialStatus = document.querySelector("#cram-material-status");
 const generateCramButton = document.querySelector("#generate-cram-button");
-const cramSetupMaterialFile = homeCramView?.querySelector(
-  "#cram-setup-material-file",
-);
-const cramSetupFileName = homeCramView?.querySelector("#cram-setup-file-name");
-const cramSetupMaterialText = homeCramView?.querySelector(
-  "#cram-setup-material-text",
-);
-const generateCramPlanButton = homeCramView?.querySelector(
-  "#generate-cram-plan-button",
-);
-const cramSubtitle = document.querySelector("#cram-subtitle");
-const cramNowFocus = document.querySelector("#cram-now-focus");
-const cramSideklickTip = document.querySelector("#cram-sideklick-tip");
-const cramStudyFirst = document.querySelector("#cram-study-first");
-const cramStudyNext = document.querySelector("#cram-study-next");
-const cramSkipList = document.querySelector("#cram-skip-list");
-const cramTimePlan = document.querySelector("#cram-time-plan");
-const cramLikelyQuestions = document.querySelector("#cram-likely-questions");
-const cramQuickSelfTest = document.querySelector("#cram-quick-self-test");
-const cramRunwaySummary = document.querySelector("#cram-runway-summary");
-const cramStepNow = document.querySelector("#cram-step-now");
-const cramStepNext = document.querySelector("#cram-step-next");
-const cramStepSkip = document.querySelector("#cram-step-skip");
-const cramStepQuestions = document.querySelector("#cram-step-questions");
-const cramStepTest = document.querySelector("#cram-step-test");
-const cramGuideGuardrail = document.querySelector("#cram-guide-guardrail");
-const cramGuideRecovery = document.querySelector("#cram-guide-recovery");
-const backToCramSetupButton = document.querySelector(
-  "#back-to-cram-setup-button",
-);
-const regenerateCramButton = document.querySelector("#regenerate-cram-button");
 const classMaterialBackdrop = document.querySelector(
   "#class-material-backdrop",
 );
@@ -273,27 +236,12 @@ const saveClassMaterialButton = document.querySelector(
   "#save-class-material-button",
 );
 const classMaterialMeta = document.querySelector("#class-material-meta");
-const cramShared = window.CRAM_SHARED || {};
-const cramConstraintsConfig = cramShared.cramInputConstraints || {
-  maxMaterialCharacters: 24000,
-};
-const validateCramMaterialPayload =
-  cramShared.validateCramMaterialInput ||
-  ((value) => ({
-    ok: Boolean(String(value ?? "").trim()),
-    normalizedMaterial: String(value ?? "").trim(),
-  }));
 const cramBackButton = document.querySelector("#cram-back-button");
 const cramScreenTitle = document.querySelector("#cram-screen-title");
 const cramScreenMeta = document.querySelector("#cram-screen-meta");
 const cramSetupPanel = document.querySelector("#cram-setup-panel");
 const cramActivePanel = document.querySelector("#cram-active-panel");
 const cramQuizPanel = document.querySelector("#cram-quiz-panel");
-const cramPlanName = document.querySelector("#cram-plan-name");
-const cramDeadline = document.querySelector("#cram-deadline");
-const cramAvailableMinutes = document.querySelector("#cram-available-minutes");
-const cramGapFocus = document.querySelector("#cram-gap-focus");
-const cramSessionPicker = document.querySelector("#cram-session-picker");
 const cramStatus = document.querySelector("#cram-status");
 const cramTaskList = document.querySelector("#cram-task-list");
 const cramTaskDetail = document.querySelector("#cram-task-detail");
@@ -304,6 +252,16 @@ const cramQuizBackButton = document.querySelector("#cram-quiz-back-button");
 const cramQuizMeta = document.querySelector("#cram-quiz-meta");
 const cramQuizMount = document.querySelector("#cram-quiz-mount");
 const resizeHandle = document.querySelector("#resize-handle");
+const cramShared = window.CRAM_SHARED || {};
+const cramConstraintsConfig = cramShared.cramInputConstraints || {
+  maxMaterialCharacters: 24000,
+};
+const validateCramMaterialPayload =
+  cramShared.validateCramMaterialInput ||
+  ((value) => ({
+    ok: Boolean(String(value ?? "").trim()),
+    normalizedMaterial: String(value ?? "").trim(),
+  }));
 
 document.body.dataset.windowMode = root?.dataset.mode || "expanded";
 const settingsThemeStatus = document.querySelector("#settings-theme-status");
@@ -2477,109 +2435,6 @@ async function extractStudyMaterialFromFiles(files, mode) {
   });
 }
 
-function getCombinedUploadedCramMaterial() {
-  return uploadedCramMaterials
-    .map(({ name, content }) => `--- ${name} ---\n${content}`)
-    .join("\n\n");
-}
-
-function getCombinedCramMaterialInput() {
-  const classMatl = formatSelectedClassMaterialText(
-    selectedCramClassMaterialKeys,
-    getCurrentClassFolder(),
-  );
-  return [
-    classMatl,
-    getCombinedUploadedCramMaterial().trim(),
-    cramMaterialText.value.trim(),
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-}
-
-function getCramUploadSummaryText() {
-  if (uploadedCramMaterials.length === 0) {
-    return "No files selected";
-  }
-
-  if (uploadedCramMaterials.length === 1) {
-    const file = uploadedCramMaterials[0];
-    return file.handler ? `${file.name} (${file.handler})` : file.name;
-  }
-
-  return `${uploadedCramMaterials.length} files selected`;
-}
-
-function renderCramUploadRollup() {
-  if (!cramUploadRollup) {
-    return;
-  }
-
-  if (uploadedCramMaterials.length === 0) {
-    cramUploadRollup.hidden = true;
-    cramUploadRollup.replaceChildren();
-    return;
-  }
-
-  cramUploadRollup.hidden = false;
-  cramUploadRollup.replaceChildren();
-
-  uploadedCramMaterials.slice(0, 4).forEach((file) => {
-    const chip = document.createElement("span");
-    chip.className = "cram-upload-rollup-chip";
-    chip.textContent = file.handler
-      ? `${file.name} • ${file.handler}`
-      : file.name;
-    cramUploadRollup.appendChild(chip);
-  });
-
-  if (uploadedCramMaterials.length > 4) {
-    const moreChip = document.createElement("span");
-    moreChip.className =
-      "cram-upload-rollup-chip cram-upload-rollup-chip-muted";
-    moreChip.textContent = `+${uploadedCramMaterials.length - 4} more`;
-    cramUploadRollup.appendChild(moreChip);
-  }
-}
-
-function getFirstSentence(value) {
-  if (!value) {
-    return "";
-  }
-
-  return String(value)
-    .trim()
-    .split(/(?<=[.!?])\s+/)[0]
-    .trim();
-}
-
-function renderCramTimelineCopy(plan) {
-  const firstFocus = plan.studyFirst?.[0] || "Start with the first study move.";
-  const secondFocus =
-    plan.studyNext?.[0] || "Move to the next supporting concept.";
-  const skipFocus =
-    plan.skipIfNeeded?.[0] || "Trim lower-value material if time gets tight.";
-  const firstQuestion =
-    plan.likelyQuestions?.[0] || "Rehearse a likely exam-style question.";
-  const firstSelfTest =
-    plan.quickSelfTest?.[0] || "Check what you can answer from memory.";
-  const firstRunwayStep = plan.timePlan?.[0] || "Take the first timeline step.";
-  const secondRunwayStep = plan.timePlan?.[1] || "Then move to the next block.";
-
-  cramNowFocus.textContent = getFirstSentence(firstFocus) || "Start here.";
-  cramSideklickTip.textContent = `${getFirstSentence(firstRunwayStep)} Next: ${getFirstSentence(secondRunwayStep) || "next block."}`;
-  cramRunwaySummary.textContent = `${plan.timePlan.length} step${plan.timePlan.length === 1 ? "" : "s"} tonight.`;
-  cramStepNow.textContent = getFirstSentence(firstRunwayStep) || "First move.";
-  cramStepNext.textContent = getFirstSentence(secondFocus) || "Next priority.";
-  cramStepSkip.textContent = getFirstSentence(skipFocus) || "Drop this first.";
-  cramStepQuestions.textContent =
-    getFirstSentence(firstQuestion) || "Rehearse these.";
-  cramStepTest.textContent =
-    getFirstSentence(firstSelfTest) || "Answer from memory.";
-  cramGuideGuardrail.textContent = `${getFirstSentence(firstFocus)} Back here if you drift.`;
-  cramGuideRecovery.textContent = `${getFirstSentence(firstSelfTest)} Missed it? Retry that step.`;
-}
-
 function openSessionSummary(session) {
   if (!requireSignedIn("view saved sessions")) {
     return;
@@ -2773,27 +2628,6 @@ function updateQuizAssessmentProfileMeta() {
 
   const summary = summarizeAssessmentProfile(selectedProfile);
   quizAssessmentProfileMeta.textContent =
-    summary.analysis.conciseSummary ||
-    summary.testFormat ||
-    "Use this saved teacher format.";
-}
-
-function updateCramAssessmentProfileMeta(classFolder) {
-  if (!cramAssessmentProfileMeta) {
-    return;
-  }
-
-  if (!cramAssessmentProfileSelect?.value) {
-    cramAssessmentProfileMeta.textContent = "Generic cram plan.";
-    return;
-  }
-
-  const selectedProfile = getSelectedClassAssessmentProfile(
-    classFolder,
-    cramAssessmentProfileSelect.value,
-  );
-  const summary = summarizeAssessmentProfile(selectedProfile);
-  cramAssessmentProfileMeta.textContent =
     summary.analysis.conciseSummary ||
     summary.testFormat ||
     "Use this saved teacher format.";
@@ -3068,7 +2902,8 @@ function renderQuizClassMaterialPicker() {
 }
 
 function renderCramClassMaterialPicker() {
-  const options = getClassMaterialReferenceOptions(getCurrentClassFolder());
+  const classFolder = getCurrentClassFolder();
+  const options = getClassMaterialReferenceOptions(classFolder);
   selectedCramClassMaterialKeys = syncClassMaterialSelection(
     selectedCramClassMaterialKeys,
     options,
@@ -3087,9 +2922,148 @@ function renderCramClassMaterialPicker() {
         selectedCramClassMaterialKeys.delete(key);
       }
       renderCramClassMaterialPicker();
-      updateCramMaterialCount();
     },
   });
+}
+
+function updateCramAssessmentProfileMeta(classFolder) {
+  if (!cramAssessmentProfileMeta) {
+    return;
+  }
+
+  if (!cramAssessmentProfileSelect?.value) {
+    cramAssessmentProfileMeta.textContent = "Generic cram plan.";
+    return;
+  }
+
+  const selectedProfile = getSelectedClassAssessmentProfile(
+    classFolder,
+    cramAssessmentProfileSelect.value,
+  );
+  const summary = summarizeAssessmentProfile(selectedProfile);
+  cramAssessmentProfileMeta.textContent =
+    summary.analysis.conciseSummary ||
+    summary.testFormat ||
+    "Use this saved teacher format.";
+}
+
+function getCombinedUploadedCramMaterial() {
+  return uploadedCramMaterials
+    .map(({ name, content }) => `--- ${name} ---\n${content}`)
+    .join("\n\n");
+}
+
+function getCramUploadSummaryText() {
+  if (uploadedCramMaterials.length === 0) {
+    return "No files selected";
+  }
+
+  if (uploadedCramMaterials.length === 1) {
+    const file = uploadedCramMaterials[0];
+    return file.handler ? `${file.name} (${file.handler})` : file.name;
+  }
+
+  return `${uploadedCramMaterials.length} files selected`;
+}
+
+function renderCramUploadRollup() {
+  if (!cramUploadRollup) {
+    return;
+  }
+
+  if (uploadedCramMaterials.length === 0) {
+    cramUploadRollup.hidden = true;
+    cramUploadRollup.replaceChildren();
+    return;
+  }
+
+  cramUploadRollup.hidden = false;
+  cramUploadRollup.replaceChildren();
+
+  uploadedCramMaterials.slice(0, 4).forEach((file) => {
+    const chip = document.createElement("span");
+    chip.className = "cram-upload-rollup-chip";
+    chip.textContent = file.handler
+      ? `${file.name} • ${file.handler}`
+      : file.name;
+    cramUploadRollup.appendChild(chip);
+  });
+
+  if (uploadedCramMaterials.length > 4) {
+    const moreChip = document.createElement("span");
+    moreChip.className =
+      "cram-upload-rollup-chip cram-upload-rollup-chip-muted";
+    moreChip.textContent = `+${uploadedCramMaterials.length - 4} more`;
+    cramUploadRollup.appendChild(moreChip);
+  }
+}
+
+function timeAvailableToMinutes(value) {
+  if (value === "30 minutes") {
+    return 30;
+  }
+  if (value === "2 hours") {
+    return 120;
+  }
+  if (value === "All night") {
+    return 240;
+  }
+  return 60;
+}
+
+function buildCramDeadlineFromAvailability(value) {
+  const minutes = timeAvailableToMinutes(value);
+  const deadline = new Date(Date.now() + minutes * 60 * 1000);
+  deadline.setSeconds(0, 0);
+  return deadline.toISOString().slice(0, 16);
+}
+
+function updateCramMaterialCount() {
+  const pastedLength = cramMaterialText?.value.trim().length || 0;
+  const uploadedLength = uploadedCramMaterials.reduce(
+    (total, file) => total + file.content.length,
+    0,
+  );
+  const selectedClassMaterialLength = getSelectedClassMaterialSources(
+    selectedCramClassMaterialKeys,
+    getCurrentClassFolder(),
+  ).reduce((total, source) => total + source.content.length, 0);
+  const selectedClassMaterialCount = getSelectedClassMaterialSources(
+    selectedCramClassMaterialKeys,
+    getCurrentClassFolder(),
+  ).length;
+  const combinedLength =
+    pastedLength + uploadedLength + selectedClassMaterialLength;
+  const approxTokens = Math.ceil(combinedLength / 4);
+  const hasUploadedMaterial = uploadedCramMaterials.length > 0;
+  const hasSelectedClassMaterial = selectedClassMaterialCount > 0;
+  const hasUploadError = Boolean(cramMaterialUploadError);
+  const overLimit =
+    combinedLength > cramConstraintsConfig.maxMaterialCharacters;
+
+  if (cramMaterialCount) {
+    cramMaterialCount.textContent = `Approx ${approxTokens.toLocaleString()} tokens loaded`;
+  }
+  if (cramMaterialStatus) {
+    cramMaterialStatus.textContent = hasUploadError
+      ? cramMaterialUploadError
+      : overLimit
+        ? `Too much material. Keep under ${cramConstraintsConfig.maxMaterialCharacters.toLocaleString()} chars.`
+        : cramMaterialUploadSummary
+          ? cramMaterialUploadSummary
+          : hasSelectedClassMaterial
+            ? `${selectedClassMaterialCount} class source${selectedClassMaterialCount === 1 ? "" : "s"} selected.`
+            : hasUploadedMaterial
+              ? `${uploadedCramMaterials.length} file${uploadedCramMaterials.length === 1 ? "" : "s"} loaded.`
+              : "Paste or upload material.";
+    cramMaterialStatus.dataset.tone =
+      hasUploadError || overLimit ? "danger" : "neutral";
+  }
+  if (generateCramButton) {
+    generateCramButton.disabled = isGeneratingCramPlan;
+  }
+
+  return { approxTokens };
 }
 
 function renderAssessmentClassMaterialPicker() {
@@ -3277,11 +3251,6 @@ function openQuizModalForCurrentClass() {
   const assessmentSummary = summarizeAssessmentProfile(
     currentClassFolder.assessmentProfile,
   );
-  renderClassAssessmentProfileSelect(
-    cramAssessmentProfileSelect,
-    currentClassFolder,
-    "Generic cram mode",
-  );
   quizModalTitle.textContent = `Quiz: ${currentClassFolder.name || "Class"}`;
   quizSessionMeta.textContent = assessmentSummary.testFormat
     ? `Teacher style: ${assessmentSummary.testFormat}. Pick sessions or add material below.`
@@ -3308,374 +3277,37 @@ function closeQuizModal() {
   quizQuestions.parentElement?.classList.remove("has-explanation");
 }
 
-function updateCramMaterialCount() {
-  const pastedLength = cramMaterialText?.value.trim().length || 0;
-  const uploadedLength = uploadedCramMaterials.reduce(
-    (total, file) => total + file.content.length,
-    0,
-  );
-  const selectedClassMaterialLength = getSelectedClassMaterialSources(
-    selectedCramClassMaterialKeys,
-    getCurrentClassFolder(),
-  ).reduce((total, source) => total + source.content.length, 0);
-  const selectedClassMaterialCount = getSelectedClassMaterialSources(
-    selectedCramClassMaterialKeys,
-    getCurrentClassFolder(),
-  ).length;
-  const combinedLength =
-    pastedLength + uploadedLength + selectedClassMaterialLength;
-  const approxTokens = Math.ceil(combinedLength / 4);
-  const hasUploadedMaterial = uploadedCramMaterials.length > 0;
-  const hasSelectedClassMaterial = selectedClassMaterialCount > 0;
-  const hasUploadError = Boolean(cramMaterialUploadError);
-  const overLimit =
-    combinedLength > cramConstraintsConfig.maxMaterialCharacters;
-
-  cramMaterialCount.textContent = `Approx ${approxTokens.toLocaleString()} tokens loaded`;
-  cramMaterialStatus.textContent = hasUploadError
-    ? cramMaterialUploadError
-    : overLimit
-      ? `Too much material. Keep under ${cramConstraintsConfig.maxMaterialCharacters.toLocaleString()} chars.`
-      : cramMaterialUploadSummary
-        ? cramMaterialUploadSummary
-        : hasSelectedClassMaterial
-          ? `${selectedClassMaterialCount} class source${selectedClassMaterialCount === 1 ? "" : "s"} selected.`
-          : hasUploadedMaterial
-            ? `${uploadedCramMaterials.length} file${uploadedCramMaterials.length === 1 ? "" : "s"} loaded.`
-            : "Paste or upload material.";
-  cramMaterialStatus.dataset.tone =
-    hasUploadError || overLimit ? "danger" : "neutral";
-  generateCramButton.disabled = isGeneratingCramPlan;
-
-  return {
-    approxTokens,
-  };
-}
-
-function resetCramModalState() {
-  activeCramPlan = null;
+function resetCramSetupState() {
   uploadedCramMaterials = [];
+  activeCramPlan = null;
+  activeCramTaskIndex = 0;
   selectedCramClassMaterialKeys = new Set();
   cramClassMaterialSelectionInitialized = false;
   cramMaterialUploadError = "";
   cramMaterialUploadSummary = "";
-  renderCramUploadRollup();
-  cramSetupView.hidden = false;
-  cramView.hidden = true;
-  cramExamNameInput.value = "";
-  cramTimeAvailableSelect.value = "1 hour";
+  if (cramExamNameInput) {
+    cramExamNameInput.value = "";
+  }
+  if (cramTimeAvailableSelect) {
+    cramTimeAvailableSelect.value = "1 hour";
+  }
   if (cramAssessmentProfileSelect) {
     cramAssessmentProfileSelect.value = "";
   }
   if (cramAssessmentProfileMeta) {
     cramAssessmentProfileMeta.textContent = "Generic cram plan.";
   }
-  cramMaterialFile.value = "";
-  cramFileName.textContent = "No files selected";
-  cramMaterialText.value = "";
-  cramAdditionalNotes.value = "";
-  cramSubtitle.textContent = "";
-  cramNowFocus.textContent = "Start here.";
-  cramSideklickTip.textContent = "Tight plan. Finishable tonight.";
-  cramRunwaySummary.textContent = "One step at a time.";
-  cramStepNow.textContent = "Lock in the highest-yield idea first.";
-  cramStepNext.textContent = "Next priority.";
-  cramStepSkip.textContent = "Drop this first.";
-  cramStepQuestions.textContent = "Rehearse these.";
-  cramStepTest.textContent = "Answer from memory.";
-  cramGuideGuardrail.textContent = "Return to step one if you drift.";
-  cramGuideRecovery.textContent = "Missed it? Retry the matching step.";
-  cramStudyFirst.replaceChildren();
-  cramStudyNext.replaceChildren();
-  cramSkipList.replaceChildren();
-  cramTimePlan.replaceChildren();
-  cramLikelyQuestions.replaceChildren();
-  cramQuickSelfTest.replaceChildren();
-  isGeneratingCramPlan = false;
-  generateCramButton.disabled = false;
-  generateCramButton.textContent = "Generate Plan";
-  renderCramClassMaterialPicker();
-  updateCramMaterialCount();
-}
-
-function closeCramModal() {
-  currentPath = [...cramReturnPath];
-  setHomeView("dashboard");
-  renderFolders();
-  activeCramPlan = null;
-}
-
-function openCramModalForCurrentClass() {
-  if (!requireSignedIn("start Cram Mode")) {
-    return;
+  if (cramMaterialText) {
+    cramMaterialText.value = "";
   }
-
-  const currentClassFolder = getCurrentClassFolder();
-  if (!currentClassFolder || currentClassFolder.type !== "class") {
-    return;
+  if (cramMaterialFile) {
+    cramMaterialFile.value = "";
   }
-
-  resetCramModalState();
-  cramReturnPath = [...currentPath];
-  const unitPathLabel = buildCurrentUnitPathLabel();
-  const assessmentSummary = summarizeAssessmentProfile(
-    currentClassFolder.assessmentProfile,
-  );
-  cramSessionMeta.textContent = unitPathLabel
-    ? `${currentClassFolder.name || "Class"} • ${unitPathLabel}${assessmentSummary.testFormat ? ` • ${assessmentSummary.testFormat}` : ""}`
-    : `${currentClassFolder.name || "Class"} • Exam rescue mode${assessmentSummary.testFormat ? ` • ${assessmentSummary.testFormat}` : ""}`;
-  updateCramAssessmentProfileMeta(currentClassFolder);
-  setHomeView("cram");
-  cramExamNameInput.focus();
-}
-
-function renderCramList(container, items) {
-  container.replaceChildren();
-
-  items.forEach((item) => {
-    const entry = document.createElement("li");
-    entry.className = "cram-list-item interactive-cram-item";
-
-    const label = document.createElement("label");
-    label.className = "cram-checkbox-label";
-
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.className = "cram-checkbox";
-
-    // Auto-save state in memory so if they switch views it stays?
-    // Just visual for now during the session
-    checkbox.addEventListener("change", () => {
-      if (checkbox.checked) {
-        entry.classList.add("completed");
-      } else {
-        entry.classList.remove("completed");
-      }
-    });
-
-    const text = document.createElement("span");
-    text.className = "cram-item-text";
-    text.textContent = item;
-
-    label.appendChild(checkbox);
-    label.appendChild(text);
-    entry.appendChild(label);
-
-    container.appendChild(entry);
-  });
-}
-
-function loadCramPlanIntoView(plan) {
-  activeCramPlan = plan;
-  cramSubtitle.textContent = activeCramPlan.subtitle;
-  renderCramList(cramStudyFirst, activeCramPlan.studyFirst);
-  renderCramList(cramStudyNext, activeCramPlan.studyNext);
-  renderCramList(cramSkipList, activeCramPlan.skipIfNeeded);
-  renderCramList(cramTimePlan, activeCramPlan.timePlan);
-  renderCramList(cramLikelyQuestions, activeCramPlan.likelyQuestions);
-  renderCramList(cramQuickSelfTest, activeCramPlan.quickSelfTest);
-  renderCramTimelineCopy(activeCramPlan);
-
-  cramSetupView.hidden = true;
-  cramView.hidden = false;
-}
-
-function openSavedCramPlan(cramItem) {
-  if (!requireSignedIn("open saved cram plans")) {
-    return;
+  if (cramFileName) {
+    cramFileName.textContent = "No files selected";
   }
-  if (cramItem.status === "processing" || cramItem.status === "failed") {
-    return;
-  }
-  if (!cramItem.cramData) {
-    return;
-  }
-
-  resetCramModalState();
-  cramReturnPath = [...currentPath];
-  cramSessionMeta.textContent = `Saved ${formatSessionDate(cramItem.createdAt)}`;
-  loadCramPlanIntoView(cramItem.cramData);
-  setHomeView("cram");
-}
-
-function buildProcessingCramEntry(examName) {
-  const name = examName ? `${examName} - Processing` : "Cram Plan - Processing";
-
-  return {
-    id: makeId(),
-    type: "cram",
-    name,
-    status: "processing",
-    createdAt: new Date().toISOString(),
-    summary: "Building cram plan",
-    cramData: null,
-  };
-}
-
-async function addCramEntryToExplorer(entry, targetPath = currentPath) {
-  const targetNode = getFolderAtPath(targetPath);
-  const targetChildren = targetNode ? targetNode.children || [] : folders;
-  const nextChildren = [entry, ...targetChildren];
-  const nextFolders = replaceChildrenAtPath(targetPath, nextChildren);
-  await persistFolders(nextFolders);
-}
-
-async function updateCramEntryInExplorer(
-  entryId,
-  transform,
-  targetPath = currentPath,
-) {
-  const targetNode = getFolderAtPath(targetPath);
-  const targetChildren = targetNode ? targetNode.children || [] : folders;
-  const nextChildren = targetChildren.map((item) =>
-    item.id === entryId ? transform(item) : item,
-  );
-  const nextFolders = replaceChildrenAtPath(targetPath, nextChildren);
-  await persistFolders(nextFolders);
-}
-
-async function generateCramPlan() {
-  if (!requireSignedIn("build a cram plan")) {
-    return;
-  }
-
-  const canUseAi = await ensureAiFeatureAvailable((message) => {
-    cramMaterialStatus.dataset.tone = "danger";
-    cramMaterialStatus.textContent = message;
-  });
-  if (!canUseAi) {
-    return;
-  }
-
-  const currentClassFolder = getCurrentClassFolder();
-  if (!currentClassFolder) {
-    return;
-  }
-
-  const examName = cramExamNameInput.value.trim();
-  const material = getCombinedCramMaterialInput();
-  updateCramMaterialCount();
-  if (!examName) {
-    cramExamNameInput.focus();
-    return;
-  }
-  const materialValidation = validateCramMaterialPayload(material);
-  if (!materialValidation.ok) {
-    cramMaterialStatus.dataset.tone = "danger";
-    cramMaterialStatus.textContent = materialValidation.message;
-    cramMaterialText.focus();
-    return;
-  }
-
-  isGeneratingCramPlan = true;
-  generateCramButton.disabled = true;
-  generateCramButton.textContent = "Building plan...";
-
-  try {
-    const classId = await ensureBackendClassId(currentClassFolder);
-    const selectedAssessmentProfile = cramAssessmentProfileSelect?.value
-      ? getSelectedClassAssessmentProfile(
-          currentClassFolder,
-          cramAssessmentProfileSelect.value,
-        )
-      : null;
-    activeCramPlan = await window.overlayApi.generateCramPlan({
-      classId,
-      courseName: currentClassFolder.name,
-      unitPathLabel: buildCurrentUnitPathLabel(),
-      examName,
-      timeAvailable: cramTimeAvailableSelect.value,
-      examMaterial: materialValidation.normalizedMaterial,
-      additionalNotes: cramAdditionalNotes.value.trim() || null,
-      teacherAssessmentProfile: selectedAssessmentProfile
-        ? getTeacherAssessmentProfilePayload(selectedAssessmentProfile)
-        : null,
-    });
-
-    cramSubtitle.textContent = activeCramPlan.subtitle;
-    renderCramList(cramStudyFirst, activeCramPlan.studyFirst);
-    renderCramList(cramStudyNext, activeCramPlan.studyNext);
-    renderCramList(cramSkipList, activeCramPlan.skipIfNeeded);
-    renderCramList(cramTimePlan, activeCramPlan.timePlan);
-    renderCramList(cramLikelyQuestions, activeCramPlan.likelyQuestions);
-    renderCramList(cramQuickSelfTest, activeCramPlan.quickSelfTest);
-    renderCramTimelineCopy(activeCramPlan);
-
-    cramSetupView.hidden = true;
-    cramView.hidden = false;
-  } catch (error) {
-    cramMaterialStatus.dataset.tone = "danger";
-    cramMaterialStatus.textContent =
-      error instanceof Error
-        ? error.message
-        : "Could not build a cram plan right now.";
-  } finally {
-    isGeneratingCramPlan = false;
-    generateCramButton.disabled = false;
-    generateCramButton.textContent = "Generate Plan";
-    updateCramMaterialCount();
-  }
-}
-
-function renderCramSessionPicker(sessions) {
-  cramSessionPicker.replaceChildren();
-
-  if (sessions.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "quiz-picker-empty";
-    empty.textContent = "No saved sessions here yet.";
-    cramSessionPicker.appendChild(empty);
-    return;
-  }
-
-  sessions.forEach((session) => {
-    const label = document.createElement("label");
-    label.className = "quiz-session-option";
-
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.value = String(session.dbSessionId);
-    input.checked = true;
-
-    const textWrap = document.createElement("div");
-    textWrap.className = "quiz-session-option-copy";
-
-    const title = document.createElement("span");
-    title.className = "quiz-session-option-title";
-    title.textContent = session.name || "Saved Session";
-
-    const meta = document.createElement("span");
-    meta.className = "quiz-session-option-meta";
-    meta.textContent = buildSessionCardStats(session);
-
-    textWrap.append(title, meta);
-    label.append(input, textWrap);
-    cramSessionPicker.appendChild(label);
-  });
-}
-
-function getDefaultCramDeadlineValue() {
-  const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  deadline.setMinutes(0, 0, 0);
-  return deadline.toISOString().slice(0, 16);
-}
-
-function resetCramSetupState() {
-  uploadedCramSetupMaterial = "";
-  activeCramPlan = null;
-  activeCramTaskIndex = 0;
-  cramPlanName.value = "";
-  cramDeadline.value = getDefaultCramDeadlineValue();
-  cramAvailableMinutes.value = "90";
-  cramGapFocus.value = "50";
-  if (cramSetupMaterialText) {
-    cramSetupMaterialText.value = "";
-  }
-  if (cramSetupMaterialFile) {
-    cramSetupMaterialFile.value = "";
-  }
-  if (cramSetupFileName) {
-    cramSetupFileName.textContent = "No file selected";
+  if (cramAdditionalNotes) {
+    cramAdditionalNotes.value = "";
   }
   cramStatus.textContent = "";
   cramSetupPanel.hidden = false;
@@ -3683,6 +3315,9 @@ function resetCramSetupState() {
   cramQuizPanel.hidden = true;
   cramScreenTitle.textContent = "Cram Mode";
   cramScreenMeta.textContent = "";
+  renderCramUploadRollup();
+  renderCramClassMaterialPicker();
+  updateCramMaterialCount();
 }
 
 function openCramSetupForCurrentClass() {
@@ -3700,7 +3335,7 @@ function openCramSetupForCurrentClass() {
   cramReturnPath = [...currentPath];
   resetCramSetupState();
   cramScreenMeta.textContent = currentClassFolder.name || "Class";
-  renderCramSessionPicker(getCurrentClassSessions());
+  updateCramAssessmentProfileMeta(currentClassFolder);
   setHomeView("cram");
 }
 
@@ -3786,12 +3421,24 @@ function buildCramProgress(plan) {
   };
 }
 
+function renderCramTakeaways(items = []) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return "";
+  }
+
+  return `
+    <ul class="cram-list">
+      ${items.map((item) => `<li class="cram-list-item">${item}</li>`).join("")}
+    </ul>
+  `;
+}
+
 function renderCramPlan(plan) {
   activeCramPlan = plan;
   cramSetupPanel.hidden = true;
   cramActivePanel.hidden = false;
   cramQuizPanel.hidden = true;
-  cramScreenTitle.textContent = "Cram Mode";
+  cramScreenTitle.textContent = "Study Guide";
   cramScreenMeta.textContent = [
     plan.name || "Cram Plan",
     formatCramDeadline(plan.deadline),
@@ -3813,7 +3460,13 @@ function renderCramPlan(plan) {
         <span class="cram-task-name">${index + 1}. ${task.title}</span>
         <span class="cram-task-meta">${task.estimatedMinutes || 0} min - ${priorityLabel(task.priority)} - ${statusLabel(task.status)}</span>
       </span>
-      <span class="cram-task-row-quiz">${task.quizId ? "Quiz saved" : "Quiz ready"}</span>
+      <span class="cram-task-row-quiz">${
+        task.quizEnabled
+          ? task.quizId
+            ? "Quiz saved"
+            : "Quiz preview"
+          : "Guide only"
+      }</span>
     `;
     button.addEventListener("click", () => {
       activeCramTaskIndex = index;
@@ -3839,6 +3492,11 @@ function renderCramTaskDetail(task) {
     Array.isArray(task.sourceLabels) && task.sourceLabels.length > 0
       ? task.sourceLabels.join(", ")
       : "Plan material";
+  const quizPreview = task.quizPreview || {
+    title: `${task.topic} quiz preview`,
+    description: "Open a fresh quiz built from this cram section and its source material.",
+    questionCount: 3,
+  };
 
   cramTaskDetail.innerHTML = `
     <div class="cram-task-detail-header">
@@ -3848,14 +3506,28 @@ function renderCramTaskDetail(task) {
       </div>
       <span class="cram-priority">${priorityLabel(task.priority)}</span>
     </div>
+    <p class="panel-help">${task.body}</p>
     <p class="cram-task-source">${sourceText}</p>
-    <div class="cram-quiz-checkpoint">
-      <div>
-        <strong>Quiz checkpoint</strong>
-        <p class="panel-help">${scoreText}</p>
+    ${renderCramTakeaways(task.keyTakeaways)}
+    ${
+      task.quizEnabled
+        ? `
+      <button id="cram-task-quiz" class="cram-quiz-preview" type="button">
+        <span class="cram-quiz-preview-kicker">Quiz Preview</span>
+        <span class="cram-quiz-preview-title">${quizPreview.title}</span>
+        <span class="cram-quiz-preview-copy">${quizPreview.description}</span>
+        <span class="cram-quiz-preview-meta">${quizPreview.questionCount || 3} questions - ${scoreText}</span>
+      </button>
+    `
+        : `
+      <div class="cram-quiz-checkpoint">
+        <div>
+          <strong>No quiz needed here</strong>
+          <p class="panel-help">Keep this section as a quick reference and move on once it feels solid.</p>
+        </div>
       </div>
-      <button id="cram-task-quiz" class="continue-button" type="button">Start Quiz</button>
-    </div>
+    `
+    }
     <div class="cram-task-actions">
       <button id="cram-mark-reviewing" class="ghost-button" type="button">Reviewing</button>
       <button id="cram-mark-done" class="continue-button" type="button">Done</button>
@@ -3882,8 +3554,26 @@ function renderCramTaskDetail(task) {
 function buildCramPlanEntry(response, values) {
   const tasks = response.tasks.map((task) => ({
     ...task,
+    body: task.body || task.title,
+    keyTakeaways:
+      Array.isArray(task.keyTakeaways) && task.keyTakeaways.length > 0
+        ? task.keyTakeaways
+        : [`Review ${task.topic}.`, "Turn this into active recall before moving on."],
     status: task.status || "not-started",
     quizEnabled: task.quizEnabled !== false,
+    quizPreview:
+      task.quizEnabled === false
+        ? null
+        : {
+            title:
+              task.quizPreview?.title || `${task.topic} quiz preview`,
+            description:
+              task.quizPreview?.description ||
+              "Open a fresh quiz based on this cram section and its supporting material.",
+            questionCount: task.quizPreview?.questionCount || 3,
+          },
+    quizId: task.quizId || null,
+    lastScore: task.lastScore || null,
   }));
   const plan = {
     id: makeId(),
@@ -3925,29 +3615,63 @@ async function generateCramPlanForCurrentClass() {
     return;
   }
 
+  const examName = cramExamNameInput?.value.trim() || "";
+  if (!examName) {
+    cramExamNameInput?.focus();
+    return;
+  }
+
   const dbClassId = await ensureBackendClassId(classFolder);
-  const pastedMaterial = cramSetupMaterialText?.value.trim() || "";
-  const uploadedMaterial = [uploadedCramSetupMaterial, pastedMaterial]
+  const pastedMaterial = cramMaterialText?.value.trim() || "";
+  const selectedClassMaterial = formatSelectedClassMaterialText(
+    selectedCramClassMaterialKeys,
+    classFolder,
+  );
+  const uploadedMaterial = [
+    selectedClassMaterial,
+    getCombinedUploadedCramMaterial().trim(),
+    pastedMaterial,
+  ]
     .filter(Boolean)
     .join("\n\n");
-  const sessionIds = Array.from(
-    cramSessionPicker.querySelectorAll('input[type="checkbox"]:checked'),
-  )
-    .map((input) => Number(input.value))
+  const materialValidation = validateCramMaterialPayload(uploadedMaterial);
+  if (!materialValidation.ok) {
+    if (cramMaterialStatus) {
+      cramMaterialStatus.dataset.tone = "danger";
+      cramMaterialStatus.textContent = materialValidation.message;
+    }
+    cramMaterialText?.focus();
+    return;
+  }
+
+  const selectedAssessmentProfile = cramAssessmentProfileSelect?.value
+    ? getSelectedClassAssessmentProfile(
+        classFolder,
+        cramAssessmentProfileSelect.value,
+      )
+    : null;
+  const sessionIds = getCurrentClassSessions()
+    .map((session) => Number(session.dbSessionId))
     .filter((value) => Number.isFinite(value));
+  const availableMinutes = timeAvailableToMinutes(
+    cramTimeAvailableSelect?.value || "1 hour",
+  );
   const values = {
-    name: cramPlanName.value.trim(),
-    deadline: cramDeadline.value || getDefaultCramDeadlineValue(),
-    availableMinutes: Number(cramAvailableMinutes.value) || 90,
-    uploadedMaterial: uploadedMaterial || null,
+    name: examName,
+    deadline: buildCramDeadlineFromAvailability(
+      cramTimeAvailableSelect?.value || "1 hour",
+    ),
+    availableMinutes,
+    uploadedMaterial: materialValidation.normalizedMaterial,
     currentUnit: buildCurrentUnitPathLabel(),
-    gapFocus: Number(cramGapFocus.value) || 50,
+    additionalNotes: cramAdditionalNotes?.value.trim() || null,
+    gapFocus: 50,
     sessionIds,
   };
 
-  if (generateCramPlanButton) {
-    generateCramPlanButton.disabled = true;
-    generateCramPlanButton.textContent = "Generating...";
+  if (generateCramButton) {
+    generateCramButton.disabled = true;
+    generateCramButton.textContent = "Generating...";
   }
   cramStatus.textContent = "Building plan...";
 
@@ -3955,11 +3679,16 @@ async function generateCramPlanForCurrentClass() {
     const response = await window.overlayApi.generateCramPlanFromSessions({
       classId: dbClassId,
       sessionIds,
+      examName,
       deadline: values.deadline,
       availableMinutes: values.availableMinutes,
       uploadedMaterial: values.uploadedMaterial,
+      additionalNotes: values.additionalNotes,
       currentUnit: values.currentUnit,
       gapFocus: values.gapFocus,
+      teacherAssessmentProfile: selectedAssessmentProfile
+        ? getTeacherAssessmentProfilePayload(selectedAssessmentProfile)
+        : null,
     });
     const plan = buildCramPlanEntry(response, values);
     const nextChildren = [plan, ...getCurrentClassItems()];
@@ -3973,9 +3702,9 @@ async function generateCramPlanForCurrentClass() {
     cramStatus.textContent =
       error instanceof Error ? error.message : "Cram plan failed.";
   } finally {
-    if (generateCramPlanButton) {
-      generateCramPlanButton.disabled = false;
-      generateCramPlanButton.textContent = "Generate Plan";
+    if (generateCramButton) {
+      generateCramButton.disabled = false;
+      generateCramButton.textContent = "Generate Plan";
     }
   }
 }
@@ -4705,6 +4434,10 @@ function renderFolders() {
       openButton.addEventListener("click", () => {
         openSavedQuiz(folder);
       });
+    } else if (isCramPlanItem) {
+      openButton.addEventListener("click", () => {
+        openSavedCramPlan(folder);
+      });
     } else {
       openButton.addEventListener("click", () => {
         if (!requireSignedIn("open folders")) {
@@ -5152,19 +4885,6 @@ quizMinimizeNative?.addEventListener("click", async () => {
   await window.overlayApi.minimizeNative();
 });
 
-cramThemeToggle.addEventListener("click", async () => {
-  if (!requireSignedIn("change appearance")) {
-    return;
-  }
-  const nextSource = currentTone === "dark" ? "light" : "dark";
-  const result = await window.overlayApi.setThemeSource(nextSource);
-  applyThemePreference(result);
-});
-
-cramMinimizeNative.addEventListener("click", async () => {
-  await window.overlayApi.minimizeNative();
-});
-
 closeWindow.addEventListener("click", async () => {
   await window.overlayApi.closeWindow();
 });
@@ -5316,31 +5036,6 @@ assessmentMaterialFile?.addEventListener("change", async () => {
 quizAssessmentProfileSelect?.addEventListener("change", () => {
   updateQuizAssessmentProfileMeta();
 });
-cramAssessmentProfileSelect?.addEventListener("change", () => {
-  const currentClassFolder = getCurrentClassFolder();
-  if (currentClassFolder) {
-    updateCramAssessmentProfileMeta(currentClassFolder);
-  }
-});
-closeCramModalButton.addEventListener("click", closeCramModal);
-cramBackdrop.addEventListener("click", (event) => {
-  if (event.target === cramBackdrop) {
-    closeCramModal();
-  }
-});
-cramMaterialText.addEventListener("input", updateCramMaterialCount);
-cramAdditionalNotes.addEventListener("input", updateCramMaterialCount);
-generateCramButton.addEventListener("click", () => {
-  void generateCramPlan();
-});
-backToCramSetupButton.addEventListener("click", () => {
-  cramView.hidden = true;
-  cramSetupView.hidden = false;
-});
-regenerateCramButton.addEventListener("click", () => {
-  cramView.hidden = true;
-  void generateCramPlan();
-});
 quizGapFocus.addEventListener("input", () => {
   quizGapFocusValue.textContent = `${quizGapFocus.value}%`;
 });
@@ -5366,72 +5061,6 @@ quizMaterialFile.addEventListener("change", async () => {
     console.error("Failed to process quiz material file", error);
   }
 });
-cramMaterialFile.addEventListener("change", async () => {
-  const files = Array.from(cramMaterialFile.files || []);
-  if (files.length === 0) {
-    uploadedCramMaterials = [];
-    cramMaterialUploadError = "";
-    cramMaterialUploadSummary = "";
-    cramFileName.textContent = "No files selected";
-    renderCramUploadRollup();
-    updateCramMaterialCount();
-    return;
-  }
-
-  try {
-    const results = await Promise.allSettled(
-      files.map((file) => extractStudyMaterialFromFiles([file], "cram")),
-    );
-    const successfulFiles = results
-      .filter((result) => result.status === "fulfilled")
-      .map((result) => result.value[0]);
-    const failedCount = results.length - successfulFiles.length;
-    const totalOriginalCharacters = successfulFiles.reduce(
-      (total, file) => total + file.originalCharacters,
-      0,
-    );
-    const totalCompressedCharacters = successfulFiles.reduce(
-      (total, file) => total + file.compressedCharacters,
-      0,
-    );
-    const totalTokenSavings = successfulFiles.reduce(
-      (total, file) => total + file.estimatedTokenSavings,
-      0,
-    );
-
-    uploadedCramMaterials = successfulFiles;
-    cramMaterialUploadError = failedCount
-      ? `Loaded ${successfulFiles.length} file${successfulFiles.length === 1 ? "" : "s"}, but ${failedCount} file${failedCount === 1 ? "" : "s"} couldn't be read cleanly.`
-      : "";
-    cramMaterialUploadSummary =
-      successfulFiles.length > 0
-        ? `Condensed ${successfulFiles.length} upload${successfulFiles.length === 1 ? "" : "s"} from ${totalOriginalCharacters.toLocaleString()} to ${totalCompressedCharacters.toLocaleString()} characters, saving about ${totalTokenSavings.toLocaleString()} tokens.`
-        : "";
-    cramFileName.textContent = getCramUploadSummaryText();
-    renderCramUploadRollup();
-  } catch (error) {
-    uploadedCramMaterials = [];
-    cramMaterialUploadError =
-      "Could not extract readable text from those files.";
-    cramMaterialUploadSummary = "";
-    cramFileName.textContent = "Files couldn't be read";
-    renderCramUploadRollup();
-    console.error("Failed to read Cram Mode material files", error);
-  }
-  updateCramMaterialCount();
-});
-cramMaterialFile.addEventListener("change", async () => {
-  const file = cramMaterialFile.files?.[0];
-  if (!file) {
-    uploadedCramMaterial = "";
-    cramFileName.textContent = "No file selected";
-    return;
-  }
-
-  uploadedCramMaterial = await readQuizMaterialFile(file);
-  cramFileName.textContent = file.name;
-});
-
 for (const button of settingsThemeButtons) {
   button.addEventListener("click", async () => {
     if (!requireSignedIn("change appearance")) {
@@ -5486,7 +5115,7 @@ function openFolderActionMenu() {
       if (action.key === "quiz") {
         openQuizModalForCurrentClass();
       } else if (action.key === "cram") {
-        openCramModalForCurrentClass();
+        openCramSetupForCurrentClass();
       } else if (action.key === "material") {
         openClassMaterialModal();
       } else {
@@ -5658,34 +5287,82 @@ privacyExportButton.addEventListener("click", async () => {
     privacyExportButton.disabled = false;
   }
 });
-cramSetupMaterialFile?.addEventListener("change", async () => {
-  const file = cramSetupMaterialFile.files?.[0];
-  if (!file) {
-    uploadedCramSetupMaterial = "";
-    if (cramSetupFileName) {
-      cramSetupFileName.textContent = "No file selected";
+cramAssessmentProfileSelect?.addEventListener("change", () => {
+  const currentClassFolder = getCurrentClassFolder();
+  if (currentClassFolder) {
+    updateCramAssessmentProfileMeta(currentClassFolder);
+  }
+});
+cramMaterialText?.addEventListener("input", () => {
+  updateCramMaterialCount();
+  if (cramStatus) {
+    cramStatus.textContent = "";
+  }
+});
+cramAdditionalNotes?.addEventListener("input", () => {
+  if (cramStatus) {
+    cramStatus.textContent = "";
+  }
+});
+cramMaterialFile?.addEventListener("change", async () => {
+  const files = Array.from(cramMaterialFile.files || []);
+  if (files.length === 0) {
+    uploadedCramMaterials = [];
+    cramMaterialUploadError = "";
+    cramMaterialUploadSummary = "";
+    if (cramFileName) {
+      cramFileName.textContent = "No files selected";
     }
+    renderCramUploadRollup();
+    updateCramMaterialCount();
     return;
   }
 
   try {
-    const [result] = await extractStudyMaterialFromFiles([file], "cram");
-    uploadedCramSetupMaterial = result.content;
-    if (cramSetupFileName) {
-      cramSetupFileName.textContent = `${file.name} • condensed`;
+    const results = await Promise.allSettled(
+      files.map((file) => extractStudyMaterialFromFiles([file], "cram")),
+    );
+    const successfulFiles = results
+      .filter((result) => result.status === "fulfilled")
+      .map((result) => result.value[0]);
+    const failedCount = results.length - successfulFiles.length;
+    const totalOriginalCharacters = successfulFiles.reduce(
+      (total, file) => total + file.originalCharacters,
+      0,
+    );
+    const totalCompressedCharacters = successfulFiles.reduce(
+      (total, file) => total + file.compressedCharacters,
+      0,
+    );
+    const totalTokenSavings = successfulFiles.reduce(
+      (total, file) => total + file.estimatedTokenSavings,
+      0,
+    );
+
+    uploadedCramMaterials = successfulFiles;
+    cramMaterialUploadError = failedCount
+      ? `Loaded ${successfulFiles.length} file${successfulFiles.length === 1 ? "" : "s"}, but ${failedCount} file${failedCount === 1 ? "" : "s"} couldn't be read cleanly.`
+      : "";
+    cramMaterialUploadSummary =
+      successfulFiles.length > 0
+        ? `Condensed ${successfulFiles.length} upload${successfulFiles.length === 1 ? "" : "s"} from ${totalOriginalCharacters.toLocaleString()} to ${totalCompressedCharacters.toLocaleString()} characters, saving about ${totalTokenSavings.toLocaleString()} tokens.`
+        : "";
+    if (cramFileName) {
+      cramFileName.textContent = getCramUploadSummaryText();
     }
+    renderCramUploadRollup();
   } catch (error) {
-    uploadedCramSetupMaterial = "";
-    if (cramSetupFileName) {
-      cramSetupFileName.textContent = "File couldn't be condensed";
+    uploadedCramMaterials = [];
+    cramMaterialUploadError =
+      "Could not extract readable text from those files.";
+    cramMaterialUploadSummary = "";
+    if (cramFileName) {
+      cramFileName.textContent = "Files couldn't be read";
     }
-    console.error("Failed to process cram setup material file", error);
+    renderCramUploadRollup();
+    console.error("Failed to read Cram Mode material files", error);
   }
-});
-cramSetupMaterialText?.addEventListener("input", () => {
-  if (cramStatus) {
-    cramStatus.textContent = "";
-  }
+  updateCramMaterialCount();
 });
 privacyDeleteAccountButton.addEventListener("click", async () => {
   if (!requireSignedIn("delete account data")) {
@@ -5722,25 +5399,25 @@ generateQuizButton.addEventListener("click", async () => {
 saveQuizButton.addEventListener("click", async () => {
   await saveActiveQuizToExplorer();
 });
-generateCramPlanButton?.addEventListener("click", async () => {
+generateCramButton?.addEventListener("click", async () => {
   if (activeHomeView !== "cram") {
     return;
   }
   await generateCramPlanForCurrentClass();
 });
-cramBackButton.addEventListener("click", () => {
+cramBackButton?.addEventListener("click", () => {
   restoreQuizViewToModal();
   activeQuizContext = "page";
   currentPath = [...cramReturnPath];
   setHomeView("dashboard");
   renderFolders();
 });
-cramQuizBackButton.addEventListener("click", () => {
+cramQuizBackButton?.addEventListener("click", () => {
   cramQuizPanel.hidden = true;
   cramActivePanel.hidden = false;
   renderCramPlan(activeCramPlan);
 });
-cramSaveProgressButton.addEventListener("click", async () => {
+cramSaveProgressButton?.addEventListener("click", async () => {
   await saveActiveCramPlanLocally();
 });
 quizSubmitButton.addEventListener("click", async () => {
@@ -5790,7 +5467,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   setHomeView("dashboard");
   renderFolders();
   attachResizeHandle(resizeHandle);
-  updateCramMaterialCount();
 });
 
 window.addEventListener("resize", scheduleFitText);

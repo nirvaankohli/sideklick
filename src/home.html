@@ -323,145 +323,172 @@
             </div>
 
             <div id="home-cram-view" class="home-view" hidden>
-              <section class="cram-screen">
-                <div class="cram-toolbar">
+              <section class="quiz-screen cram-page-screen">
+                <div class="quiz-page-toolbar">
                   <button
                     id="cram-back-button"
-                    class="ghost-button cram-back-button"
+                    class="ghost-button quiz-page-back-button"
                     type="button"
+                    aria-label="Back to home"
                   >
                     Back
                   </button>
                   <div>
-                    <h2 id="cram-screen-title" class="cram-title">
-                      Cram Mode
-                    </h2>
+                    <p class="panel-label">Cram Mode</p>
+                    <h2 id="cram-screen-title" class="cram-title">Cram Mode</h2>
                     <p id="cram-screen-meta" class="panel-help"></p>
                   </div>
                 </div>
 
-                <section id="cram-setup-panel" class="cram-panel">
-                  <div class="cram-form-grid">
+                <div id="cram-setup-panel" class="quiz-setup-form quiz-page-section">
+                  <p id="cram-session-meta" class="panel-help"></p>
+
+                  <label class="modal-field">
+                    <span>Exam name</span>
+                    <input
+                      id="cram-exam-name"
+                      type="text"
+                      placeholder="AP Biology Unit 4 Test"
+                    />
+                  </label>
+
+                  <div class="cram-setup-row">
                     <label class="modal-field">
-                      <span>Plan name</span>
-                      <input
-                        id="cram-plan-name"
-                        type="text"
-                        placeholder="Unit 3 cram"
-                      />
+                      <span>Time available</span>
+                      <select id="cram-time-available" class="cram-select">
+                        <option value="30 minutes">30 min</option>
+                        <option value="1 hour" selected>1 hour</option>
+                        <option value="2 hours">2 hours</option>
+                        <option value="All night">All night</option>
+                      </select>
                     </label>
                     <label class="modal-field">
-                      <span>Deadline</span>
-                      <input id="cram-deadline" type="datetime-local" />
-                    </label>
-                    <label class="modal-field">
-                      <span>Available time</span>
-                      <input
-                        id="cram-available-minutes"
-                        type="number"
-                        min="15"
-                        max="1440"
-                        step="15"
-                        value="90"
-                      />
-                    </label>
-                    <label class="modal-field">
-                      <span>Gap focus</span>
-                      <input
-                        id="cram-gap-focus"
-                        type="range"
-                        min="0"
-                        max="100"
-                        value="50"
-                      />
+                      <span>Assessment format</span>
+                      <select id="cram-assessment-profile-select" class="cram-select"></select>
                     </label>
                   </div>
+                  <p id="cram-assessment-profile-meta" class="panel-help">
+                    Generic cram plan.
+                  </p>
 
                   <div class="cram-source-stack">
-                    <section class="cram-section">
-                      <h3 class="cram-section-title">Sessions</h3>
+                    <div class="material-reference-section">
+                      <span class="material-reference-label">Class material</span>
+                      <span id="cram-class-material-status" class="material-reference-status"></span>
+                      <div id="cram-class-material-picker" class="material-reference-picker"></div>
+                    </div>
+
+                    <label class="modal-field">
+                      <span>Material</span>
+                      <div class="assessment-upload-drop">
+                        <input
+                          id="cram-material-file"
+                          class="assessment-file-input"
+                          type="file"
+                          multiple
+                          accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                        />
+                        <label for="cram-material-file" class="assessment-upload-drop-label quiz-upload-drop-compact">
+                          <span class="assessment-upload-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" class="icon-svg">
+                              <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
+                            </svg>
+                          </span>
+                          <span class="assessment-upload-title">Upload or drop files</span>
+                        </label>
+                        <span id="cram-file-name" class="panel-help">No files selected</span>
+                      </div>
+                    </label>
+                    <div class="cram-upload-meta">
                       <div
-                        id="cram-session-picker"
-                        class="quiz-session-picker"
+                        id="cram-upload-rollup"
+                        class="cram-upload-rollup"
+                        hidden
                       ></div>
-                    </section>
-                    <section class="cram-section">
-                      <h3 class="cram-section-title">Material</h3>
-                      <label class="modal-field">
-                        <span>Upload material</span>
-                        <div class="quiz-file-shell">
-                          <input
-                            id="cram-setup-material-file"
-                            class="quiz-file-input"
-                            type="file"
-                            accept=".txt,.md,.csv,.json,text/plain,text/markdown"
-                          />
-                          <label
-                            for="cram-setup-material-file"
-                            class="quiz-file-button"
-                            >Choose file</label
-                          >
-                          <span id="cram-setup-file-name" class="quiz-file-name"
-                            >No file selected</span
-                          >
-                        </div>
-                      </label>
-                      <label class="modal-field">
-                        <span>Or paste material</span>
-                        <textarea
-                          id="cram-setup-material-text"
-                          rows="5"
-                          placeholder="Paste study material here"
-                        ></textarea>
-                      </label>
-                    </section>
+                    </div>
+
+                    <label class="modal-field">
+                      <span>Or paste notes</span>
+                      <textarea
+                        id="cram-material-text"
+                        rows="4"
+                        placeholder="Paste study material here"
+                      ></textarea>
+                    </label>
                   </div>
 
-                  <div class="cram-actions">
-                    <p id="cram-status" class="panel-help"></p>
+                  <p
+                    id="cram-material-status"
+                    class="panel-help cram-material-status"
+                  >
+                    Ready to build from uploaded and pasted material.
+                  </p>
+
+                  <p id="cram-material-count" class="cram-token-hint" hidden>
+                    Approx 0 tokens loaded
+                  </p>
+
+                  <label class="modal-field">
+                    <span>Additional notes</span>
+                    <textarea
+                      id="cram-additional-notes"
+                      rows="3"
+                      placeholder="Teacher emphasis, format, weak spots"
+                    ></textarea>
+                  </label>
+
+                  <p id="cram-status" class="panel-help"></p>
+
+                  <div class="modal-actions">
                     <button
-                      id="generate-cram-plan-button"
+                      id="generate-cram-button"
                       class="continue-button"
                       type="button"
                     >
                       Generate Plan
                     </button>
                   </div>
-                </section>
+                </div>
 
-                <section id="cram-active-panel" class="cram-active" hidden>
-                  <aside class="cram-progress-panel">
-                    <p id="cram-progress-value" class="cram-progress-value">
-                      0%
+                <div id="cram-active-panel" class="quiz-page-section" hidden>
+                  <div class="cram-progress-panel">
+                    <p id="cram-progress-value" class="cram-progress-value">0%</p>
+                    <p id="cram-progress-copy" class="panel-help">
+                      0/0 tasks done - Build a guide to begin.
                     </p>
-                    <p id="cram-progress-copy" class="panel-help"></p>
-                    <button
-                      id="cram-save-progress"
-                      class="ghost-button"
-                      type="button"
-                    >
+                  </div>
+
+                  <div class="cram-active">
+                    <section class="cram-task-list-shell">
+                      <h3 class="cram-section-title">Study Sections</h3>
+                      <div id="cram-task-list" class="cram-task-list"></div>
+                    </section>
+
+                    <section id="cram-task-detail" class="cram-panel">
+                      Select a study section.
+                    </section>
+                  </div>
+
+                  <div class="modal-actions">
+                    <button id="cram-save-progress" class="ghost-button" type="button">
                       Save Progress
                     </button>
-                  </aside>
-                  <article id="cram-task-detail" class="cram-panel"></article>
-                  <aside class="cram-task-list-shell">
-                    <div id="cram-task-list" class="cram-task-list"></div>
-                  </aside>
-                </section>
+                  </div>
+                </div>
 
-                <section id="cram-quiz-panel" class="cram-panel" hidden>
+                <div id="cram-quiz-panel" class="quiz-page-section cram-quiz-panel" hidden>
                   <div class="cram-quiz-toolbar">
                     <button
                       id="cram-quiz-back-button"
                       class="ghost-button"
                       type="button"
                     >
-                      Back to Plan
+                      Back to Guide
                     </button>
                     <p id="cram-quiz-meta" class="panel-help"></p>
                   </div>
                   <div id="cram-quiz-mount"></div>
-                </section>
+                </div>
               </section>
             </div>
 
@@ -1333,393 +1360,6 @@
           </section>
         </div>
 
-        <div id="cram-backdrop" class="modal-backdrop no-drag" hidden>
-          <section
-            class="modal-card cram-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cram-modal-title"
-          >
-            <div class="modal-header cram-modal-header">
-              <div>
-                <p class="panel-label">Cram Mode</p>
-                <h2 id="cram-modal-title" class="modal-title">
-                  Create Cram Plan
-                </h2>
-              </div>
-              <div class="window-actions no-drag quiz-window-actions">
-                <button
-                  id="cram-theme-toggle"
-                  class="icon-button"
-                  type="button"
-                  aria-label="Toggle light or dark theme"
-                >
-                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M12.2 3.2c.5 0 .8.4.8.8 0 .2 0 .4-.1.5-1 1.8-1.3 4-.7 6.1 1 3.2 4 5.4 7.4 5.4.4 0 .8.3.8.8 0 .2-.1.4-.2.5-1.7 2.3-4.4 3.7-7.3 3.7-5 0-9-4-9-9 0-4 2.7-7.4 6.5-8.6.1-.1.3-.2.5-.2Z"
-                    ></path>
-                  </svg>
-                </button>
-                <button
-                  id="cram-minimize-native"
-                  class="icon-button"
-                  type="button"
-                  aria-label="Minimize window"
-                >
-                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M6 19h12v-2H6z"></path>
-                  </svg>
-                </button>
-                <button
-                  id="close-cram-modal"
-                  class="icon-button danger"
-                  type="button"
-                  aria-label="Close Cram Mode modal"
-                >
-                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
-                    ></path>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div id="cram-setup-view" class="quiz-setup-form">
-              <p id="cram-session-meta" class="panel-help"></p>
-
-              <label class="modal-field">
-                <span>Exam name</span>
-                <input
-                  id="cram-exam-name"
-                  type="text"
-                  placeholder="AP Biology Unit 4 Test"
-                />
-              </label>
-
-              <div class="cram-setup-row">
-                <label class="modal-field">
-                  <span>Time available</span>
-                  <select id="cram-time-available" class="cram-select">
-                    <option value="30 minutes">30 min</option>
-                    <option value="1 hour" selected>1 hour</option>
-                    <option value="2 hours">2 hours</option>
-                    <option value="All night">All night</option>
-                  </select>
-                </label>
-                <label class="modal-field">
-                  <span>Assessment format</span>
-                  <select id="cram-assessment-profile-select" class="cram-select"></select>
-                </label>
-              </div>
-              <p id="cram-assessment-profile-meta" class="panel-help">
-                Generic cram plan.
-              </p>
-
-              <div class="quiz-material-section">
-                <div class="material-reference-section">
-                  <span class="material-reference-label">Class material</span>
-                  <span id="cram-class-material-status" class="material-reference-status"></span>
-                  <div id="cram-class-material-picker" class="material-reference-picker"></div>
-                </div>
-                <label class="modal-field">
-                  <span>Material</span>
-                  <div class="assessment-upload-drop">
-                    <input
-                      id="cram-material-file"
-                      class="assessment-file-input"
-                      type="file"
-                      multiple
-                      accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                    />
-                    <label for="cram-material-file" class="assessment-upload-drop-label quiz-upload-drop-compact">
-                      <span class="assessment-upload-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" class="icon-svg">
-                          <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
-                        </svg>
-                      </span>
-                      <span class="assessment-upload-title">Upload or drop files</span>
-                    </label>
-                    <span id="cram-file-name" class="panel-help">No files selected</span>
-                  </div>
-                </label>
-                <div class="cram-upload-meta">
-                  <div
-                    id="cram-upload-rollup"
-                    class="cram-upload-rollup"
-                    hidden
-                  ></div>
-                </div>
-                <label class="modal-field">
-                  <span>Or paste notes</span>
-                  <textarea
-                    id="cram-material-text"
-                    rows="4"
-                    placeholder="Paste study material here"
-                  ></textarea>
-                </label>
-              </div>
-              <p
-                id="cram-material-status"
-                class="panel-help cram-material-status"
-              >
-                Ready to build from uploaded and pasted material.
-              </p>
-
-              <!-- Hidden token count (kept for data tracking) -->
-              <p id="cram-material-count" class="cram-token-hint" hidden>
-                Approx 0 tokens loaded
-              </p>
-
-              <label class="modal-field">
-                <span>Additional notes</span>
-                <textarea
-                  id="cram-additional-notes"
-                  rows="3"
-                  placeholder="Teacher emphasis, format, weak spots"
-                ></textarea>
-              </label>
-
-              <div class="modal-actions">
-                <button
-                  id="generate-cram-button"
-                  class="continue-button"
-                  type="button"
-                >
-                  Generate Plan
-                </button>
-              </div>
-            </div>
-
-            <div id="cram-view" class="cram-stack" hidden>
-              <div class="cram-results-bar">
-                <div class="cram-results-copy">
-                  <p class="panel-label">Cram plan</p>
-                  <p id="cram-subtitle" class="panel-help"></p>
-                  <h3 id="cram-now-focus" class="cram-now-focus">
-                    Start here.
-                  </h3>
-                </div>
-                <div class="cram-results-sidecar">
-                  <p id="cram-priority-hint" class="cram-results-hint">
-                    Start here.
-                  </p>
-                  <div class="cram-coach-card">
-                    <p class="panel-label">Coach</p>
-                    <p id="cram-sideklick-tip" class="panel-help">
-                      Tight plan. Finishable tonight.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="cram-runway-card">
-                <div class="cram-runway-header">
-                  <div>
-                    <p class="panel-label">Tonight's Timeline</p>
-                    <p class="panel-help">Follow in order.</p>
-                  </div>
-                  <p id="cram-runway-summary" class="cram-runway-summary">
-                    One step at a time.
-                  </p>
-                </div>
-                <ol
-                  id="cram-time-plan"
-                  class="cram-list cram-list-ordered"
-                ></ol>
-              </div>
-
-              <div class="cram-timeline-shell">
-                <div class="cram-timeline">
-                  <section
-                    class="cram-timeline-step cram-timeline-step-primary"
-                  >
-                    <div class="cram-step-marker" aria-hidden="true">1</div>
-                    <div class="cram-step-body">
-                      <div class="cram-step-header">
-                        <div>
-                          <p class="panel-label">Start Here</p>
-                          <h4 class="cram-step-title">First Priority</h4>
-                        </div>
-                        <p id="cram-step-now" class="cram-step-kicker">
-                          Lock in the highest-yield idea first.
-                        </p>
-                      </div>
-                      <ul id="cram-study-first" class="cram-list"></ul>
-                    </div>
-                  </section>
-
-                  <section class="cram-timeline-step">
-                    <div class="cram-step-marker" aria-hidden="true">2</div>
-                    <div class="cram-step-body">
-                      <div class="cram-step-header">
-                        <div>
-                          <p class="panel-label">Then Move</p>
-                          <h4 class="cram-step-title">Study Next</h4>
-                        </div>
-                        <p id="cram-step-next" class="cram-step-kicker">
-                          Next priority.
-                        </p>
-                      </div>
-                      <ul id="cram-study-next" class="cram-list"></ul>
-                    </div>
-                  </section>
-
-                  <section class="cram-timeline-step">
-                    <div class="cram-step-marker" aria-hidden="true">3</div>
-                    <div class="cram-step-body">
-                      <div class="cram-step-header">
-                        <div>
-                          <p class="panel-label">Cut Scope</p>
-                          <h4 class="cram-step-title">Skip If Needed</h4>
-                        </div>
-                        <p id="cram-step-skip" class="cram-step-kicker">
-                          Drop this first.
-                        </p>
-                      </div>
-                      <ul id="cram-skip-list" class="cram-list"></ul>
-                    </div>
-                  </section>
-
-                  <section class="cram-timeline-step">
-                    <div class="cram-step-marker" aria-hidden="true">4</div>
-                    <div class="cram-step-body">
-                      <div class="cram-step-header">
-                        <div>
-                          <p class="panel-label">Rehearse</p>
-                          <h4 class="cram-step-title">Likely Questions</h4>
-                        </div>
-                        <p id="cram-step-questions" class="cram-step-kicker">
-                          Rehearse these.
-                        </p>
-                      </div>
-                      <ul id="cram-likely-questions" class="cram-list"></ul>
-                    </div>
-                  </section>
-
-                  <section class="cram-timeline-step">
-                    <div class="cram-step-marker" aria-hidden="true">5</div>
-                    <div class="cram-step-body">
-                      <div class="cram-step-header">
-                        <div>
-                          <p class="panel-label">Check Yourself</p>
-                          <h4 class="cram-step-title">Quick Self-Test</h4>
-                        </div>
-                        <p id="cram-step-test" class="cram-step-kicker">
-                          Answer from memory.
-                        </p>
-                      </div>
-                      <ul id="cram-quick-self-test" class="cram-list"></ul>
-                    </div>
-                  </section>
-                </div>
-
-                <aside class="cram-guide-rail">
-                  <section class="cram-guide-card">
-                    <p class="panel-label">Guardrail</p>
-                    <p id="cram-guide-guardrail" class="panel-help">
-                      Return to step one if you drift.
-                    </p>
-                  </section>
-                  <section class="cram-guide-card">
-                    <p class="panel-label">Recovery</p>
-                    <p id="cram-guide-recovery" class="panel-help">
-                      Missed it? Retry the matching step.
-                    </p>
-                  </section>
-                </aside>
-
-                <!-- Right Main Content: The What -->
-                <main class="cram-dashboard-main">
-                  <div class="cram-timeline">
-                    <section class="cram-timeline-step cram-timeline-step-primary">
-                      <div class="cram-step-marker" aria-hidden="true">1</div>
-                      <div class="cram-step-body">
-                        <div class="cram-step-header">
-                          <div>
-                            <p class="panel-label">Start Here</p>
-                            <h4 class="cram-step-title">First Priority</h4>
-                          </div>
-                          <p id="cram-step-now" class="cram-step-kicker">
-                            Lock in the highest-yield idea first.
-                          </p>
-                        </div>
-                        <ul id="cram-study-first" class="cram-list"></ul>
-                      </div>
-                    </section>
-
-                    <section class="cram-timeline-step">
-                      <div class="cram-step-marker" aria-hidden="true">2</div>
-                      <div class="cram-step-body">
-                        <div class="cram-step-header">
-                          <div>
-                            <p class="panel-label">Then Move</p>
-                            <h4 class="cram-step-title">Study Next</h4>
-                          </div>
-                          <p id="cram-step-next" class="cram-step-kicker">
-                            Next priority.
-                          </p>
-                        </div>
-                        <ul id="cram-study-next" class="cram-list"></ul>
-                      </div>
-                    </section>
-
-                    <section class="cram-timeline-step cram-timeline-step-testing">
-                      <div class="cram-step-marker" aria-hidden="true">3</div>
-                      <div class="cram-step-body">
-                        <div class="cram-step-header">
-                          <div>
-                            <p class="panel-label">Rehearse & Test</p>
-                            <h4 class="cram-step-title">Likely Questions & Quick Self-Test</h4>
-                          </div>
-                          <div class="cram-step-kicker-stack">
-                            <p id="cram-step-questions" class="cram-step-kicker">Rehearse these.</p>
-                            <p id="cram-step-test" class="cram-step-kicker" hidden>Answer from memory.</p>
-                          </div>
-                        </div>
-                        <ul id="cram-likely-questions" class="cram-list cram-test-list"></ul>
-                        <ul id="cram-quick-self-test" class="cram-list cram-test-list"></ul>
-                      </div>
-                    </section>
-
-                    <section class="cram-timeline-step cram-timeline-step-warning">
-                      <div class="cram-step-marker" aria-hidden="true">4</div>
-                      <div class="cram-step-body">
-                        <div class="cram-step-header">
-                          <div>
-                            <p class="panel-label">Cut Scope</p>
-                            <h4 class="cram-step-title">Skip If Needed</h4>
-                          </div>
-                          <p id="cram-step-skip" class="cram-step-kicker">
-                            Drop this first.
-                          </p>
-                        </div>
-                        <ul id="cram-skip-list" class="cram-list"></ul>
-                      </div>
-                    </section>
-                  </div>
-                </main>
-              </div>
-
-              <div class="modal-actions">
-                <button
-                  id="back-to-cram-setup-button"
-                  class="ghost-button"
-                  type="button"
-                >
-                  Edit Inputs
-                </button>
-                <button
-                  id="regenerate-cram-button"
-                  class="continue-button"
-                  type="button"
-                >
-                  Regenerate Plan
-                </button>
-              </div>
-            </div>
-          </section>
-        </div>
       </section>
     </main>
 

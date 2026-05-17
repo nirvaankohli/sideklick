@@ -323,29 +323,42 @@ export const cramResponseSchema = z.object({
 export const cramTaskSchema = z.object({
   title: z.string().trim().min(1),
   topic: z.string().trim().min(1),
+  body: z.string().trim().min(1),
+  keyTakeaways: z.array(z.string().trim().min(1)).min(2).max(5),
   estimatedMinutes: z.number().int().min(5).max(180),
   priority: z.enum(["must-review", "quick-win", "if-time"]),
   sourceLabels: z.array(z.string().trim().min(1)).default([]),
   status: z.enum(["not-started", "reviewing", "done", "quiz"]).default("not-started"),
   quizEnabled: z.boolean().default(true),
-  quizId: z.string().trim().min(1).optional(),
+  quizPreview: z
+    .object({
+      title: z.string().trim().min(1),
+      description: z.string().trim().min(1),
+      questionCount: z.number().int().min(2).max(5).default(3),
+    })
+    .strict()
+    .nullable(),
+  quizId: z.string().trim().min(1).nullable(),
   lastScore: z
     .object({
       correct: z.number().int().min(0),
       total: z.number().int().positive(),
     })
     .strict()
-    .optional(),
+    .nullable(),
 }).strict();
 
 export const cramPlanRequestSchema = z.object({
   classId: z.number().int().positive(),
   sessionIds: z.array(z.number().int().positive()).default([]),
+  examName: nullableTrimmedString,
   deadline: z.string().trim().min(1),
   availableMinutes: z.number().int().min(15).max(1440),
   uploadedMaterial: nullableTrimmedString,
+  additionalNotes: nullableTrimmedString,
   currentUnit: nullableTrimmedString,
   gapFocus: z.number().min(0).max(100).default(50),
+  teacherAssessmentProfile: teacherAssessmentProfileSchema.nullable().optional(),
 }).strict();
 
 export const cramPlanResponseSchema = z.object({

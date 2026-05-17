@@ -5970,6 +5970,8 @@ button {
 }
 
 .cram-panel {
+  display: grid;
+  gap: 14px;
   padding: 22px 24px;
   border-bottom: 1px solid rgba(20, 32, 51, 0.08);
 }
@@ -6043,6 +6045,7 @@ button {
 }
 
 .cram-task-row-quiz {
+  justify-self: start;
   color: #155f98;
   font-size: 0.82rem;
   font-weight: 700;
@@ -6072,7 +6075,6 @@ button {
 .cram-quiz-checkpoint {
   display: grid;
   gap: 12px;
-  margin-top: 16px;
   padding: 12px;
   border: 1px solid rgba(20, 32, 51, 0.1);
   border-radius: 8px;
@@ -6082,6 +6084,46 @@ button {
 .cram-quiz-checkpoint strong {
   display: block;
   margin-bottom: 4px;
+}
+
+.cram-quiz-preview {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid rgba(20, 32, 51, 0.1);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(244, 248, 252, 0.98), rgba(235, 242, 248, 0.92));
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cram-quiz-preview:hover {
+  border-color: rgba(21, 95, 152, 0.22);
+  background:
+    linear-gradient(180deg, rgba(246, 250, 255, 1), rgba(232, 241, 250, 0.96));
+}
+
+.cram-quiz-preview-kicker,
+.cram-quiz-preview-meta {
+  color: rgba(20, 32, 51, 0.62);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.cram-quiz-preview-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.cram-quiz-preview-copy {
+  color: rgba(20, 32, 51, 0.72);
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
 .cram-task-actions {
@@ -6205,6 +6247,12 @@ button {
 .window-shell[data-tone="light"] .cram-task-button[data-active="true"] {
   border-color: rgba(92, 181, 255, 0.24);
   background: rgba(92, 181, 255, 0.1);
+}
+
+.window-shell[data-tone="light"] .cram-quiz-preview {
+  border-color: rgba(36, 72, 122, 0.12);
+  background:
+    linear-gradient(180deg, rgba(248, 251, 255, 1), rgba(239, 246, 252, 0.96));
 }
 
 @keyframes bubble-in {

@@ -4,6 +4,7 @@
 
 Analyze this codebase and record the current understanding in `agent-docs/codebase.md` so it can be edited into a source of truth before generating a future `AGENTS.md`.
 
+
 ## What This Project Is
 
 This repo is a local desktop study assistant called `SideClick`, built as an Electron app with:

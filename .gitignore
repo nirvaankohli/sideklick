@@ -212,7 +212,7 @@ cython_debug/
 # .vscode/
 
 device-specific-scripts/
-
+run-proj
 
 # Ruff stuff:
 .ruff_cache/

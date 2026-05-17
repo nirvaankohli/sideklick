@@ -286,26 +286,36 @@ export type CramResponse = {
 export type CramTask = {
   title: string;
   topic: string;
+  body: string;
+  keyTakeaways: string[];
   estimatedMinutes: number;
   priority: "must-review" | "quick-win" | "if-time";
   sourceLabels: string[];
   status: "not-started" | "reviewing" | "done" | "quiz";
   quizEnabled: boolean;
-  quizId?: string;
-  lastScore?: {
+  quizPreview: {
+    title: string;
+    description: string;
+    questionCount: number;
+  } | null;
+  quizId: string | null;
+  lastScore: {
     correct: number;
     total: number;
-  };
+  } | null;
 };
 
 export type CramPlanRequest = {
   classId: number;
   sessionIds: number[];
+  examName?: string | null;
   deadline: string;
   availableMinutes: number;
   uploadedMaterial?: string | null;
+  additionalNotes?: string | null;
   currentUnit?: string | null;
   gapFocus: number;
+  teacherAssessmentProfile?: TeacherAssessmentProfile | null;
 };
 
 export type CramPlanResponse = {
