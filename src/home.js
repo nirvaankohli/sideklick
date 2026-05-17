@@ -217,6 +217,7 @@ const cramAdditionalNotes = document.querySelector("#cram-additional-notes");
 const cramMaterialCount = document.querySelector("#cram-material-count");
 const cramMaterialStatus = document.querySelector("#cram-material-status");
 const generateCramButton = document.querySelector("#generate-cram-button");
+const cramPageScreen = document.querySelector(".cram-page-screen");
 const classMaterialBackdrop = document.querySelector(
   "#class-material-backdrop",
 );
@@ -365,6 +366,7 @@ let quizViewModalNextSibling = null;
 let quizReturnPath = [];
 let activeCramPath = [];
 let activeCramTaskIndex = 0;
+let activeCramOverviewPage = 0;
 let uploadedCramSetupMaterial = "";
 let cramReturnPath = [];
 let activeHomeView = "dashboard";
@@ -1839,7 +1841,7 @@ function renderAssessmentManager() {
     editButton.setAttribute("aria-label", `Edit ${profile.name || "template"}`);
     editButton.innerHTML = `
       <svg class="icon-svg" viewBox="0 0 24 24">
-        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.13z"></path>
+        <path d="M14.06 9.02 15.48 10.44 6.92 19H5.5v-1.42l8.56-8.56ZM17.66 3c-.26 0-.51.1-.71.29l-1.83 1.83 3.75 3.75 1.83-1.83a.996.996 0 0 0 0-1.41l-2.34-2.34A.987.987 0 0 0 17.66 3ZM3.5 20.5h4.04l11.02-11.02-4.04-4.04L3.5 16.46V20.5Z"></path>
       </svg>
     `;
     editButton.addEventListener("click", () => {
@@ -3313,6 +3315,10 @@ function resetCramSetupState() {
   cramSetupPanel.hidden = false;
   cramActivePanel.hidden = true;
   cramQuizPanel.hidden = true;
+  if (cramPageScreen) {
+    cramPageScreen.dataset.cramState = "setup";
+  }
+  activeCramOverviewPage = 0;
   cramScreenTitle.textContent = "Cram Mode";
   cramScreenMeta.textContent = "";
   renderCramUploadRollup();
@@ -3345,10 +3351,7 @@ function openSavedCramPlan(plan) {
   }
   activeQuizClassFolder = getCurrentClassFolder();
   activeCramPlan = plan;
-  activeCramTaskIndex = Math.max(
-    0,
-    (plan.tasks || []).findIndex((task) => task.status !== "done"),
-  );
+  activeCramTaskIndex = -1;
   activeCramPath = [...currentPath, plan.id];
   cramReturnPath = [...currentPath];
   restoreQuizViewToModal();
@@ -3421,6 +3424,92 @@ function buildCramProgress(plan) {
   };
 }
 
+function clampCramTaskIndex(plan, index) {
+  const total = Array.isArray(plan?.tasks) ? plan.tasks.length : 0;
+  if (total === 0) {
+    return -1;
+  }
+  if (!Number.isFinite(index)) {
+    return -1;
+  }
+  return Math.min(Math.max(index, -1), total - 1);
+}
+
+function getRecommendedCramTaskIndex(plan) {
+  const tasks = Array.isArray(plan?.tasks) ? plan.tasks : [];
+  if (tasks.length === 0) {
+    return -1;
+  }
+
+  const nextUndoneIndex = tasks.findIndex((task) => task.status !== "done");
+  if (nextUndoneIndex >= 0) {
+    return nextUndoneIndex;
+  }
+
+  return 0;
+}
+
+function openCramOverview() {
+  activeCramTaskIndex = -1;
+  activeCramOverviewPage = 0;
+  if (activeCramPlan) {
+    renderCramPlan(activeCramPlan);
+  }
+}
+
+function openCramOverviewPage(page) {
+  activeCramTaskIndex = -1;
+  activeCramOverviewPage = Math.max(0, Math.min(page, 1));
+  if (activeCramPlan) {
+    renderCramPlan(activeCramPlan);
+  }
+}
+
+function openCramTask(index) {
+  if (!activeCramPlan) {
+    return;
+  }
+  activeCramTaskIndex = clampCramTaskIndex(activeCramPlan, index);
+  renderCramPlan(activeCramPlan);
+}
+
+function openNextCramStep() {
+  if (!activeCramPlan) {
+    return;
+  }
+
+  if (activeCramTaskIndex < 0) {
+    if (activeCramOverviewPage === 0) {
+      openCramOverviewPage(1);
+      return;
+    }
+    openCramTask(getRecommendedCramTaskIndex(activeCramPlan));
+    return;
+  }
+
+  if (activeCramTaskIndex >= (activeCramPlan.tasks?.length || 0) - 1) {
+    openCramOverview();
+    return;
+  }
+
+  openCramTask(activeCramTaskIndex + 1);
+}
+
+function openPreviousCramStep() {
+  if (!activeCramPlan) {
+    return;
+  }
+  if (activeCramTaskIndex <= 0) {
+    if (activeCramTaskIndex < 0) {
+      openCramOverviewPage(Math.max(0, activeCramOverviewPage - 1));
+    } else {
+      openCramOverviewPage(1);
+    }
+    return;
+  }
+  openCramTask(activeCramTaskIndex - 1);
+}
+
 function renderCramTakeaways(items = []) {
   if (!Array.isArray(items) || items.length === 0) {
     return "";
@@ -3435,9 +3524,13 @@ function renderCramTakeaways(items = []) {
 
 function renderCramPlan(plan) {
   activeCramPlan = plan;
+  activeCramTaskIndex = clampCramTaskIndex(plan, activeCramTaskIndex);
   cramSetupPanel.hidden = true;
   cramActivePanel.hidden = false;
   cramQuizPanel.hidden = true;
+  if (cramPageScreen) {
+    cramPageScreen.dataset.cramState = "guide";
+  }
   cramScreenTitle.textContent = "Study Guide";
   cramScreenMeta.textContent = [
     plan.name || "Cram Plan",
@@ -3446,42 +3539,163 @@ function renderCramPlan(plan) {
   ].join(" - ");
 
   const progress = getCramProgress(plan);
-  cramProgressValue.textContent = `${progress.percent}%`;
-  cramProgressCopy.textContent = `${progress.done}/${progress.total} tasks done - ${getNextCramTask(plan)?.title || "Review complete"}`;
+  cramProgressValue.textContent = `${progress.done}/${progress.total} done`;
+  cramProgressCopy.textContent = `${progress.total} sections · ${plan.availableMinutes || 0} min · ${getNextCramTask(plan)?.title || "Review complete"}`;
   cramTaskList.replaceChildren();
+
+  const timelineNodes = 1 + (plan.tasks?.length || 0);
+  cramTaskList.style.gridTemplateColumns = `repeat(${timelineNodes}, minmax(0, 1fr))`;
+
+  const startButton = document.createElement("button");
+  startButton.type = "button";
+  startButton.className =
+    "cram-task-button cram-task-timeline-button cram-task-start-button";
+  startButton.dataset.active = activeCramTaskIndex < 0 ? "true" : "false";
+  startButton.dataset.tooltip =
+    "Overview of your generated guide. Start here, then move through each numbered checkpoint.";
+  startButton.title = "Overview of your generated guide.";
+  startButton.setAttribute("aria-label", "Start. Overview of your generated guide.");
+  startButton.innerHTML = `
+    <span class="cram-task-timeline-label">Start</span>
+  `;
+  startButton.addEventListener("click", () => {
+    openCramOverview();
+  });
+  cramTaskList.appendChild(startButton);
 
   (plan.tasks || []).forEach((task, index) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "cram-task-button";
+    button.className = "cram-task-button cram-task-timeline-button";
     button.dataset.active = index === activeCramTaskIndex ? "true" : "false";
+    button.dataset.status = task.status || "not-started";
+    button.dataset.hasQuiz = task.quizEnabled ? "true" : "false";
+    button.dataset.tooltip = `${task.title}: ${task.body || task.quizPreview?.description || task.topic}`;
+    button.title = task.title;
+    button.setAttribute("aria-label", `${index + 1}. ${task.title}. ${task.body || task.topic}`);
     button.innerHTML = `
-      <span class="cram-task-row-main">
-        <span class="cram-task-name">${index + 1}. ${task.title}</span>
-        <span class="cram-task-meta">${task.estimatedMinutes || 0} min - ${priorityLabel(task.priority)} - ${statusLabel(task.status)}</span>
-      </span>
-      <span class="cram-task-row-quiz">${
-        task.quizEnabled
-          ? task.quizId
-            ? "Quiz saved"
-            : "Quiz preview"
-          : "Guide only"
-      }</span>
+      <span class="cram-task-timeline-label">${index + 1}</span>
     `;
     button.addEventListener("click", () => {
-      activeCramTaskIndex = index;
-      renderCramPlan(activeCramPlan);
+      openCramTask(index);
     });
     cramTaskList.appendChild(button);
   });
 
-  renderCramTaskDetail(plan.tasks?.[activeCramTaskIndex] || plan.tasks?.[0]);
+  renderCramTaskDetail(
+    activeCramTaskIndex >= 0 ? plan.tasks?.[activeCramTaskIndex] : null,
+  );
 }
 
 function renderCramTaskDetail(task) {
   cramTaskDetail.replaceChildren();
+  if (!activeCramPlan) {
+    cramTaskDetail.textContent = "No study guide loaded.";
+    return;
+  }
+
   if (!task) {
-    cramTaskDetail.textContent = "No task selected.";
+    const recommendedTask =
+      activeCramPlan.tasks?.[getRecommendedCramTaskIndex(activeCramPlan)] || null;
+    const progress = getCramProgress(activeCramPlan);
+    const summaryText =
+      activeCramPlan.summary ||
+      "Your guide is ready. Move through the timeline, study one section at a time, and use the quiz checkpoints to test recall.";
+    const sourceText = activeCramPlan.sourceSummary || "Built from your selected class material.";
+    const sections = Array.isArray(activeCramPlan.tasks) ? activeCramPlan.tasks : [];
+    const highlights = sections.slice(0, 3);
+
+    if (activeCramOverviewPage === 0) {
+      cramTaskDetail.innerHTML = `
+      <div class="cram-guide-overview cram-guide-overview-centered">
+        <div class="cram-overview-hero">
+          <p class="cram-guide-kicker">Study guide ready</p>
+          <h3 class="cram-guide-hero-title">Your study guide is generated.</h3>
+            <p class="cram-guide-summary">${summaryText}</p>
+            <div class="cram-overview-meta-row">
+              <span class="cram-overview-meta-pill">${progress.total} sections</span>
+              <span class="cram-overview-meta-pill">${activeCramPlan.availableMinutes || 0} min</span>
+              <span class="cram-overview-meta-pill">${recommendedTask?.title || "Review complete"}</span>
+            </div>
+          </div>
+          <div class="cram-overview-sidecar">
+            <article class="cram-overview-card">
+              <span class="cram-overview-label">First move</span>
+              <strong>${recommendedTask?.title || "Review complete"}</strong>
+              <p class="panel-help">${
+                recommendedTask?.body ||
+                "Every section is complete. Reopen any numbered step from the timeline to review it again."
+              }</p>
+            </article>
+            <article class="cram-overview-card">
+              <span class="cram-overview-label">Source</span>
+              <p class="panel-help">${sourceText}</p>
+            </article>
+          </div>
+          <div class="cram-task-actions cram-task-actions-inline">
+            <button id="cram-overview-next" class="continue-button" type="button">See coverage</button>
+          </div>
+        </div>
+      `;
+
+      cramTaskDetail
+        .querySelector("#cram-overview-next")
+        ?.addEventListener("click", () => {
+          openNextCramStep();
+        });
+      return;
+    }
+
+    cramTaskDetail.innerHTML = `
+      <div class="cram-guide-overview cram-guide-overview-secondary">
+        <div class="cram-overview-hero">
+          <p class="cram-guide-kicker">What this guide covers</p>
+          <h3 class="cram-guide-hero-title cram-guide-hero-title-secondary">What you'll work through</h3>
+          <p class="cram-guide-summary">
+            This guide moves from the core ideas into the highest-yield checkpoints, then finishes with quicker review items and quiz checks.
+          </p>
+        </div>
+        <div class="cram-coverage-grid">
+          ${highlights
+            .map(
+              (item, index) => `
+            <article class="cram-overview-card">
+              <span class="cram-overview-label">Step ${index + 1}</span>
+              <strong>${item.title}</strong>
+              <p class="panel-help">${item.body}</p>
+            </article>
+          `,
+            )
+            .join("")}
+        </div>
+        ${
+          recommendedTask
+            ? `
+          <div class="cram-coverage-focus">
+            <span class="cram-overview-label">Start with</span>
+            <strong>${recommendedTask.title}</strong>
+            ${renderCramTakeaways(recommendedTask.keyTakeaways || [])}
+          </div>
+        `
+            : ""
+        }
+        <div class="cram-task-actions cram-task-actions-grid cram-overview-actions-grid">
+          <button id="cram-overview-back" class="ghost-button" type="button">Back</button>
+          <button id="cram-overview-next" class="continue-button" type="button">Begin section 1</button>
+        </div>
+      </div>
+    `;
+
+    cramTaskDetail
+      .querySelector("#cram-overview-back")
+      ?.addEventListener("click", () => {
+        openPreviousCramStep();
+      });
+    cramTaskDetail
+      .querySelector("#cram-overview-next")
+      ?.addEventListener("click", () => {
+        openNextCramStep();
+      });
     return;
   }
 
@@ -3497,26 +3711,50 @@ function renderCramTaskDetail(task) {
     description: "Open a fresh quiz built from this cram section and its source material.",
     questionCount: 3,
   };
+  const totalTasks = activeCramPlan.tasks?.length || 0;
+  const isLastTask = activeCramTaskIndex >= totalTasks - 1;
 
   cramTaskDetail.innerHTML = `
     <div class="cram-task-detail-header">
       <div>
+        <p class="cram-task-page-kicker">Section ${activeCramTaskIndex + 1} of ${totalTasks}</p>
         <h3 class="cram-task-detail-title">${task.title}</h3>
         <p class="panel-help">${task.topic} - ${task.estimatedMinutes || 0} min</p>
       </div>
       <span class="cram-priority">${priorityLabel(task.priority)}</span>
     </div>
-    <p class="panel-help">${task.body}</p>
+    <p class="cram-task-body">${task.body}</p>
     <p class="cram-task-source">${sourceText}</p>
     ${renderCramTakeaways(task.keyTakeaways)}
     ${
       task.quizEnabled
         ? `
       <button id="cram-task-quiz" class="cram-quiz-preview" type="button">
-        <span class="cram-quiz-preview-kicker">Quiz Preview</span>
+        <span class="cram-quiz-preview-header">
+          <span class="cram-quiz-preview-kicker">Quiz Preview</span>
+          <span class="cram-quiz-preview-meta">${quizPreview.questionCount || 3} questions · ${scoreText}</span>
+        </span>
         <span class="cram-quiz-preview-title">${quizPreview.title}</span>
         <span class="cram-quiz-preview-copy">${quizPreview.description}</span>
-        <span class="cram-quiz-preview-meta">${quizPreview.questionCount || 3} questions - ${scoreText}</span>
+        <span class="cram-quiz-preview-surface">
+          <span class="quiz-results-bar cram-quiz-preview-bar">
+            <span>
+              <span class="material-reference-label">Checkpoint</span>
+              <strong class="cram-quiz-preview-surface-title">${task.topic}</strong>
+            </span>
+            <span class="quiz-gap-value">${priorityLabel(task.priority)}</span>
+          </span>
+          <span class="quiz-insights cram-quiz-preview-insights">
+            <span class="quiz-insight-card cram-quiz-preview-panel">
+              <strong>What you'll review</strong>
+              <small>${task.keyTakeaways?.[0] || task.body}</small>
+            </span>
+            <span class="quiz-insight-card cram-quiz-preview-panel">
+              <strong>Open checkpoint</strong>
+              <small>${currentTone === "dark" ? "Expands in dark mode." : "Expands in light mode."}</small>
+            </span>
+          </span>
+        </span>
       </button>
     `
         : `
@@ -3528,12 +3766,28 @@ function renderCramTaskDetail(task) {
       </div>
     `
     }
-    <div class="cram-task-actions">
+    <div class="cram-task-actions cram-task-actions-grid">
+      <button id="cram-step-back" class="ghost-button" type="button">${
+        activeCramTaskIndex === 0 ? "Overview" : "Previous"
+      }</button>
       <button id="cram-mark-reviewing" class="ghost-button" type="button">Reviewing</button>
-      <button id="cram-mark-done" class="continue-button" type="button">Done</button>
+      <button id="cram-mark-done" class="ghost-button" type="button">Done</button>
+      <button id="cram-step-next" class="continue-button" type="button">${
+        isLastTask ? "Finish Guide" : "Next"
+      }</button>
     </div>
   `;
 
+  cramTaskDetail
+    .querySelector("#cram-step-back")
+    ?.addEventListener("click", () => {
+      openPreviousCramStep();
+    });
+  cramTaskDetail
+    .querySelector("#cram-step-next")
+    ?.addEventListener("click", () => {
+      openNextCramStep();
+    });
   cramTaskDetail
     .querySelector("#cram-mark-reviewing")
     ?.addEventListener("click", async () => {
@@ -3694,7 +3948,8 @@ async function generateCramPlanForCurrentClass() {
     const nextChildren = [plan, ...getCurrentClassItems()];
     const nextFolders = replaceChildrenAtPath(activeCramPath, nextChildren);
     await persistFolders(nextFolders);
-    activeCramTaskIndex = 0;
+    activeCramTaskIndex = -1;
+    activeCramOverviewPage = 0;
     activeCramPath = [...activeCramPath, plan.id];
     activeCramPlan = plan;
     renderCramPlan(plan);
@@ -3847,6 +4102,33 @@ function mountQuizViewInCram() {
   activeQuizContext = "cram";
 }
 
+function prepareCramQuizLoadingState(task) {
+  activeQuiz = null;
+  quizHasBeenChecked = false;
+  quizSetupView.hidden = true;
+  quizView.hidden = false;
+  quizInsights.hidden = true;
+  quizExplanationPanel.hidden = true;
+  quizQuestions.parentElement?.classList.remove("has-explanation");
+  quizSubtitle.textContent = `Building a checkpoint for ${task.title}...`;
+  if (quizExplainHint) {
+    quizExplainHint.textContent = "Generating questions for this section.";
+  }
+  saveQuizButton.hidden = true;
+  quizQuestions.replaceChildren();
+
+  const loadingCard = document.createElement("article");
+  loadingCard.className = "quiz-question-card quiz-question-card-loading";
+  loadingCard.innerHTML = `
+    <div class="quiz-loading-copy">
+      <p class="panel-label">Generating</p>
+      <h3 class="quiz-question-title">Preparing your embedded checkpoint</h3>
+      <p class="panel-help">We’re turning this cram section into a focused quiz right now.</p>
+    </div>
+  `;
+  quizQuestions.appendChild(loadingCard);
+}
+
 function saveActiveCramPlanLocally() {
   if (!activeCramPlan) {
     return Promise.resolve();
@@ -3899,7 +4181,11 @@ async function launchCramTaskQuiz(task) {
   cramQuizMeta.textContent = `Quiz for ${task.title}`;
   cramActivePanel.hidden = true;
   cramQuizPanel.hidden = false;
+  if (cramPageScreen) {
+    cramPageScreen.dataset.cramState = "quiz";
+  }
   mountQuizViewInCram();
+  prepareCramQuizLoadingState(task);
   quizSubmitButton.hidden = false;
   quizSubmitButton.disabled = true;
   quizSubmitButton.textContent = "Generating...";
@@ -3936,6 +4222,9 @@ async function launchCramTaskQuiz(task) {
   } catch (error) {
     cramQuizPanel.hidden = true;
     cramActivePanel.hidden = false;
+    if (cramPageScreen) {
+      cramPageScreen.dataset.cramState = "guide";
+    }
     cramStatus.textContent =
       error instanceof Error ? error.message : "Quiz generation failed.";
     renderCramPlan(activeCramPlan);
@@ -4458,7 +4747,7 @@ function renderFolders() {
       editButton.setAttribute("aria-label", `Edit ${folder.name}`);
       editButton.innerHTML = `
         <svg class="icon-svg" viewBox="0 0 24 24">
-          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm14.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.13z"></path>
+          <path d="M14.06 9.02 15.48 10.44 6.92 19H5.5v-1.42l8.56-8.56ZM17.66 3c-.26 0-.51.1-.71.29l-1.83 1.83 3.75 3.75 1.83-1.83a.996.996 0 0 0 0-1.41l-2.34-2.34A.987.987 0 0 0 17.66 3ZM3.5 20.5h4.04l11.02-11.02-4.04-4.04L3.5 16.46V20.5Z"></path>
         </svg>
       `;
       editButton.addEventListener("click", () => {
@@ -5415,6 +5704,9 @@ cramBackButton?.addEventListener("click", () => {
 cramQuizBackButton?.addEventListener("click", () => {
   cramQuizPanel.hidden = true;
   cramActivePanel.hidden = false;
+  if (cramPageScreen) {
+    cramPageScreen.dataset.cramState = "guide";
+  }
   renderCramPlan(activeCramPlan);
 });
 cramSaveProgressButton?.addEventListener("click", async () => {
