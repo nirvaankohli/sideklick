@@ -1,4 +1,4 @@
-const test = require("node:test");
+const { test } = require("./helpers/test-runner");
 const assert = require("node:assert/strict");
 
 const {

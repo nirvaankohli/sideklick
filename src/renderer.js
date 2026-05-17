@@ -740,7 +740,10 @@ async function executeAssistRequest(normalizedPayload) {
     return;
   }
 
-  const aiStatus = await window.overlayApi.getAiBackendStatus();
+  const aiStatus =
+    typeof window.overlayApi?.getAiBackendStatus === "function"
+      ? await window.overlayApi.getAiBackendStatus()
+      : { available: true };
   if (aiStatus?.available === false) {
     addMessage(
       "assistant",

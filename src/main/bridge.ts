@@ -164,6 +164,7 @@ export function createIncomingMessageBridge({
   port = DEFAULT_PORT,
   log = console,
   allowedRequestTtlMs = DEFAULT_ALLOWED_REQUEST_TTL_MS,
+  createServer = http.createServer,
 }: {
   dispatchIncomingPayload: (payload: Record<string, unknown>) => void;
   authSecret: string;
@@ -171,6 +172,7 @@ export function createIncomingMessageBridge({
   port?: number;
   log?: Pick<typeof console, "log" | "error">;
   allowedRequestTtlMs?: number;
+  createServer?: typeof http.createServer;
 }) {
   let server: http.Server | null = null;
   const seenNonces = new Map<string, number>();
@@ -232,49 +234,51 @@ export function createIncomingMessageBridge({
     return { ok: true };
   }
 
+  async function handleRequest(req: http.IncomingMessage, res: http.ServerResponse) {
+    if (req.method !== "POST") {
+      res.statusCode = 405;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ ok: false, error: "Method not allowed" }));
+      return;
+    }
+
+    try {
+      const rawBody = await readRequestBody(req);
+      const authResult = authenticateRequest(req, rawBody);
+      if (!authResult.ok) {
+        res.statusCode = authResult.statusCode;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ ok: false, error: authResult.error }));
+        return;
+      }
+
+      const parsed = rawBody ? JSON.parse(rawBody) : {};
+      dispatchIncomingPayload(validateIncomingPayload(parsed as Record<string, unknown>));
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ ok: true }));
+    } catch (error) {
+      res.statusCode = 400;
+      res.setHeader("Content-Type", "application/json");
+      res.end(
+        JSON.stringify({
+          ok: false,
+          error:
+            error instanceof z.ZodError
+              ? "Invalid bridge payload"
+              : "Invalid JSON payload",
+        }),
+      );
+    }
+  }
+
   return {
     start() {
       if (server) {
         return server;
       }
 
-      server = http.createServer(async (req, res) => {
-        if (req.method !== "POST") {
-          res.statusCode = 405;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ ok: false, error: "Method not allowed" }));
-          return;
-        }
-
-        try {
-          const rawBody = await readRequestBody(req);
-          const authResult = authenticateRequest(req, rawBody);
-          if (!authResult.ok) {
-            res.statusCode = authResult.statusCode;
-            res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ ok: false, error: authResult.error }));
-            return;
-          }
-
-          const parsed = rawBody ? JSON.parse(rawBody) : {};
-          dispatchIncomingPayload(validateIncomingPayload(parsed as Record<string, unknown>));
-          res.statusCode = 200;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ ok: true }));
-        } catch (error) {
-          res.statusCode = 400;
-          res.setHeader("Content-Type", "application/json");
-          res.end(
-            JSON.stringify({
-              ok: false,
-              error:
-                error instanceof z.ZodError
-                  ? "Invalid bridge payload"
-                  : "Invalid JSON payload",
-            }),
-          );
-        }
-      });
+      server = createServer(handleRequest);
 
       server.on("error", (error) => {
         log.error("Incoming message server error:", error);
@@ -294,5 +298,6 @@ export function createIncomingMessageBridge({
       server.close();
       server = null;
     },
+    handleRequest,
   };
 }
