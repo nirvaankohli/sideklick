@@ -159,6 +159,7 @@ celerybeat.pid
 
 # Environments
 .env
+!.env.example
 .envrc
 .venv
 env/
@@ -213,6 +214,7 @@ cython_debug/
 
 device-specific-scripts/
 run-proj
+package-lock.json
 
 # Ruff stuff:
 .ruff_cache/

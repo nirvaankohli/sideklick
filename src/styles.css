@@ -7,7 +7,7 @@
   --light-border: rgba(255, 255, 255, 0.7);
   --light-strong: #132033;
   --light-muted: rgba(19, 32, 51, 0.62);
-  --light-panel: rgba(255, 255, 255, 0.46);
+  -bac-light-panel: rgba(255, 255, 255, 0.46);
   --light-button: rgba(255, 255, 255, 0.58);
   --light-shadow: rgba(24, 39, 61, 0.18);
   --dark-shell: rgba(7, 10, 18, 0.8);
@@ -5935,6 +5935,7 @@ button {
 .cram-back-button,
 .cram-quiz-toolbar .ghost-button {
   width: fit-content;
+  position: relative;
   min-width: 0;
 }
 

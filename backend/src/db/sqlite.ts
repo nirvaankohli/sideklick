@@ -3,7 +3,7 @@ import type BetterSqlite3 from "better-sqlite3";
 
 import type { DatabaseCounts } from "../type/database";
 
-const DATABASE_FILE_NAME = "big-red-hacks.sqlite";
+const DATABASE_FILE_NAME = "sideklick.sqlite";
 
 type DatabaseLike = BetterSqlite3.Database;
 

@@ -2,9 +2,9 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-const APP_NAME = "big-red-hacks-overlay";
+const APP_NAME = "sideklick";
 const REPO_ROOT = path.resolve(__dirname, "..");
-const SQLITE_PATH = path.join(REPO_ROOT, "big-red-hacks.sqlite");
+const SQLITE_PATH = path.join(REPO_ROOT, "sideklick.sqlite");
 
 function getUserDataRoot() {
   if (process.platform === "win32") {
@@ -63,7 +63,7 @@ function printUsage() {
   console.log("Usage: node scripts/reset-first-launch.js [--full]");
   console.log("");
   console.log("  default  resets the first-launch flag in preferences.json");
-  console.log("  --full   also deletes big-red-hacks.sqlite in the repo root");
+  console.log("  --full   also deletes sideklick.sqlite in the repo root");
 }
 
 function main() {

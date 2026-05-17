@@ -215,7 +215,7 @@ function buildBuiltContext(session) {
 }
 
 function seedDatabase(repoRoot) {
-  const dbPath = path.join(repoRoot, "big-red-hacks.sqlite");
+  const dbPath = path.join(repoRoot, "sideklick.sqlite");
   const db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = OFF");
@@ -382,7 +382,7 @@ function seedDatabase(repoRoot) {
 function seedPreferences() {
   const prefsPath = path.join(
     process.env.APPDATA || app.getPath("appData"),
-    "big-red-hacks-overlay",
+    "sideklick",
     "preferences.json",
   );
   const sessionChildren = sessions

@@ -3,7 +3,7 @@ import Database from "better-sqlite3";
 
 import type { DatabaseCounts } from "../type/database";
 
-const DATABASE_FILE_NAME = "big-red-hacks.sqlite";
+const DATABASE_FILE_NAME = "sideklick.sqlite";
 
 let database: Database.Database | null = null;
 

@@ -197,8 +197,8 @@ test("auth tokens include stronger claims and revoke cleanly through token versi
   );
   const registeredClaims = decodeJwtPayload(registeredSession.token);
 
-  assert.equal(registeredClaims.iss, "big-red-hacks-local-backend");
-  assert.equal(registeredClaims.aud, "big-red-hacks-local-client");
+  assert.equal(registeredClaims.iss, "sideklick-local-backend");
+  assert.equal(registeredClaims.aud, "sideklick-local-client");
   assert.equal(registeredClaims.email, "student@example.com");
   assert.equal(registeredClaims.tokenVersion, 0);
   assert.equal(typeof registeredClaims.jti, "string");

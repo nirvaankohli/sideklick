@@ -8,8 +8,8 @@ const PASSWORD_HASH_ITERATIONS = 120_000;
 const PASSWORD_HASH_BYTES = 64;
 const PASSWORD_HASH_DIGEST = "sha512";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 14;
-const JWT_ISSUER = "big-red-hacks-local-backend";
-const JWT_AUDIENCE = "big-red-hacks-local-client";
+const JWT_ISSUER = "sideklick-local-backend";
+const JWT_AUDIENCE = "sideklick-local-client";
 const ALLOWED_JWT_IAT_SKEW_SECONDS = 5;
 
 export type AuthenticatedJwtClaims = {

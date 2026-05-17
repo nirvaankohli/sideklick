@@ -12,7 +12,7 @@ const DEFAULT_HOST = "127.0.0.1";
 
 export type LocalServerStatus = {
   ok: true;
-  service: "big-red-hacks-local-backend";
+  service: "sideklick-local-backend";
   host: string;
   port: number;
 };
@@ -40,7 +40,7 @@ export function createServer(): Express {
   app.get("/health", (_request, response) => {
     const status: LocalServerStatus = {
       ok: true,
-      service: "big-red-hacks-local-backend",
+      service: "sideklick-local-backend",
       host: activeHost,
       port: activePort,
     };

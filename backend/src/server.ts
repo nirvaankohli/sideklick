@@ -35,7 +35,7 @@ const DEFAULT_HOST = "127.0.0.1";
 
 export type LocalServerStatus = {
   ok: true;
-  service: "big-red-hacks-local-backend";
+  service: "sideklick-local-backend";
   host: string;
   port: number;
   protocol: "http" | "https";
@@ -122,8 +122,6 @@ export function createServer(): Express {
   app.use("/api/classes", classesRouter);
   app.use("/api/cram", cramRouter);
   app.use("/api/cram-plan", cramPlanRouter);
-  app.use("/api/cram", cramRouter);
-  app.use("/api/cram-plan", cramPlanRouter);
   app.use("/api/feedback", feedbackRouter);
   app.use("/api", privacyRouter);
   app.use("/api/quiz", quizRouter);
@@ -131,7 +129,7 @@ export function createServer(): Express {
   app.get("/health", (_request, response) => {
     const status: LocalServerStatus = {
       ok: true,
-      service: "big-red-hacks-local-backend",
+      service: "sideklick-local-backend",
       host: activeHost,
       port: activePort,
       protocol: activeProtocol,

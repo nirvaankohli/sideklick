@@ -1,6 +1,6 @@
 const INBOX_URL = "http://127.0.0.1:4353/";
 const RESTORE_CLICK_FUNCTION = "restore-window";
-const BRIDGE_AUTH_SECRET = "sideclick-local-dev-secret";
+const BRIDGE_AUTH_SECRET = process.env.BRIDGE_AUTH_SECRET;
 const BRIDGE_REQUEST_TTL_MS = 30 * 1000;
 const BRIDGE_EXPIRES_HEADER = "x-sideclick-expires";
 const BRIDGE_NONCE_HEADER = "x-sideclick-nonce";
