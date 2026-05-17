@@ -845,11 +845,13 @@ function getBridgeAuthSecret() {
   const configuredSecret =
     typeof process.env.SIDECLICK_BRIDGE_SECRET === "string"
       ? process.env.SIDECLICK_BRIDGE_SECRET.trim()
+      : typeof process.env.BRIDGE_AUTH_SECRET === "string"
+        ? process.env.BRIDGE_AUTH_SECRET.trim()
       : "";
 
   if (!configuredSecret) {
     throw new Error(
-      "[bridge] SIDECLICK_BRIDGE_SECRET must be configured before starting the bridge.",
+      "[bridge] SIDECLICK_BRIDGE_SECRET or BRIDGE_AUTH_SECRET must be configured before starting the bridge.",
     );
   }
 

@@ -50,7 +50,7 @@ This folder contains the lightweight local backend that runs inside the Electron
 - Folder names are currently `schema` and `type` in the repo, even though the original plan mentioned plural names.
 - `services/openai.ts` expects `OPENAI_API_KEY`, and optionally `OPENAI_MODEL`.
 - Put local secrets in the repo-root `.env` file. It is already ignored by git.
-- `BACKEND_JWT_SECRET` is required for local auth routes to start.
+- `BACKEND_JWT_SECRET` can be set in the repo-root `.env`. When the Electron app starts without it, it generates and persists a local secret for that device.
 - Model output is validated in two stages: OpenAI structured parsing, then local Zod parsing again before normalization.
 - Successful assist calls now write request payload, response payload, and built context into `interactions`.
 - Gap memory is updated heuristically by topic match within a class, using `weight`, `evidence_count`, `last_seen_at`, and a new `gap_events` record for each returned model gap.

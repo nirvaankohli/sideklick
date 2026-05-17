@@ -3,6 +3,9 @@ import fs from "node:fs";
 import http, { type Server as HttpServer } from "node:http";
 import https, { type Server as HttpsServer } from "node:https";
 import crypto from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 
 import {
   closePostgresPool,
@@ -32,6 +35,25 @@ import { startBackgroundWorkers, stopBackgroundWorkers } from "./workers";
 
 const DEFAULT_PORT = 3001;
 const DEFAULT_HOST = "127.0.0.1";
+
+function loadEnvironment() {
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
+  const candidatePaths = [
+    path.resolve(process.cwd(), ".env"),
+    path.resolve(currentDir, "../../.env"),
+  ];
+
+  for (const envPath of candidatePaths) {
+    if (!fs.existsSync(envPath)) {
+      continue;
+    }
+
+    dotenv.config({ path: envPath });
+    return;
+  }
+}
+
+loadEnvironment();
 
 export type LocalServerStatus = {
   ok: true;
