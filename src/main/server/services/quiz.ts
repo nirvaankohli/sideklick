@@ -8,6 +8,10 @@ import {
 } from "../schema";
 import type { QuizRequest, QuizResponse } from "../type";
 import { getClassProfileById } from "./classes";
+import {
+  getObservedOpenAIClient,
+  withLangfuseObservation,
+} from "../../../shared/langfuse.ts";
 
 type SessionRow = {
   id: number;
@@ -154,45 +158,87 @@ function buildQuizPrompt(input: QuizRequest): string {
 
 export async function generateQuiz(input: unknown): Promise<QuizResponse> {
   const parsedInput = quizRequestSchema.parse(input);
-  const client = getOpenAIClient();
 
-  const response = await client.responses.parse({
-    model: getOpenAIModel(),
-    input: [
-      {
-        role: "system",
-        content: [
-          "You are generating a study quiz for a desktop learning product.",
-          "Return clean structured JSON only.",
-          "Make the quiz concise, useful, and grounded in the provided material.",
-          "Write a short, specific quiz title that clearly tells the student what is inside.",
-          "Generate exactly the requested number of questions from the quiz constraints.",
-          "Use the gap focus slider as a weighting signal: higher values should target weak spots more aggressively.",
-          "Every question must have four plausible options, exactly one correct answer, and a short explanation.",
-          "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
-          parsedInput.titleHint
-            ? `Use this saved-title direction for the quiz title: ${parsedInput.titleHint}. Keep it short and specific, and avoid filler words like preview, checkpoint, or practice set.`
-            : "",
-        ].join(" "),
+  return withLangfuseObservation(
+    "quiz.generate",
+    {
+      input: {
+        classId: parsedInput.classId,
+        sessionIds: parsedInput.sessionIds,
+        questionCount: parsedInput.questionCount,
+        gapFocus: parsedInput.gapFocus,
+        includeSessionSummary: parsedInput.includeSessionSummary,
+        includeSessionNotes: parsedInput.includeSessionNotes,
+        includeKeyTopics: parsedInput.includeKeyTopics,
+        includeUploadedMaterial: parsedInput.includeUploadedMaterial,
+        uploadedMaterialLength: parsedInput.uploadedMaterial?.length ?? 0,
+        titleHint: parsedInput.titleHint ?? null,
       },
-      {
-        role: "user",
-        content: [
+      metadata: {
+        feature: "quiz",
+        classId: parsedInput.classId,
+        sessionCount: parsedInput.sessionIds.length,
+        questionCount: parsedInput.questionCount,
+      },
+      tags: ["quiz", "local-desktop-backend"],
+      output: (result) => {
+        const quiz = result as QuizResponse;
+        return {
+          title: quiz.title,
+          questionCount: quiz.questions.length,
+        };
+      },
+    },
+    async () => {
+      const client = getOpenAIClient();
+      const observedClient = getObservedOpenAIClient(client, {
+        generationName: "quiz-openai-response",
+        generationMetadata: {
+          feature: "quiz",
+          classId: parsedInput.classId,
+          questionCount: parsedInput.questionCount,
+        },
+      });
+
+      const response = await observedClient.responses.parse({
+        model: getOpenAIModel(),
+        input: [
           {
-            type: "input_text",
-            text: buildQuizPrompt(parsedInput),
+            role: "system",
+            content: [
+              "You are generating a study quiz for a desktop learning product.",
+              "Return clean structured JSON only.",
+              "Make the quiz concise, useful, and grounded in the provided material.",
+              "Write a short, specific quiz title that clearly tells the student what is inside.",
+              "Generate exactly the requested number of questions from the quiz constraints.",
+              "Use the gap focus slider as a weighting signal: higher values should target weak spots more aggressively.",
+              "Every question must have four plausible options, exactly one correct answer, and a short explanation.",
+              "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
+              parsedInput.titleHint
+                ? `Use this saved-title direction for the quiz title: ${parsedInput.titleHint}. Keep it short and specific, and avoid filler words like preview, checkpoint, or practice set.`
+                : "",
+            ].join(" "),
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: buildQuizPrompt(parsedInput),
+              },
+            ],
           },
         ],
-      },
-    ],
-    text: {
-      format: zodTextFormat(quizResponseSchema, "quiz_response"),
+        text: {
+          format: zodTextFormat(quizResponseSchema, "quiz_response"),
+        },
+      });
+
+      if (!response.output_parsed) {
+        throw new Error("OpenAI returned no structured quiz.");
+      }
+
+      return quizResponseSchema.parse(response.output_parsed);
     },
-  });
-
-  if (!response.output_parsed) {
-    throw new Error("OpenAI returned no structured quiz.");
-  }
-
-  return quizResponseSchema.parse(response.output_parsed);
+  );
 }

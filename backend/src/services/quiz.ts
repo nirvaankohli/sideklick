@@ -14,6 +14,10 @@ import type {
   TeacherAssessmentProfile,
 } from "../type/index.ts";
 import { getClassProfileById } from "./classes.ts";
+import {
+  getObservedOpenAIClient,
+  withLangfuseObservation,
+} from "../../../src/shared/langfuse.ts";
 
 type SessionRow = {
   id: number;
@@ -271,42 +275,84 @@ function buildQuizPrompt(input: QuizRequest): string {
 
 export async function generateQuiz(input: unknown): Promise<QuizResponse> {
   const parsedInput = quizRequestSchema.parse(input);
-  const client = getOpenAIClient();
   const teacherAssessmentProfile = parsedInput.teacherAssessmentProfile
     ? teacherAssessmentProfileSchema.parse(parsedInput.teacherAssessmentProfile)
     : null;
 
-  const response = await client.responses.parse({
-    model: getOpenAIModel(),
-    input: [
-      {
-        role: "system",
-        content: [
-          ...buildQuizSystemInstructions(
-            getClassProfileById(parsedInput.classId),
-            teacherAssessmentProfile,
-            parsedInput.titleHint ?? null,
-          ),
-        ].join(" "),
+  return withLangfuseObservation(
+    "quiz.generate",
+    {
+      input: {
+        classId: parsedInput.classId,
+        sessionIds: parsedInput.sessionIds,
+        questionCount: parsedInput.questionCount,
+        gapFocus: parsedInput.gapFocus,
+        includeSessionSummary: parsedInput.includeSessionSummary,
+        includeSessionNotes: parsedInput.includeSessionNotes,
+        includeKeyTopics: parsedInput.includeKeyTopics,
+        includeUploadedMaterial: parsedInput.includeUploadedMaterial,
+        uploadedMaterialLength: parsedInput.uploadedMaterial?.length ?? 0,
+        titleHint: parsedInput.titleHint ?? null,
+        hasTeacherAssessmentProfile: Boolean(teacherAssessmentProfile),
       },
-      {
-        role: "user",
-        content: [
+      metadata: {
+        feature: "quiz",
+        classId: parsedInput.classId,
+        sessionCount: parsedInput.sessionIds.length,
+        questionCount: parsedInput.questionCount,
+      },
+      tags: ["quiz", "backend"],
+      output: (result) => {
+        const quiz = result as QuizResponse;
+        return {
+          title: quiz.title,
+          questionCount: quiz.questions.length,
+        };
+      },
+    },
+    async () => {
+      const client = getOpenAIClient();
+      const observedClient = getObservedOpenAIClient(client, {
+        generationName: "quiz-openai-response",
+        generationMetadata: {
+          feature: "quiz",
+          classId: parsedInput.classId,
+          questionCount: parsedInput.questionCount,
+        },
+      });
+      const response = await observedClient.responses.parse({
+        model: getOpenAIModel(),
+        input: [
           {
-            type: "input_text",
-            text: buildQuizPrompt(parsedInput),
+            role: "system",
+            content: [
+              ...buildQuizSystemInstructions(
+                getClassProfileById(parsedInput.classId),
+                teacherAssessmentProfile,
+                parsedInput.titleHint ?? null,
+              ),
+            ].join(" "),
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: buildQuizPrompt(parsedInput),
+              },
+            ],
           },
         ],
-      },
-    ],
-    text: {
-      format: zodTextFormat(quizResponseSchema, "quiz_response"),
+        text: {
+          format: zodTextFormat(quizResponseSchema, "quiz_response"),
+        },
+      });
+
+      if (!response.output_parsed) {
+        throw new Error("OpenAI returned no structured quiz.");
+      }
+
+      return quizResponseSchema.parse(response.output_parsed);
     },
-  });
-
-  if (!response.output_parsed) {
-    throw new Error("OpenAI returned no structured quiz.");
-  }
-
-  return quizResponseSchema.parse(response.output_parsed);
+  );
 }

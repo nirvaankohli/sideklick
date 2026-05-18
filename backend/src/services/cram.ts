@@ -22,6 +22,10 @@ import type {
   TeacherAssessmentProfile,
 } from "../type/index.ts";
 import { getClassProfileById } from "./classes.ts";
+import {
+  getObservedOpenAIClient,
+  withLangfuseObservation,
+} from "../../../src/shared/langfuse.ts";
 
 const require = createRequire(import.meta.url);
 const {
@@ -550,55 +554,100 @@ async function requestChunkInsightFromOpenAI(
   const teacherAssessmentProfile = input.teacherAssessmentProfile
     ? teacherAssessmentProfileSchema.parse(input.teacherAssessmentProfile)
     : null;
-  const response = await client.responses.parse({
-    model: getOpenAIModel(),
-    prompt_cache_key: "cram-mode-chunk-extraction-v1",
-    input: [
-      {
-        role: "system",
-        content: [
-          "You are extracting chunk-level exam signals for a night-before-exam cram product.",
-          "Return structured JSON only.",
-          "Ground every field in the provided chunk.",
-          "Prioritize testable topics, repeated ideas, formulas, definitions, and likely teacher emphasis.",
-          "Keep topics specific and scannable, not broad textbook chapter names unless the chunk truly supports them.",
-        ].join(" "),
+
+  return withLangfuseObservation(
+    "cram.chunk-insight",
+    {
+      input: {
+        examName: input.examName,
+        timeAvailable: input.timeAvailable,
+        chunkId: chunk.id,
+        chunkLabel: chunk.label,
+        chunkLength: chunk.text.length,
+        courseName: input.courseName ?? null,
+        unitPathLabel: input.unitPathLabel ?? null,
+        hasTeacherAssessmentProfile: Boolean(teacherAssessmentProfile),
       },
-      {
-        role: "user",
-        content: [
+      metadata: {
+        feature: "cram",
+        stage: "chunk-insight",
+        chunkId: chunk.id,
+        chunkLabel: chunk.label,
+      },
+      tags: ["cram", "chunk-insight", "backend"],
+      output: (result) => {
+        const insight = result as CramChunkInsight;
+        return {
+          chunkLabel: insight.chunkLabel,
+          topicCount: insight.topics.length,
+          formulaCount: insight.formulas.length,
+          definitionCount: insight.definitions.length,
+        };
+      },
+    },
+    async () => {
+      const observedClient = getObservedOpenAIClient(client, {
+        generationName: "cram-chunk-openai-response",
+        generationMetadata: {
+          feature: "cram",
+          stage: "chunk-insight",
+          chunkId: chunk.id,
+          chunkLabel: chunk.label,
+        },
+      });
+      const response = await observedClient.responses.parse({
+        model: getOpenAIModel(),
+        prompt_cache_key: "cram-mode-chunk-extraction-v1",
+        input: [
           {
-            type: "input_text",
-            text: JSON.stringify(
+            role: "system",
+            content: [
+              "You are extracting chunk-level exam signals for a night-before-exam cram product.",
+              "Return structured JSON only.",
+              "Ground every field in the provided chunk.",
+              "Prioritize testable topics, repeated ideas, formulas, definitions, and likely teacher emphasis.",
+              "Keep topics specific and scannable, not broad textbook chapter names unless the chunk truly supports them.",
+            ].join(" "),
+          },
+          {
+            role: "user",
+            content: [
               {
-                exam_name: input.examName,
-                time_available: input.timeAvailable,
-                course_name: input.courseName ?? null,
-                unit_path_label: input.unitPathLabel ?? null,
-                additional_notes: input.additionalNotes ?? null,
-                teacher_profile: buildTeacherProfilePromptPacket(
-                  teacherAssessmentProfile,
+                type: "input_text",
+                text: JSON.stringify(
+                  {
+                    exam_name: input.examName,
+                    time_available: input.timeAvailable,
+                    course_name: input.courseName ?? null,
+                    unit_path_label: input.unitPathLabel ?? null,
+                    additional_notes: input.additionalNotes ?? null,
+                    teacher_profile: buildTeacherProfilePromptPacket(
+                      teacherAssessmentProfile,
+                    ),
+                    chunk_label: chunk.label,
+                    chunk_text: chunk.text,
+                  },
+                  null,
+                  2,
                 ),
-                chunk_label: chunk.label,
-                chunk_text: chunk.text,
               },
-              null,
-              2,
-            ),
+            ],
           },
         ],
-      },
-    ],
-    text: {
-      format: zodTextFormat(cramChunkInsightSchema, "cram_chunk_insight"),
+        text: {
+          format: zodTextFormat(cramChunkInsightSchema, "cram_chunk_insight"),
+        },
+      });
+
+      if (!response.output_parsed) {
+        throw new Error(
+          "OpenAI returned no structured chunk insight for Cram Mode.",
+        );
+      }
+
+      return cramChunkInsightSchema.parse(response.output_parsed);
     },
-  });
-
-  if (!response.output_parsed) {
-    throw new Error("OpenAI returned no structured chunk insight for Cram Mode.");
-  }
-
-  return cramChunkInsightSchema.parse(response.output_parsed);
+  );
 }
 
 async function buildChunkInsights(
@@ -730,8 +779,37 @@ export async function buildCramExamMap(input: unknown): Promise<CramExamMap> {
   }
 
   const chunks = chunkCramMaterial(materialValidation.normalizedMaterial);
-  const chunkInsights = await buildChunkInsights(parsedInput, chunks);
-  return mergeChunkInsightsToExamMap(chunkInsights);
+  return withLangfuseObservation(
+    "cram.build-exam-map",
+    {
+      input: {
+        examName: parsedInput.examName,
+        timeAvailable: parsedInput.timeAvailable,
+        courseName: parsedInput.courseName ?? null,
+        unitPathLabel: parsedInput.unitPathLabel ?? null,
+        materialLength: materialValidation.normalizedMaterial.length,
+        chunkCount: chunks.length,
+      },
+      metadata: {
+        feature: "cram",
+        stage: "exam-map",
+        chunkCount: chunks.length,
+      },
+      tags: ["cram", "exam-map", "backend"],
+      output: (result) => {
+        const examMap = result as CramExamMap;
+        return {
+          overview: examMap.overview,
+          topTopicCount: examMap.topTopics.length,
+          sourceChunkCount: examMap.sourceChunkCount,
+        };
+      },
+    },
+    async () => {
+      const chunkInsights = await buildChunkInsights(parsedInput, chunks);
+      return mergeChunkInsightsToExamMap(chunkInsights);
+    },
+  );
 }
 
 function buildLocalCramPlan(
@@ -822,56 +900,95 @@ async function requestFinalCramPlanFromOpenAI(
   const teacherAssessmentProfile = input.teacherAssessmentProfile
     ? teacherAssessmentProfileSchema.parse(input.teacherAssessmentProfile)
     : null;
-  const response = await client.responses.parse({
-    model: getOpenAIModel(),
-    prompt_cache_key: "cram-mode-final-plan-v1",
-    input: [
-      {
-        role: "system",
-        content: [
-          "You are generating a night-before-exam cram plan for a desktop study product.",
-          "Return structured JSON only.",
-          "Optimize for score maximization under time pressure, not broad coverage.",
-          "Make every list short, actionable, and easy to scan during a stressed cram session.",
-          "Ground likely questions and self-test items in the exam map, not in generic study advice.",
-        ].join(" "),
+
+  return withLangfuseObservation(
+    "cram.generate-plan",
+    {
+      input: {
+        examName: input.examName,
+        timeAvailable: input.timeAvailable,
+        courseContext: buildCourseContext(input),
+        topTopicCount: examMap.topTopics.length,
+        formulaCount: examMap.formulasToMemorize.length,
+        definitionCount: examMap.definitionsToKnow.length,
+        hasTeacherAssessmentProfile: Boolean(teacherAssessmentProfile),
       },
-      {
-        role: "user",
-        content: [
+      metadata: {
+        feature: "cram",
+        stage: "final-plan",
+        topTopicCount: examMap.topTopics.length,
+      },
+      tags: ["cram", "final-plan", "backend"],
+      output: (result) => {
+        const cramPlan = result as CramResponse;
+        return {
+          title: cramPlan.title,
+          likelyQuestionCount: cramPlan.likelyQuestions.length,
+          selfTestCount: cramPlan.quickSelfTest.length,
+        };
+      },
+    },
+    async () => {
+      const observedClient = getObservedOpenAIClient(client, {
+        generationName: "cram-plan-openai-response",
+        generationMetadata: {
+          feature: "cram",
+          stage: "final-plan",
+          topTopicCount: examMap.topTopics.length,
+        },
+      });
+      const response = await observedClient.responses.parse({
+        model: getOpenAIModel(),
+        prompt_cache_key: "cram-mode-final-plan-v1",
+        input: [
           {
-            type: "input_text",
-            text: JSON.stringify(
+            role: "system",
+            content: [
+              "You are generating a night-before-exam cram plan for a desktop study product.",
+              "Return structured JSON only.",
+              "Optimize for score maximization under time pressure, not broad coverage.",
+              "Make every list short, actionable, and easy to scan during a stressed cram session.",
+              "Ground likely questions and self-test items in the exam map, not in generic study advice.",
+            ].join(" "),
+          },
+          {
+            role: "user",
+            content: [
               {
-                exam_name: input.examName,
-                time_available: input.timeAvailable,
-                course_context: buildCourseContext(input),
-                teacher_focus_hint: buildTeacherFocusHint(input),
-                teacher_profile: buildTeacherProfilePromptPacket(
-                  teacherAssessmentProfile,
+                type: "input_text",
+                text: JSON.stringify(
+                  {
+                    exam_name: input.examName,
+                    time_available: input.timeAvailable,
+                    course_context: buildCourseContext(input),
+                    teacher_focus_hint: buildTeacherFocusHint(input),
+                    teacher_profile: buildTeacherProfilePromptPacket(
+                      teacherAssessmentProfile,
+                    ),
+                    additional_notes: input.additionalNotes ?? null,
+                    exam_map: examMap,
+                  },
+                  null,
+                  2,
                 ),
-                additional_notes: input.additionalNotes ?? null,
-                exam_map: examMap,
               },
-              null,
-              2,
-            ),
+            ],
           },
         ],
-      },
-    ],
-    text: {
-      format: zodTextFormat(cramResponseSchema, "cram_plan_response"),
+        text: {
+          format: zodTextFormat(cramResponseSchema, "cram_plan_response"),
+        },
+      });
+
+      if (!response.output_parsed) {
+        throw new Error("OpenAI returned no structured cram plan.");
+      }
+
+      return normalizeCramResponse(
+        input,
+        cramResponseSchema.parse(response.output_parsed),
+      );
     },
-  });
-
-  if (!response.output_parsed) {
-    throw new Error("OpenAI returned no structured cram plan.");
-  }
-
-  return normalizeCramResponse(
-    input,
-    cramResponseSchema.parse(response.output_parsed),
   );
 }
 

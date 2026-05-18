@@ -8,6 +8,10 @@ import {
 } from "../schema";
 import type { CramPlanRequest, CramPlanResponse } from "../type";
 import { getClassProfileById } from "./classes";
+import {
+  getObservedOpenAIClient,
+  withLangfuseObservation,
+} from "../../../src/shared/langfuse.ts";
 
 type SessionRow = {
   id: number;
@@ -153,43 +157,81 @@ export async function generateCramPlan(
   input: unknown,
 ): Promise<CramPlanResponse> {
   const parsedInput = cramPlanRequestSchema.parse(input);
-  const client = getOpenAIClient();
-
-  const response = await client.responses.parse({
-    model: getOpenAIModel(),
-    input: [
-      {
-        role: "system",
-        content: [
-          "You are generating a cram study plan for a desktop learning product.",
-          "Return clean structured JSON only.",
-          "Prioritize what the student should do next with limited time.",
-          "Tasks must be concise, actionable, time-boxed, and ordered by study value.",
-          "Each task should read like a study guide section, not just a label.",
-          "Blend exam-sprint planning with digesting any provided material.",
-          "Prefer active recall and quiz checkpoints over passive rereading.",
-          "Most tasks should include a quiz preview that can launch a fresh quiz.",
-          "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
-        ].join(" "),
+  return withLangfuseObservation(
+    "cram-plan.generate",
+    {
+      input: {
+        classId: parsedInput.classId,
+        examName: parsedInput.examName,
+        currentUnit: parsedInput.currentUnit ?? null,
+        availableMinutes: parsedInput.availableMinutes,
+        gapFocus: parsedInput.gapFocus,
+        sessionIds: parsedInput.sessionIds,
+        hasUploadedMaterial: Boolean(parsedInput.uploadedMaterial),
+        uploadedMaterialLength: parsedInput.uploadedMaterial?.length ?? 0,
+        hasTeacherAssessmentProfile: Boolean(parsedInput.teacherAssessmentProfile),
       },
-      {
-        role: "user",
-        content: [
+      metadata: {
+        feature: "cram-plan",
+        classId: parsedInput.classId,
+        sessionCount: parsedInput.sessionIds.length,
+      },
+      tags: ["cram-plan", "backend"],
+      output: (result) => {
+        const plan = result as CramPlanResponse;
+        return {
+          title: plan.title,
+          taskCount: plan.tasks.length,
+        };
+      },
+    },
+    async () => {
+      const client = getOpenAIClient();
+      const observedClient = getObservedOpenAIClient(client, {
+        generationName: "cram-plan-openai-response",
+        generationMetadata: {
+          feature: "cram-plan",
+          classId: parsedInput.classId,
+          availableMinutes: parsedInput.availableMinutes,
+        },
+      });
+      const response = await observedClient.responses.parse({
+        model: getOpenAIModel(),
+        input: [
           {
-            type: "input_text",
-            text: buildCramPlanPrompt(parsedInput),
+            role: "system",
+            content: [
+              "You are generating a cram study plan for a desktop learning product.",
+              "Return clean structured JSON only.",
+              "Prioritize what the student should do next with limited time.",
+              "Tasks must be concise, actionable, time-boxed, and ordered by study value.",
+              "Each task should read like a study guide section, not just a label.",
+              "Blend exam-sprint planning with digesting any provided material.",
+              "Prefer active recall and quiz checkpoints over passive rereading.",
+              "Most tasks should include a quiz preview that can launch a fresh quiz.",
+              "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
+            ].join(" "),
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: buildCramPlanPrompt(parsedInput),
+              },
+            ],
           },
         ],
-      },
-    ],
-    text: {
-      format: zodTextFormat(cramPlanResponseSchema, "cram_plan_response"),
+        text: {
+          format: zodTextFormat(cramPlanResponseSchema, "cram_plan_response"),
+        },
+      });
+
+      if (!response.output_parsed) {
+        throw new Error("OpenAI returned no structured cram plan.");
+      }
+
+      return cramPlanResponseSchema.parse(response.output_parsed);
     },
-  });
-
-  if (!response.output_parsed) {
-    throw new Error("OpenAI returned no structured cram plan.");
-  }
-
-  return cramPlanResponseSchema.parse(response.output_parsed);
+  );
 }

@@ -15,6 +15,10 @@ import type {
   AssessmentProfileAnalysisResponse,
   AssessmentProfileMaterial,
 } from "../type/index.ts";
+import {
+  getObservedOpenAIClient,
+  withLangfuseObservation,
+} from "../../../src/shared/langfuse.ts";
 
 const DEFAULT_ASSESSMENT_MODEL = "gpt-5.4-mini";
 const MAX_SOURCE_SNIPPETS = 8;
@@ -299,42 +303,85 @@ export async function analyzeAssessmentProfile(
     return buildFallbackAnalysis(parsedInput);
   }
 
-  const response = await client.responses.parse({
-    model: getOpenAIModel(),
-    prompt_cache_key: "assessment-profile-analysis-v1",
-    input: [
-      {
-        role: "system",
-        content: [
-          "You analyze uploaded teacher assessments for a study app.",
-          "Return structured JSON only.",
-          "Focus on the differences between generic practice and this teacher's actual style.",
-          "Infer the most likely test format, wording habits, grading priorities, and what quiz/cram generation should imitate.",
-          "Be concise, specific, and grounded in the provided evidence.",
-          "Do not copy long passages from uploaded material.",
-        ].join(" "),
+  return withLangfuseObservation(
+    "assessment-profile.analyze",
+    {
+      input: {
+        classId: parsedInput.classId ?? null,
+        profileName: parsedInput.profileName ?? null,
+        presetLabel: parsedInput.presetLabel ?? null,
+        customFormat: parsedInput.customFormat ?? null,
+        exampleQuestionCount: parsedInput.exampleQuestions.length,
+        uploadedMaterialCount: parsedInput.uploadedMaterials.length,
+        uploadedMaterialNames: parsedInput.uploadedMaterials.map(
+          (material) => material.name,
+        ),
       },
-      {
-        role: "user",
-        content: [
+      metadata: {
+        feature: "assessment-profile",
+        classId: parsedInput.classId ?? null,
+        uploadedMaterialCount: parsedInput.uploadedMaterials.length,
+      },
+      tags: ["assessment-profile", "backend"],
+      output: (result) => {
+        const analysis = result as AssessmentProfileAnalysisResponse;
+        return {
+          profileName: analysis.profileName,
+          testFormat: analysis.testFormat,
+          quizAdjustmentCount: analysis.quizAdjustments.length,
+          cramAdjustmentCount: analysis.cramAdjustments.length,
+        };
+      },
+    },
+    async () => {
+      const observedClient = getObservedOpenAIClient(client, {
+        generationName: "assessment-profile-openai-response",
+        generationMetadata: {
+          feature: "assessment-profile",
+          classId: parsedInput.classId ?? null,
+          uploadedMaterialCount: parsedInput.uploadedMaterials.length,
+        },
+      });
+      const response = await observedClient.responses.parse({
+        model: getOpenAIModel(),
+        prompt_cache_key: "assessment-profile-analysis-v1",
+        input: [
           {
-            type: "input_text",
-            text: JSON.stringify(buildPromptPacket(parsedInput), null, 2),
+            role: "system",
+            content: [
+              "You analyze uploaded teacher assessments for a study app.",
+              "Return structured JSON only.",
+              "Focus on the differences between generic practice and this teacher's actual style.",
+              "Infer the most likely test format, wording habits, grading priorities, and what quiz/cram generation should imitate.",
+              "Be concise, specific, and grounded in the provided evidence.",
+              "Do not copy long passages from uploaded material.",
+            ].join(" "),
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "input_text",
+                text: JSON.stringify(buildPromptPacket(parsedInput), null, 2),
+              },
+            ],
           },
         ],
-      },
-    ],
-    text: {
-      format: zodTextFormat(
-        assessmentProfileAnalysisResponseSchema,
-        "assessment_profile_analysis",
-      ),
+        text: {
+          format: zodTextFormat(
+            assessmentProfileAnalysisResponseSchema,
+            "assessment_profile_analysis",
+          ),
+        },
+      });
+
+      if (!response.output_parsed) {
+        throw new Error(
+          "OpenAI returned no structured assessment profile analysis.",
+        );
+      }
+
+      return assessmentProfileAnalysisResponseSchema.parse(response.output_parsed);
     },
-  });
-
-  if (!response.output_parsed) {
-    throw new Error("OpenAI returned no structured assessment profile analysis.");
-  }
-
-  return assessmentProfileAnalysisResponseSchema.parse(response.output_parsed);
+  );
 }
