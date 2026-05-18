@@ -3358,6 +3358,7 @@ function openSavedCramPlan(plan) {
   activeQuizContext = "page";
   renderCramPlan(plan);
   setHomeView("cram");
+  void hydrateMissingCramQuizzes();
 }
 
 function getCramProgress(plan) {
@@ -3519,6 +3520,36 @@ function renderCramTakeaways(items = []) {
     <ul class="cram-list">
       ${items.map((item) => `<li class="cram-list-item">${item}</li>`).join("")}
     </ul>
+  `;
+}
+
+function renderCramStudyGuide(task) {
+  if (!task) {
+    return "";
+  }
+
+  const topic = task.topic || task.title || "this topic";
+  const takeawayA =
+    Array.isArray(task.keyTakeaways) && task.keyTakeaways[0]
+      ? task.keyTakeaways[0]
+      : `Explain ${topic} without looking at your notes.`;
+  const takeawayB =
+    Array.isArray(task.keyTakeaways) && task.keyTakeaways[1]
+      ? task.keyTakeaways[1]
+      : `Work one clean example that shows how ${topic} appears on an exam.`;
+
+  return `
+    <div class="cram-study-guide-markdown">
+      <p class="cram-study-guide-intro">
+        Treat this section like a fast exam sheet: understand the main pattern, say it back in plain language, and connect it to one example you could reproduce under pressure.
+      </p>
+      <ul class="cram-study-guide-points">
+        <li><strong>Know the idea:</strong> Be able to explain ${topic} clearly before you try to memorize details.</li>
+        <li><strong>Know the exam move:</strong> If you see a question on ${topic}, identify the pattern first, then connect it to the rule or outcome it produces.</li>
+        <li><strong>Know it cold:</strong> ${takeawayA}</li>
+        <li><strong>Final check:</strong> ${takeawayB}</li>
+      </ul>
+    </div>
   `;
 }
 
@@ -3708,11 +3739,33 @@ function renderCramTaskDetail(task) {
       : "Plan material";
   const quizPreview = task.quizPreview || {
     title: `${task.topic} quiz preview`,
-    description: "Open a fresh quiz built from this cram section and its source material.",
+    description:
+      "Open the saved checkpoint for this section and test recall before moving on.",
     questionCount: 3,
   };
   const totalTasks = activeCramPlan.tasks?.length || 0;
   const isLastTask = activeCramTaskIndex >= totalTasks - 1;
+  const quizStatus =
+    task.quizStatus ||
+    (task.quizEnabled ? (task.quizId ? "ready" : "preparing") : "not-needed");
+  const checkpointStatusText =
+    quizStatus === "failed"
+      ? "Unavailable"
+      : task.quizId
+        ? "Saved checkpoint"
+        : "Preparing checkpoint";
+  const checkpointActionText =
+    quizStatus === "failed"
+      ? "Not ready"
+      : task.quizId
+        ? "Open saved quiz"
+        : "Building quiz";
+  const checkpointDetailText =
+    quizStatus === "failed"
+      ? "This guide section could not finish its quiz build."
+      : task.quizId
+        ? scoreText
+        : "This checkpoint was requested when the guide was created and is still being prepared.";
 
   cramTaskDetail.innerHTML = `
     <div class="cram-task-detail-header">
@@ -3723,35 +3776,55 @@ function renderCramTaskDetail(task) {
       </div>
       <span class="cram-priority">${priorityLabel(task.priority)}</span>
     </div>
-    <p class="cram-task-body">${task.body}</p>
     <p class="cram-task-source">${sourceText}</p>
-    ${renderCramTakeaways(task.keyTakeaways)}
+    <div class="cram-study-guide-layout">
+      <div class="cram-study-guide-main">
+        <p class="cram-study-guide-label">Study guide</p>
+        ${renderCramStudyGuide(task)}
+      </div>
+      <div class="cram-study-guide-aside">
+        <div class="cram-study-guide-block">
+          <p class="cram-study-guide-label">Study focus</p>
+          <p class="cram-task-body">${task.body}</p>
+        </div>
+        <div class="cram-study-guide-block">
+          <p class="cram-study-guide-label">Key takeaways</p>
+          ${renderCramTakeaways(task.keyTakeaways)}
+        </div>
+      </div>
+    </div>
     ${
       task.quizEnabled
         ? `
       <button id="cram-task-quiz" class="cram-quiz-preview" type="button">
         <span class="cram-quiz-preview-header">
-          <span class="cram-quiz-preview-kicker">Quiz Preview</span>
-          <span class="cram-quiz-preview-meta">${quizPreview.questionCount || 3} questions · ${scoreText}</span>
+          <span class="cram-quiz-preview-kicker">Checkpoint</span>
+          <span class="cram-quiz-preview-meta">${quizPreview.questionCount || 3} questions · ${checkpointStatusText}</span>
         </span>
         <span class="cram-quiz-preview-title">${quizPreview.title}</span>
         <span class="cram-quiz-preview-copy">${quizPreview.description}</span>
         <span class="cram-quiz-preview-surface">
           <span class="quiz-results-bar cram-quiz-preview-bar">
             <span>
-              <span class="material-reference-label">Checkpoint</span>
+              <span class="material-reference-label">Saved quiz</span>
               <strong class="cram-quiz-preview-surface-title">${task.topic}</strong>
             </span>
-            <span class="quiz-gap-value">${priorityLabel(task.priority)}</span>
+            <span class="quiz-gap-value">${checkpointActionText}</span>
           </span>
           <span class="quiz-insights cram-quiz-preview-insights">
             <span class="quiz-insight-card cram-quiz-preview-panel">
-              <strong>What you'll review</strong>
+              <strong>What you'll check</strong>
               <small>${task.keyTakeaways?.[0] || task.body}</small>
             </span>
             <span class="quiz-insight-card cram-quiz-preview-panel">
-              <strong>Open checkpoint</strong>
-              <small>${currentTone === "dark" ? "Expands in dark mode." : "Expands in light mode."}</small>
+              <strong>${
+                quizStatus === "failed"
+                  ? "Checkpoint unavailable"
+                  : task.quizId
+                    ? "Saved checkpoint"
+                    : "Checkpoint preparing"
+              }</strong>
+              <small>${checkpointDetailText}</small>
             </span>
           </span>
         </span>
@@ -3823,10 +3896,12 @@ function buildCramPlanEntry(response, values) {
               task.quizPreview?.title || `${task.topic} quiz preview`,
             description:
               task.quizPreview?.description ||
-              "Open a fresh quiz based on this cram section and its supporting material.",
+              "Open the saved checkpoint for this study section and test recall before moving on.",
             questionCount: task.quizPreview?.questionCount || 3,
           },
     quizId: task.quizId || null,
+    quizStatus:
+      task.quizEnabled === false ? "not-needed" : task.quizId ? "ready" : "preparing",
     lastScore: task.lastScore || null,
   }));
   const plan = {
@@ -3944,7 +4019,9 @@ async function generateCramPlanForCurrentClass() {
         ? getTeacherAssessmentProfilePayload(selectedAssessmentProfile)
         : null,
     });
-    const plan = buildCramPlanEntry(response, values);
+    let plan = buildCramPlanEntry(response, values);
+    cramStatus.textContent = "Building guide and quiz checkpoints...";
+    plan = await prebuildCramTaskQuizzes(plan, dbClassId, activeCramPath);
     const nextChildren = [plan, ...getCurrentClassItems()];
     const nextFolders = replaceChildrenAtPath(activeCramPath, nextChildren);
     await persistFolders(nextFolders);
@@ -4018,15 +4095,15 @@ function openSavedQuiz(quizItem) {
   setHomeView("quiz");
 }
 
-function buildProcessingQuizEntry() {
+function buildProcessingQuizEntry(options = {}) {
   return {
     id: makeId(),
     type: "quiz",
-    name: "Quiz - Processing",
+    name: options.name || "Quiz - Processing",
     status: "processing",
     createdAt: new Date().toISOString(),
     questionCount: 0,
-    summary: "Generating quiz",
+    summary: options.summary || "Generating quiz",
     quizData: null,
   };
 }
@@ -4076,7 +4153,6 @@ async function saveQuizToExplorer(quiz, targetPath) {
     quizData: quiz,
   };
 
-  await addQuizEntryToExplorer(nextQuizEntry);
   saveQuizButton.hidden = true;
   const targetNode = getFolderAtPath(targetPath);
   const targetChildren = targetNode ? targetNode.children || [] : folders;
@@ -4084,6 +4160,19 @@ async function saveQuizToExplorer(quiz, targetPath) {
   const nextFolders = replaceChildrenAtPath(targetPath, nextChildren);
   await persistFolders(nextFolders);
   return nextQuizEntry;
+}
+
+function getQuizEntryFromPath(targetPath, quizId) {
+  if (!quizId) {
+    return null;
+  }
+  const targetNode = getFolderAtPath(targetPath);
+  const targetChildren = targetNode ? targetNode.children || [] : folders;
+  return (
+    targetChildren.find(
+      (item) => item?.type === "quiz" && item.id === quizId && item.quizData,
+    ) || null
+  );
 }
 
 function restoreQuizViewToModal() {
@@ -4129,6 +4218,153 @@ function prepareCramQuizLoadingState(task) {
   quizQuestions.appendChild(loadingCard);
 }
 
+function openSavedCramQuiz(task, quizEntry) {
+  cramQuizMeta.textContent = `Quiz for ${task.title}`;
+  cramActivePanel.hidden = true;
+  cramQuizPanel.hidden = false;
+  if (cramPageScreen) {
+    cramPageScreen.dataset.cramState = "quiz";
+  }
+  mountQuizViewInCram();
+  loadQuizIntoView(quizEntry.quizData, {
+    readOnly: false,
+    hideSave: true,
+  });
+}
+
+async function buildSavedQuizForCramTask(plan, task, classId, targetPath) {
+  const quizMaterial = [
+    plan.sourceSummary,
+    task.title,
+    task.topic,
+    plan.uploadedMaterial,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const processingEntry = buildProcessingQuizEntry({
+    name: `${task.title} Quiz - Processing`,
+    summary: `Preparing a saved checkpoint for ${task.title}.`,
+  });
+
+  await addQuizEntryToExplorer(processingEntry, targetPath);
+
+  try {
+    const quiz = await window.overlayApi.generateQuiz({
+      classId,
+      sessionIds: plan.sessionIds || [],
+      includeSessionSummary: true,
+      includeSessionNotes: false,
+      includeKeyTopics: true,
+      includeUploadedMaterial: true,
+      uploadedMaterial: quizMaterial || null,
+      gapFocus: plan.gapFocus || 50,
+    });
+
+    await updateQuizEntryInExplorer(
+      processingEntry.id,
+      (item) => ({
+        ...item,
+        name: quiz.title || `${task.title} Quiz`,
+        status: "ready",
+        completedAt: new Date().toISOString(),
+        questionCount: quiz.questions.length,
+        summary: quiz.subtitle,
+        quizData: quiz,
+      }),
+      targetPath,
+    );
+
+    return {
+      ...processingEntry,
+      name: quiz.title || `${task.title} Quiz`,
+      status: "ready",
+      questionCount: quiz.questions.length,
+      summary: quiz.subtitle,
+      quizData: quiz,
+    };
+  } catch (error) {
+    await updateQuizEntryInExplorer(
+      processingEntry.id,
+      (item) => ({
+        ...item,
+        name: `${task.title} Quiz - Failed`,
+        status: "failed",
+        completedAt: new Date().toISOString(),
+        summary:
+          error instanceof Error
+            ? error.message
+            : "Quiz generation failed. Try again.",
+      }),
+      targetPath,
+    );
+    throw error;
+  }
+}
+
+async function prebuildCramTaskQuizzes(plan, classId, targetPath) {
+  const tasks = Array.isArray(plan?.tasks) ? plan.tasks : [];
+  for (let index = 0; index < tasks.length; index += 1) {
+    const task = tasks[index];
+    if (!task?.quizEnabled || task.quizId) {
+      continue;
+    }
+
+    try {
+      const savedQuiz = await buildSavedQuizForCramTask(
+        plan,
+        task,
+        classId,
+        targetPath,
+      );
+      plan.linkedQuizIds = [
+        ...new Set([...(plan.linkedQuizIds || []), savedQuiz.id]),
+      ];
+      plan.tasks = plan.tasks.map((candidate, candidateIndex) =>
+        candidateIndex === index
+          ? { ...candidate, quizId: savedQuiz.id, quizStatus: "ready" }
+          : candidate,
+      );
+    } catch {
+      plan.tasks = plan.tasks.map((candidate, candidateIndex) =>
+        candidateIndex === index
+          ? { ...candidate, quizStatus: "failed" }
+          : candidate,
+      );
+    }
+  }
+
+  plan.progress = buildCramProgress(plan);
+  return plan;
+}
+
+async function hydrateMissingCramQuizzes() {
+  if (!activeCramPlan || !activeQuizClassFolder) {
+    return;
+  }
+
+  const needsBackfill = (activeCramPlan.tasks || []).some(
+    (task) => task?.quizEnabled && !task.quizId && task.quizStatus !== "failed",
+  );
+  if (!needsBackfill) {
+    return;
+  }
+
+  try {
+    const classId = await ensureBackendClassId(activeQuizClassFolder);
+    cramStatus.textContent = "Preparing saved checkpoints for this guide...";
+    activeCramPlan = await prebuildCramTaskQuizzes(
+      activeCramPlan,
+      classId,
+      activeCramPath.slice(0, -1),
+    );
+    await saveActiveCramPlanLocally();
+    renderCramPlan(activeCramPlan);
+  } catch {
+    cramStatus.textContent = "Some saved checkpoints are still unavailable.";
+  }
+}
+
 function saveActiveCramPlanLocally() {
   if (!activeCramPlan) {
     return Promise.resolve();
@@ -4158,79 +4394,28 @@ async function updateActiveCramTask(patch) {
 }
 
 async function launchCramTaskQuiz(task) {
-  if (!activeCramPlan || !activeQuizClassFolder) {
+  if (!activeCramPlan || !task?.quizEnabled) {
     return;
   }
-  const canUseAi = await ensureAiFeatureAvailable((message) => {
-    cramStatus.textContent = message;
-  });
-  if (!canUseAi) {
+  const quizEntry = getQuizEntryFromPath(activeCramPath.slice(0, -1), task.quizId);
+  if (quizEntry?.quizData) {
+    openSavedCramQuiz(task, quizEntry);
     return;
   }
-
-  const dbClassId = await ensureBackendClassId(activeQuizClassFolder);
-  const quizMaterial = [
-    activeCramPlan.sourceSummary,
-    task.title,
-    task.topic,
-    activeCramPlan.uploadedMaterial,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-
-  cramQuizMeta.textContent = `Quiz for ${task.title}`;
-  cramActivePanel.hidden = true;
-  cramQuizPanel.hidden = false;
-  if (cramPageScreen) {
-    cramPageScreen.dataset.cramState = "quiz";
-  }
-  mountQuizViewInCram();
-  prepareCramQuizLoadingState(task);
-  quizSubmitButton.hidden = false;
-  quizSubmitButton.disabled = true;
-  quizSubmitButton.textContent = "Generating...";
-
-  try {
-    const quiz = await window.overlayApi.generateQuiz({
-      classId: dbClassId,
-      sessionIds: activeCramPlan.sessionIds || [],
-      includeSessionSummary: true,
-      includeSessionNotes: false,
-      includeKeyTopics: true,
-      includeUploadedMaterial: true,
-      uploadedMaterial: quizMaterial || null,
-      gapFocus: activeCramPlan.gapFocus || 50,
-    });
-    const savedQuiz = await saveQuizToExplorer(
-      quiz,
-      activeCramPath.slice(0, -1),
-    );
-    activeCramPlan.linkedQuizIds = [
-      ...new Set([...(activeCramPlan.linkedQuizIds || []), savedQuiz.id]),
-    ];
-    activeCramPlan.tasks = activeCramPlan.tasks.map((candidate, index) =>
-      index === activeCramTaskIndex
-        ? { ...candidate, status: "quiz", quizId: savedQuiz.id }
-        : candidate,
-    );
-    activeCramPlan.progress = buildCramProgress(activeCramPlan);
-    await saveActiveCramPlanLocally();
-    loadQuizIntoView(quiz, {
-      readOnly: false,
-      hideSave: true,
-    });
-  } catch (error) {
-    cramQuizPanel.hidden = true;
-    cramActivePanel.hidden = false;
+  cramStatus.textContent =
+    task.quizStatus === "failed"
+      ? "This section's saved checkpoint is unavailable."
+      : "This section's checkpoint is still being prepared.";
+  if (task.quizStatus !== "failed") {
+    cramQuizMeta.textContent = `Quiz for ${task.title}`;
+    cramActivePanel.hidden = true;
+    cramQuizPanel.hidden = false;
     if (cramPageScreen) {
-      cramPageScreen.dataset.cramState = "guide";
+      cramPageScreen.dataset.cramState = "quiz";
     }
-    cramStatus.textContent =
-      error instanceof Error ? error.message : "Quiz generation failed.";
-    renderCramPlan(activeCramPlan);
-  } finally {
-    quizSubmitButton.textContent = "Check Answers";
-    quizSubmitButton.disabled = false;
+    mountQuizViewInCram();
+    prepareCramQuizLoadingState(task);
+    quizSubmitButton.hidden = true;
   }
 }
 
