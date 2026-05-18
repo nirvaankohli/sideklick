@@ -142,10 +142,14 @@ function buildCramPlanPrompt(input: CramPlanRequest): string {
         task_body:
           "each task needs body copy that explains what to study and how",
         key_takeaways: "each task needs 2 to 5 concise bullets",
+        vocab_to_know:
+          "each task needs 2 to 6 high-yield vocab, formula, or definition phrases the student should recognize cold",
         quiz_mix:
           "most tasks should have quizEnabled true and a quizPreview object; only a few may set quizEnabled false",
         null_fields:
           "when a task does not have a quiz preview or prior score, return quizPreview, quizId, and lastScore as null",
+        emphasis:
+          "body, keyTakeaways, and vocabToKnow may use Markdown bold or italics for high-yield terms, formulas, warnings, or memory hooks; do not use HTML",
       },
     },
     null,
@@ -208,6 +212,7 @@ export async function generateCramPlan(
               "Each task should read like a study guide section, not just a label.",
               "Blend exam-sprint planning with digesting any provided material.",
               "Prefer active recall and quiz checkpoints over passive rereading.",
+              "It is fine to use Markdown bold or italics inside study-guide copy, focus/body copy, key takeaways, and vocab lists when emphasis helps scanning.",
               "Most tasks should include a quiz preview that can launch a fresh quiz.",
               "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
             ].join(" "),

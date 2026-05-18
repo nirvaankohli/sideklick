@@ -326,6 +326,7 @@ export const cramTaskSchema = z.object({
   topic: z.string().trim().min(1),
   body: z.string().trim().min(1),
   keyTakeaways: z.array(z.string().trim().min(1)).min(2).max(5),
+  vocabToKnow: z.array(z.string().trim().min(1)).min(2).max(6),
   estimatedMinutes: z.number().int().min(5).max(180),
   priority: z.enum(["must-review", "quick-win", "if-time"]),
   sourceLabels: z.array(z.string().trim().min(1)).default([]),

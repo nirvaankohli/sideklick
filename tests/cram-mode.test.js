@@ -57,6 +57,7 @@ test("cram plan schemas accept the saved plan generator contract", async () => {
         topic: "Tree traversal",
         body: "Walk each traversal from memory, then map when each one appears in exam prompts.",
         keyTakeaways: ["Preorder starts at the root.", "Inorder reveals sorted output in BSTs."],
+        vocabToKnow: ["**Preorder**", "*Inorder*", "Binary search tree (BST)"],
         estimatedMinutes: 20,
         priority: "must-review",
         sourceLabels: ["Session summary"],
@@ -75,6 +76,7 @@ test("cram plan schemas accept the saved plan generator contract", async () => {
         topic: "Runtime",
         body: "Compare common traversal and search paths until the time complexity is automatic.",
         keyTakeaways: ["Balanced trees stay near log n.", "A full scan falls back to linear time."],
+        vocabToKnow: ["Balanced tree", "Linear time", "Log n"],
         estimatedMinutes: 25,
         priority: "quick-win",
         sourceLabels: ["Uploaded material"],
@@ -93,6 +95,7 @@ test("cram plan schemas accept the saved plan generator contract", async () => {
         topic: "Edge cases",
         body: "Review null children, empty trees, and one-node examples only if time remains.",
         keyTakeaways: ["Check base cases first.", "Use tiny examples to catch pointer mistakes."],
+        vocabToKnow: ["Base case", "Null child"],
         estimatedMinutes: 15,
         priority: "if-time",
         sourceLabels: [],
@@ -129,6 +132,14 @@ test("home renderer keeps cram plans in the folder tree and bridges quiz flow", 
   assert.match(homeJs, /activeQuizContext === "cram"/);
   assert.match(homeJs, /Your study guide is generated\./);
   assert.match(homeJs, /Study guide/);
+  assert.match(homeJs, /Vocab to know/);
+  assert.match(homeJs, /renderInlineCramText/);
+  assert.match(homeJs, /vocabToKnow/);
+  assert.match(homeJs, /Built from your selected study material\./);
+  assert.doesNotMatch(homeJs, /task\.sourceLabels\.join/);
+  assert.match(homeJs, /cram-study-guide-takeaways-card/);
+  assert.match(homeJs, /cram-quiz-preview-grid/);
+  assert.match(homeJs, /cram-coverage-focus/);
   assert.match(homeJs, /Quiz - Processing/);
   assert.match(homeJs, /cram-task-start-button/);
   assert.match(homeJs, /Open saved quiz/);

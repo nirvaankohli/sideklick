@@ -289,6 +289,7 @@ export type CramTask = {
   topic: string;
   body: string;
   keyTakeaways: string[];
+  vocabToKnow: string[];
   estimatedMinutes: number;
   priority: "must-review" | "quick-win" | "if-time";
   sourceLabels: string[];
