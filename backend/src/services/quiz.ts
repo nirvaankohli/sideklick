@@ -104,6 +104,7 @@ export function buildQuizSystemInstructions(
     "You are generating a study quiz for a desktop learning product.",
     "Return clean structured JSON only.",
     "Make the quiz concise, useful, and grounded in the provided material.",
+    "Write a short, specific quiz title that clearly tells the student what is inside.",
     "Generate exactly the requested number of questions from the quiz constraints.",
     "Use the gap focus slider as a weighting signal: higher values should target weak spots more aggressively.",
     "Every question must have four plausible options, exactly one correct answer, and a short explanation.",

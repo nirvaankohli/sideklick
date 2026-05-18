@@ -31,6 +31,7 @@ test("quiz system instructions mirror teacher assessment format when provided", 
   assert.match(joined, /mirror the teacher's assessment feel/i);
   assert.match(joined, /adapt its reasoning style/i);
   assert.match(joined, /style anchors/i);
+  assert.match(joined, /short, specific quiz title/i);
 });
 
 test("quiz prompt packet carries teacher assessment profile for generation", async () => {
