@@ -99,6 +99,7 @@ function getTopGaps(classId: number): GapRow[] {
 export function buildQuizSystemInstructions(
   classProfile: ClassProfile | null,
   teacherAssessmentProfile: TeacherAssessmentProfile | null = null,
+  titleHint: string | null = null,
 ): string[] {
   const instructions = [
     "You are generating a study quiz for a desktop learning product.",
@@ -110,6 +111,12 @@ export function buildQuizSystemInstructions(
     "Every question must have four plausible options, exactly one correct answer, and a short explanation.",
     "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
   ];
+
+  if (titleHint?.trim()) {
+    instructions.push(
+      `Use this saved-title direction for the quiz title: ${titleHint.trim()}. Keep it short and specific, and avoid filler words like preview, checkpoint, or practice set.`,
+    );
+  }
 
   const testFormat =
     teacherAssessmentProfile?.testFormat?.trim() ||
@@ -230,6 +237,7 @@ export function buildQuizPromptPacket({
       selected_session_count: sessions.length,
     },
     high_priority_gaps: gapRows,
+    title_hint: input.titleHint ?? null,
     included_sources: includedSources,
   };
 }
@@ -277,6 +285,7 @@ export async function generateQuiz(input: unknown): Promise<QuizResponse> {
           ...buildQuizSystemInstructions(
             getClassProfileById(parsedInput.classId),
             teacherAssessmentProfile,
+            parsedInput.titleHint ?? null,
           ),
         ].join(" "),
       },

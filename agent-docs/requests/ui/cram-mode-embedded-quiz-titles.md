@@ -1,23 +1,21 @@
 # Cram Mode Embedded Quiz Titles
 
 ## Summary
-The request was to improve Cram Mode's embedded quiz generation so the model produces quiz titles that are short, sweet, and clearly define what the quiz covers, then commit the change once tests pass.
+The request was clarified to target Cram Mode's auto-generated quizzes specifically: when cram tasks prebuild quizzes in the background, the model should return short, descriptive names for those quizzes so the saved entries look clean and meaningful in the file manager.
 
 ## Implementation
-I updated the quiz-generation system instructions in both quiz service entry points:
+I updated the quiz-generation flow for auto-generated cram quizzes:
 
-- `backend/src/services/quiz.ts`
-- `src/main/server/services/quiz.ts`
-
-The prompt now explicitly tells the model to write a short, specific quiz title that clearly tells the student what is inside. This keeps the change focused on generation behavior, which is what drives the saved embedded quiz names used in Cram Mode.
-
-I also added a regression assertion in `tests/backend.quiz.test.js` so this instruction stays in place.
+- Added an optional `titleHint` field to the quiz request schema and types in both backend service stacks.
+- Updated `src/home.js` so `buildSavedQuizForCramTask` sends a cram-specific title hint based on the task topic/title when it requests an auto-generated quiz.
+- Updated the quiz-generation prompt in both service entry points so, when `titleHint` is present, the model uses that as saved-title direction and keeps the result short and specific.
+- Added regression coverage in `tests/backend.quiz.test.js` and `tests/cram-mode.test.js`.
 
 ## Architecture Impact
-This does not change the request or response contract, storage shape, or quiz rendering flow.
+This slightly extends the quiz request contract by adding optional title guidance, but it does not change the quiz response shape or file-manager storage model.
 
-It slightly strengthens the prompt contract between the app and the quiz model:
+It makes the cram auto-generation path more intentional:
 
-- embedded cram quizzes should come back with more descriptive titles
-- saved quiz names continue to derive from the generated quiz title
-- no new UI or persistence logic was required
+- cram-generated quizzes can ask for a file-manager-friendly title explicitly
+- saved quiz entries still use the model's returned `quiz.title`
+- regular quiz generation remains compatible because `titleHint` is optional

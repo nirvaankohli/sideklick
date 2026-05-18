@@ -124,6 +124,8 @@ test("home renderer keeps cram plans in the folder tree and bridges quiz flow", 
   assert.match(homeJs, /launchCramTaskQuiz/);
   assert.match(homeJs, /generateCramPlan/);
   assert.match(homeJs, /prebuildCramTaskQuizzes/);
+  assert.match(homeJs, /titleHint = task\.topic \|\| task\.quizPreview\?\.title \|\| task\.title \|\| null/);
+  assert.match(homeJs, /titleHint,/);
   assert.match(homeJs, /activeQuizContext === "cram"/);
   assert.match(homeJs, /Your study guide is generated\./);
   assert.match(homeJs, /Study guide/);

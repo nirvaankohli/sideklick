@@ -4241,6 +4241,7 @@ async function buildSavedQuizForCramTask(plan, task, classId, targetPath) {
   ]
     .filter(Boolean)
     .join("\n\n");
+  const titleHint = task.topic || task.quizPreview?.title || task.title || null;
 
   const processingEntry = buildProcessingQuizEntry({
     name: `${task.title} Quiz - Processing`,
@@ -4258,6 +4259,7 @@ async function buildSavedQuizForCramTask(plan, task, classId, targetPath) {
       includeKeyTopics: true,
       includeUploadedMaterial: true,
       uploadedMaterial: quizMaterial || null,
+      titleHint,
       gapFocus: plan.gapFocus || 50,
     });
 

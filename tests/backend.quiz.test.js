@@ -25,13 +25,15 @@ test("quiz system instructions mirror teacher assessment format when provided", 
     ],
     keyConcepts: [],
     notes: null,
-  });
+  }, null, "Industrialization");
 
   const joined = instructions.join(" ");
   assert.match(joined, /mirror the teacher's assessment feel/i);
   assert.match(joined, /adapt its reasoning style/i);
   assert.match(joined, /style anchors/i);
   assert.match(joined, /short, specific quiz title/i);
+  assert.match(joined, /saved-title direction/i);
+  assert.match(joined, /industrialization/i);
 });
 
 test("quiz prompt packet carries teacher assessment profile for generation", async () => {
@@ -46,6 +48,7 @@ test("quiz prompt packet carries teacher assessment profile for generation", asy
       includeKeyTopics: true,
       includeUploadedMaterial: false,
       uploadedMaterial: null,
+      titleHint: "Membrane Transport",
       gapFocus: 70,
       questionCount: 8,
     },
@@ -94,5 +97,6 @@ test("quiz prompt packet carries teacher assessment profile for generation", asy
     "Which graph best shows enzyme saturation under inhibitor pressure?",
   ]);
   assert.equal(packet.quiz_constraints.question_count, 8);
+  assert.equal(packet.title_hint, "Membrane Transport");
   assert.match(JSON.stringify(packet.included_sources), /Reviewed membrane transport/);
 });

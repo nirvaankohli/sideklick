@@ -203,6 +203,7 @@ export const quizRequestSchema = z.object({
   includeKeyTopics: z.boolean(),
   includeUploadedMaterial: z.boolean(),
   uploadedMaterial: nullableTrimmedString,
+  titleHint: nullableTrimmedString.optional(),
   gapFocus: z.number().min(0).max(100),
   questionCount: z.number().int().min(3).max(8).default(5),
 }).strict();

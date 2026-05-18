@@ -168,6 +168,7 @@ export type QuizRequest = {
   includeKeyTopics: boolean;
   includeUploadedMaterial: boolean;
   uploadedMaterial?: string | null;
+  titleHint?: string | null;
   gapFocus: number;
   questionCount: number;
 };

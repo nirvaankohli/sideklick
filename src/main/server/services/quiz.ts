@@ -170,6 +170,9 @@ export async function generateQuiz(input: unknown): Promise<QuizResponse> {
           "Use the gap focus slider as a weighting signal: higher values should target weak spots more aggressively.",
           "Every question must have four plausible options, exactly one correct answer, and a short explanation.",
           "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
+          parsedInput.titleHint
+            ? `Use this saved-title direction for the quiz title: ${parsedInput.titleHint}. Keep it short and specific, and avoid filler words like preview, checkpoint, or practice set.`
+            : "",
         ].join(" "),
       },
       {
