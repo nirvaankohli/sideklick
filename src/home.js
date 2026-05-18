@@ -3511,6 +3511,23 @@ function openPreviousCramStep() {
   openCramTask(activeCramTaskIndex - 1);
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function renderInlineCramText(value) {
+  const escaped = escapeHtml(value);
+  return escaped
+    .replace(/(\*\*|__)(.+?)\1/g, "<strong>$2</strong>")
+    .replace(/(\*|_)(.+?)\1/g, "<em>$2</em>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+
 function renderCramTakeaways(items = []) {
   if (!Array.isArray(items) || items.length === 0) {
     return "";
@@ -3518,7 +3535,12 @@ function renderCramTakeaways(items = []) {
 
   return `
     <ul class="cram-list">
-      ${items.map((item) => `<li class="cram-list-item">${item}</li>`).join("")}
+      ${items
+        .map(
+          (item) =>
+            `<li class="cram-list-item">${renderInlineCramText(item)}</li>`,
+        )
+        .join("")}
     </ul>
   `;
 }
@@ -3544,10 +3566,10 @@ function renderCramStudyGuide(task) {
         Treat this section like a fast exam sheet: understand the main pattern, say it back in plain language, and connect it to one example you could reproduce under pressure.
       </p>
       <ul class="cram-study-guide-points">
-        <li><strong>Know the idea:</strong> Be able to explain ${topic} clearly before you try to memorize details.</li>
-        <li><strong>Know the exam move:</strong> If you see a question on ${topic}, identify the pattern first, then connect it to the rule or outcome it produces.</li>
-        <li><strong>Know it cold:</strong> ${takeawayA}</li>
-        <li><strong>Final check:</strong> ${takeawayB}</li>
+        <li><strong>Know the idea:</strong> Be able to explain ${escapeHtml(topic)} clearly before you try to memorize details.</li>
+        <li><strong>Know the exam move:</strong> If you see a question on ${escapeHtml(topic)}, identify the pattern first, then connect it to the rule or outcome it produces.</li>
+        <li><strong>Know it cold:</strong> ${renderInlineCramText(takeawayA)}</li>
+        <li><strong>Final check:</strong> ${renderInlineCramText(takeawayB)}</li>
       </ul>
     </div>
   `;
@@ -3632,7 +3654,7 @@ function renderCramTaskDetail(task) {
     const summaryText =
       activeCramPlan.summary ||
       "Your guide is ready. Move through the timeline, study one section at a time, and use the quiz checkpoints to test recall.";
-    const sourceText = activeCramPlan.sourceSummary || "Built from your selected class material.";
+    const sourceText = "Built from your selected study material.";
     const sections = Array.isArray(activeCramPlan.tasks) ? activeCramPlan.tasks : [];
     const highlights = sections.slice(0, 3);
 
@@ -3642,26 +3664,30 @@ function renderCramTaskDetail(task) {
         <div class="cram-overview-hero">
           <p class="cram-guide-kicker">Study guide ready</p>
           <h3 class="cram-guide-hero-title">Your study guide is generated.</h3>
-            <p class="cram-guide-summary">${summaryText}</p>
+            <p class="cram-guide-summary">${renderInlineCramText(summaryText)}</p>
             <div class="cram-overview-meta-row">
               <span class="cram-overview-meta-pill">${progress.total} sections</span>
               <span class="cram-overview-meta-pill">${activeCramPlan.availableMinutes || 0} min</span>
-              <span class="cram-overview-meta-pill">${recommendedTask?.title || "Review complete"}</span>
+              <span class="cram-overview-meta-pill">${renderInlineCramText(recommendedTask?.title || "Review complete")}</span>
             </div>
           </div>
-          <div class="cram-overview-sidecar">
-            <article class="cram-overview-card">
+          <div class="cram-overview-summary">
+            <div class="cram-overview-summary-row">
               <span class="cram-overview-label">First move</span>
-              <strong>${recommendedTask?.title || "Review complete"}</strong>
-              <p class="panel-help">${
-                recommendedTask?.body ||
-                "Every section is complete. Reopen any numbered step from the timeline to review it again."
-              }</p>
-            </article>
-            <article class="cram-overview-card">
-              <span class="cram-overview-label">Source</span>
-              <p class="panel-help">${sourceText}</p>
-            </article>
+              <div class="cram-overview-summary-copy">
+                <strong>${renderInlineCramText(recommendedTask?.title || "Review complete")}</strong>
+                <p class="panel-help">${
+                  renderInlineCramText(
+                    recommendedTask?.body ||
+                      "Every section is complete. Reopen any numbered step from the timeline to review it again.",
+                  )
+                }</p>
+              </div>
+            </div>
+            <div class="cram-overview-summary-row">
+              <span class="cram-overview-label">Plan</span>
+              <p class="panel-help">${renderInlineCramText(sourceText)}</p>
+            </div>
           </div>
           <div class="cram-task-actions cram-task-actions-inline">
             <button id="cram-overview-next" class="continue-button" type="button">See coverage</button>
@@ -3686,26 +3712,30 @@ function renderCramTaskDetail(task) {
             This guide moves from the core ideas into the highest-yield checkpoints, then finishes with quicker review items and quiz checks.
           </p>
         </div>
-        <div class="cram-coverage-grid">
+        <ol class="cram-coverage-list">
           ${highlights
             .map(
               (item, index) => `
-            <article class="cram-overview-card">
-              <span class="cram-overview-label">Step ${index + 1}</span>
-              <strong>${item.title}</strong>
-              <p class="panel-help">${item.body}</p>
-            </article>
+            <li class="cram-coverage-item">
+              <span class="cram-coverage-step">0${index + 1}</span>
+              <div class="cram-coverage-copy">
+                <strong>${renderInlineCramText(item.title)}</strong>
+                <p class="panel-help">${renderInlineCramText(item.body)}</p>
+              </div>
+            </li>
           `,
             )
             .join("")}
-        </div>
+        </ol>
         ${
           recommendedTask
             ? `
           <div class="cram-coverage-focus">
             <span class="cram-overview-label">Start with</span>
-            <strong>${recommendedTask.title}</strong>
-            ${renderCramTakeaways(recommendedTask.keyTakeaways || [])}
+            <div class="cram-coverage-focus-copy">
+              <strong>${renderInlineCramText(recommendedTask.title)}</strong>
+              ${renderCramTakeaways(recommendedTask.keyTakeaways || [])}
+            </div>
           </div>
         `
             : ""
@@ -3733,10 +3763,7 @@ function renderCramTaskDetail(task) {
   const scoreText = task.lastScore
     ? `Last quiz: ${task.lastScore.correct}/${task.lastScore.total}`
     : "Quiz not taken yet";
-  const sourceText =
-    Array.isArray(task.sourceLabels) && task.sourceLabels.length > 0
-      ? task.sourceLabels.join(", ")
-      : "Plan material";
+  const sourceText = "Built from your selected study material.";
   const quizPreview = task.quizPreview || {
     title: `${task.topic} quiz preview`,
     description:
@@ -3771,27 +3798,31 @@ function renderCramTaskDetail(task) {
     <div class="cram-task-detail-header">
       <div>
         <p class="cram-task-page-kicker">Section ${activeCramTaskIndex + 1} of ${totalTasks}</p>
-        <h3 class="cram-task-detail-title">${task.title}</h3>
-        <p class="panel-help">${task.topic} - ${task.estimatedMinutes || 0} min</p>
+        <h3 class="cram-task-detail-title">${renderInlineCramText(task.title)}</h3>
+        <p class="panel-help">${renderInlineCramText(task.topic)} - ${task.estimatedMinutes || 0} min</p>
       </div>
       <span class="cram-priority">${priorityLabel(task.priority)}</span>
     </div>
-    <p class="cram-task-source">${sourceText}</p>
+    <p class="cram-task-source">${renderInlineCramText(sourceText)}</p>
     <div class="cram-study-guide-layout">
       <div class="cram-study-guide-main">
         <p class="cram-study-guide-label">Study guide</p>
         ${renderCramStudyGuide(task)}
-      </div>
-      <div class="cram-study-guide-aside">
-        <div class="cram-study-guide-block">
-          <p class="cram-study-guide-label">Study focus</p>
-          <p class="cram-task-body">${task.body}</p>
-        </div>
-        <div class="cram-study-guide-block">
+        <section class="cram-study-guide-card cram-study-guide-takeaways-card">
           <p class="cram-study-guide-label">Key takeaways</p>
           ${renderCramTakeaways(task.keyTakeaways)}
-        </div>
+        </section>
       </div>
+      <aside class="cram-study-guide-aside">
+        <section class="cram-study-guide-section">
+          <p class="cram-study-guide-label">Study focus</p>
+          <p class="cram-task-body">${renderInlineCramText(task.body)}</p>
+        </section>
+        <section class="cram-study-guide-section">
+          <p class="cram-study-guide-label">Vocab to know</p>
+          ${renderCramTakeaways(task.vocabToKnow)}
+        </section>
+      </aside>
     </div>
     ${
       task.quizEnabled
@@ -3801,20 +3832,34 @@ function renderCramTaskDetail(task) {
           <span class="cram-quiz-preview-kicker">Checkpoint</span>
           <span class="cram-quiz-preview-meta">${quizPreview.questionCount || 3} questions · ${checkpointStatusText}</span>
         </span>
-        <span class="cram-quiz-preview-title">${quizPreview.title}</span>
-        <span class="cram-quiz-preview-copy">${quizPreview.description}</span>
+        <span class="cram-quiz-preview-title">${renderInlineCramText(quizPreview.title)}</span>
+        <span class="cram-quiz-preview-copy">${renderInlineCramText(quizPreview.description)}</span>
+        <span class="cram-quiz-preview-grid">
+          <span class="cram-quiz-preview-stat">
+            <span class="cram-quiz-preview-stat-label">Topic</span>
+            <strong>${renderInlineCramText(task.topic)}</strong>
+          </span>
+          <span class="cram-quiz-preview-stat">
+            <span class="cram-quiz-preview-stat-label">Questions</span>
+            <strong>${quizPreview.questionCount || 3}</strong>
+          </span>
+          <span class="cram-quiz-preview-stat">
+            <span class="cram-quiz-preview-stat-label">Status</span>
+            <strong>${renderInlineCramText(checkpointStatusText)}</strong>
+          </span>
+        </span>
         <span class="cram-quiz-preview-surface">
           <span class="quiz-results-bar cram-quiz-preview-bar">
             <span>
               <span class="material-reference-label">Saved quiz</span>
-              <strong class="cram-quiz-preview-surface-title">${task.topic}</strong>
+              <strong class="cram-quiz-preview-surface-title">${renderInlineCramText(task.topic)}</strong>
             </span>
             <span class="quiz-gap-value">${checkpointActionText}</span>
           </span>
           <span class="quiz-insights cram-quiz-preview-insights">
             <span class="quiz-insight-card cram-quiz-preview-panel">
               <strong>What you'll check</strong>
-              <small>${task.keyTakeaways?.[0] || task.body}</small>
+              <small>${renderInlineCramText(task.keyTakeaways?.[0] || task.body)}</small>
             </span>
             <span class="quiz-insight-card cram-quiz-preview-panel">
               <strong>${
@@ -3824,9 +3869,10 @@ function renderCramTaskDetail(task) {
                     ? "Saved checkpoint"
                     : "Checkpoint preparing"
               }</strong>
-              <small>${checkpointDetailText}</small>
+              <small>${renderInlineCramText(checkpointDetailText)}</small>
             </span>
           </span>
+          <span class="cram-quiz-preview-footer">Open this checkpoint after you can explain the section without looking.</span>
         </span>
       </button>
     `
@@ -3886,6 +3932,13 @@ function buildCramPlanEntry(response, values) {
       Array.isArray(task.keyTakeaways) && task.keyTakeaways.length > 0
         ? task.keyTakeaways
         : [`Review ${task.topic}.`, "Turn this into active recall before moving on."],
+    vocabToKnow:
+      Array.isArray(task.vocabToKnow) && task.vocabToKnow.length > 0
+        ? task.vocabToKnow
+        : [
+            task.topic || "core idea",
+            `Key idea from ${task.topic || task.title || "this section"}`,
+          ],
     status: task.status || "not-started",
     quizEnabled: task.quizEnabled !== false,
     quizPreview:
