@@ -51,8 +51,8 @@ const {
   resolveStoredAuthAfterSessionRefreshFailure,
 } = require("./main/auth-session.js");
 const {
-  createIncomingMessageBridge,
-} = require("./main/bridge.ts");
+  createNativeMessagingIpcServer,
+} = require("./main/native-bridge.ts");
 const {
   getPrivacySettings,
   resetPrivacySettings,
@@ -854,26 +854,8 @@ function dispatchIncomingPayload(payload) {
   deliverPayload();
 }
 
-function getBridgeAuthSecret() {
-  const configuredSecret =
-    typeof process.env.SIDECLICK_BRIDGE_SECRET === "string"
-      ? process.env.SIDECLICK_BRIDGE_SECRET.trim()
-      : typeof process.env.BRIDGE_AUTH_SECRET === "string"
-        ? process.env.BRIDGE_AUTH_SECRET.trim()
-      : "";
-
-  if (!configuredSecret) {
-    throw new Error(
-      "[bridge] SIDECLICK_BRIDGE_SECRET or BRIDGE_AUTH_SECRET must be configured before starting the bridge.",
-    );
-  }
-
-  return configuredSecret;
-}
-
-const incomingMessageServer = createIncomingMessageBridge({
+const nativeMessagingIpcServer = createNativeMessagingIpcServer({
   dispatchIncomingPayload,
-  authSecret: getBridgeAuthSecret(),
 });
 const sessionManager = createSessionLifecycle({
   createSession,
@@ -896,7 +878,7 @@ app.whenReady().then(async () => {
   const shouldOpenOnboarding = shouldShowOnboardingGate();
   applyThemeSource(readStoredThemeSource());
   createStartupWindows(shouldOpenOnboarding);
-  incomingMessageServer.start();
+  nativeMessagingIpcServer.start();
   if (!hasLaunchedBefore()) {
     markAppLaunched();
   }
@@ -911,7 +893,7 @@ app.whenReady().then(async () => {
 });
 
 app.on("window-all-closed", () => {
-  incomingMessageServer.stop();
+  nativeMessagingIpcServer.stop();
 
   if (process.platform !== "darwin") {
     app.quit();
