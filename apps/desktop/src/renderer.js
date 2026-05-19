@@ -32,8 +32,13 @@ const ACTION_LABELS = {
 };
 const STREAM_CHUNK_SIZE = 3;
 const STREAM_INTERVAL_MS = 22;
-const THUMBS_UP = "\uD83D\uDC4D";
-const THUMBS_DOWN = "\uD83D\uDC4E";
+const MUI_ICON_PATHS = {
+  copy: "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2m0 16H8V7h11z",
+  thumbsUp:
+    "M2 21h4V9H2zm20-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L13.17 1 6.59 7.59C6.22 7.95 6 8.45 6 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73z",
+  thumbsDown:
+    "M22 3h-4v12h4zM2 14c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L10.83 23l6.58-6.59c.37-.36.59-.86.59-1.41V5c0-1.1-.9-2-2-2H7c-.83 0-1.54.5-1.84 1.22L2.14 11.27c-.09.23-.14.47-.14.73z",
+};
 
 let currentTone = "light";
 let currentSession = null;
@@ -286,15 +291,62 @@ function setMode(mode) {
   document.body.dataset.windowMode = mode;
 }
 
-function createFeedbackRow(interactionId) {
+function createMUIIcon(path, label) {
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("class", "feedback-icon-svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("aria-hidden", "true");
+  icon.setAttribute("focusable", "false");
+
+  const iconPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  iconPath.setAttribute("d", path);
+  icon.appendChild(iconPath);
+
+  const text = document.createElement("span");
+  text.className = "visually-hidden";
+  text.textContent = label;
+
+  const wrap = document.createDocumentFragment();
+  wrap.append(icon, text);
+  return wrap;
+}
+
+async function copyToClipboard(value) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  const tempInput = document.createElement("textarea");
+  tempInput.value = value;
+  tempInput.setAttribute("readonly", "");
+  tempInput.style.position = "fixed";
+  tempInput.style.opacity = "0";
+  document.body.appendChild(tempInput);
+  tempInput.select();
+  document.execCommand("copy");
+  document.body.removeChild(tempInput);
+}
+
+function createFeedbackRow(interactionId, messageCopy) {
   const feedbackRow = document.createElement("div");
   feedbackRow.className = "chat-feedback-row";
+
+  const copyButton = document.createElement("button");
+  copyButton.type = "button";
+  copyButton.className = "ghost-button feedback-icon-button";
+  copyButton.setAttribute("aria-label", "Copy response");
+  copyButton.append(createMUIIcon(MUI_ICON_PATHS.copy, "Copy response"));
+  copyButton.addEventListener("click", async () => {
+    await copyToClipboard(messageCopy);
+    feedbackRow.replaceChildren(document.createTextNode("Copied."));
+  });
 
   const helpfulButton = document.createElement("button");
   helpfulButton.type = "button";
   helpfulButton.className = "ghost-button feedback-icon-button";
-  helpfulButton.textContent = THUMBS_UP;
   helpfulButton.setAttribute("aria-label", "Helpful");
+  helpfulButton.append(createMUIIcon(MUI_ICON_PATHS.thumbsUp, "Helpful"));
   helpfulButton.addEventListener("click", async () => {
     await window.overlayApi.submitFeedback({
       interactionId,
@@ -306,8 +358,10 @@ function createFeedbackRow(interactionId) {
   const notHelpfulButton = document.createElement("button");
   notHelpfulButton.type = "button";
   notHelpfulButton.className = "ghost-button feedback-icon-button";
-  notHelpfulButton.textContent = THUMBS_DOWN;
   notHelpfulButton.setAttribute("aria-label", "Not helpful");
+  notHelpfulButton.append(
+    createMUIIcon(MUI_ICON_PATHS.thumbsDown, "Not helpful"),
+  );
   notHelpfulButton.addEventListener("click", async () => {
     await window.overlayApi.submitFeedback({
       interactionId,
@@ -316,7 +370,7 @@ function createFeedbackRow(interactionId) {
     feedbackRow.replaceChildren(document.createTextNode("Feedback saved."));
   });
 
-  feedbackRow.append(helpfulButton, notHelpfulButton);
+  feedbackRow.append(copyButton, helpfulButton, notHelpfulButton);
   return feedbackRow;
 }
 
@@ -345,7 +399,7 @@ function addMessage(role, copy, options = {}) {
   }
 
   if (role === "assistant" && options.interactionId) {
-    article.appendChild(createFeedbackRow(options.interactionId));
+    article.appendChild(createFeedbackRow(options.interactionId, copy));
   }
 
   chatThread.appendChild(article);
