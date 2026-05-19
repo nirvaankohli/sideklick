@@ -5,7 +5,7 @@ const {
   getManagedBackendErrorStatus,
   isManagedBackendAuthFailure,
   resolveStoredAuthAfterSessionRefreshFailure,
-} = require("../src/main/auth-session.js");
+} = require("../apps/desktop/src/main/auth-session.js");
 
 test("managed backend auth helpers detect explicit auth failures", () => {
   const unauthorizedError = new Error("Unauthorized");

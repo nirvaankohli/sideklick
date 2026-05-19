@@ -30,7 +30,7 @@ async function waitFor(assertion, timeoutMs = 1500) {
 
 function createHomeDom() {
   const html = fs.readFileSync(
-    path.join(__dirname, "..", "src", "home.html"),
+    path.join(__dirname, "..", "apps", "desktop", "src", "home.html"),
     "utf8",
   );
   return new JSDOM(html, { url: "http://localhost/" });
@@ -183,7 +183,7 @@ test("class configure flow opens the assessment page and still saves the class",
     generateQuiz: async () => ({ questions: [] }),
   };
 
-  const homePath = path.join(__dirname, "..", "src", "home.js");
+  const homePath = path.join(__dirname, "..", "apps", "desktop", "src", "home.js");
   delete require.cache[require.resolve(homePath)];
   require(homePath);
 
@@ -339,7 +339,7 @@ test("class material upload saves extracted content and shows saved uploads when
     generateQuiz: async () => ({ questions: [] }),
   };
 
-  const homePath = path.join(__dirname, "..", "src", "home.js");
+  const homePath = path.join(__dirname, "..", "apps", "desktop", "src", "home.js");
   delete require.cache[require.resolve(homePath)];
   require(homePath);
 
@@ -552,7 +552,7 @@ test("assessment profile analysis can reference saved class material uploads", a
     generateQuiz: async () => ({ questions: [] }),
   };
 
-  const homePath = path.join(__dirname, "..", "src", "home.js");
+  const homePath = path.join(__dirname, "..", "apps", "desktop", "src", "home.js");
   delete require.cache[require.resolve(homePath)];
   require(homePath);
 
@@ -813,7 +813,7 @@ test("quiz, cram, and assessment UI can target specific saved class material", a
     },
   };
 
-  const homePath = path.join(__dirname, "..", "src", "home.js");
+  const homePath = path.join(__dirname, "..", "apps", "desktop", "src", "home.js");
   delete require.cache[require.resolve(homePath)];
   require(homePath);
 
@@ -1007,7 +1007,7 @@ test("quiz generation autosaves a processing item and replaces it with the finis
     generateQuiz: async () => deferredQuiz.promise,
   };
 
-  const homePath = path.join(__dirname, "..", "src", "home.js");
+  const homePath = path.join(__dirname, "..", "apps", "desktop", "src", "home.js");
   delete require.cache[require.resolve(homePath)];
   require(homePath);
 

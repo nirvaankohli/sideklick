@@ -5,19 +5,19 @@ const { pathToFileURL } = require("node:url");
 
 async function loadAuthServiceModule() {
   return import(
-    pathToFileURL(path.join(__dirname, "..", "backend", "src", "services", "auth.ts")).href
+    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "services", "auth.ts")).href
   );
 }
 
 async function loadAuthMiddlewareModule() {
   return import(
-    pathToFileURL(path.join(__dirname, "..", "backend", "src", "middleware", "auth.ts")).href
+    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "middleware", "auth.ts")).href
   );
 }
 
 async function loadRateLimitModule() {
   return import(
-    pathToFileURL(path.join(__dirname, "..", "backend", "src", "middleware", "rate-limit.ts")).href
+    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "middleware", "rate-limit.ts")).href
   );
 }
 

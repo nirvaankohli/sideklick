@@ -6,7 +6,7 @@ const { pathToFileURL } = require("node:url");
 async function loadLangfuseModule() {
   return import(
     pathToFileURL(
-      path.join(__dirname, "..", "src", "shared", "langfuse.ts"),
+      path.join(__dirname, "..", "apps", "desktop", "src", "shared", "langfuse.ts"),
     ).href,
   );
 }

@@ -101,7 +101,7 @@ test("incoming payload shows action plus pasted text card and sends the assist r
     }),
   };
 
-  const rendererPath = path.join(__dirname, "..", "src", "renderer.js");
+  const rendererPath = path.join(__dirname, "..", "apps", "desktop", "src", "renderer.js");
   delete require.cache[require.resolve(rendererPath)];
   require(rendererPath);
 
@@ -192,7 +192,7 @@ test("manual chat submit shows the typed message instead of the action label", a
     }),
   };
 
-  const rendererPath = path.join(__dirname, "..", "src", "renderer.js");
+  const rendererPath = path.join(__dirname, "..", "apps", "desktop", "src", "renderer.js");
   delete require.cache[require.resolve(rendererPath)];
   require(rendererPath);
 

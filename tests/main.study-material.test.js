@@ -8,7 +8,7 @@ const {
   compressStudyMaterialText,
   extractStudyMaterialFromFile,
   extractTextFromPptxBuffer,
-} = require("../src/main/study-material.js");
+} = require("../apps/desktop/src/main/study-material.js");
 
 test("compressStudyMaterialText removes repeated boilerplate and keeps high-signal lines", () => {
   const rawText = [

@@ -8,7 +8,7 @@ process.env.DISABLE_OPENAI_CRAM = "1";
 async function loadCramModule() {
   return import(
     pathToFileURL(
-      path.join(__dirname, "..", "backend", "src", "services", "cram.ts"),
+      path.join(__dirname, "..", "apps", "backend", "src", "services", "cram.ts"),
     ).href,
   );
 }
