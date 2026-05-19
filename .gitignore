@@ -17,7 +17,6 @@ release-builds/
 *.log
 npm-debug.log*
 
-agents.md
 /tasks
 
 # C extensions
