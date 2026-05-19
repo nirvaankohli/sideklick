@@ -185,7 +185,9 @@ export async function requestAssistFromOpenAI(
         const output = result as ModelAssistOutput;
         return {
           answerPreview: summarizeTextForTrace(output.answer),
-          possibleGapCount: output.possibleGaps.length,
+          possibleGapCount: Array.isArray(output.possibleGaps)
+            ? output.possibleGaps.length
+            : 0,
           hasNextStep: Boolean(output.nextStep),
         };
       },

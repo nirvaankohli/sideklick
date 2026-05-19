@@ -4,8 +4,13 @@ const path = require("path");
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const TARGET_PORTS = [3001, 4353];
 const TARGET_COMMAND_SNIPPETS = [
+  "bun run backend:dev",
+  "bun run backend:start",
+  "node --import tsx --eval",
+  "apps/backend/src/server.ts",
   `${REPO_ROOT}/node_modules/.bin/electron .`,
   `${REPO_ROOT}/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron .`,
+  `${REPO_ROOT}/apps/backend/src/server.ts`,
 ];
 
 function runCommand(command, args) {

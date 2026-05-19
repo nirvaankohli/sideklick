@@ -3173,10 +3173,10 @@ button {
 .compact-strip {
   display: none;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 6px;
   min-height: 0;
-  padding: 0 2px;
+  padding: 0 2.5px;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -3197,10 +3197,11 @@ button {
 .compact-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 6px;
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
+  margin-left: 2px;
 }
 
 .compact-copy {
@@ -3476,7 +3477,7 @@ button {
 }
 
 .session-card {
-  padding: 18px 18px 16px;
+  padding: 12px 18px 16px;
 }
 
 .session-title-group {
@@ -3801,10 +3802,46 @@ button {
 }
 
 .feedback-icon-button {
-  min-width: 42px;
-  padding: 8px 10px;
-  font-size: 1rem;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 6px;
+  border-radius: 999px;
+  color: rgba(235, 241, 250, 0.74);
+  background: rgba(255, 255, 255, 0.05);
   line-height: 1;
+}
+
+.feedback-icon-svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  display: block;
+}
+
+.window-shell[data-tone="light"] .feedback-icon-button {
+  color: rgba(36, 72, 122, 0.72);
+  background: rgba(36, 72, 122, 0.08);
+}
+
+.feedback-icon-button:hover {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.window-shell[data-tone="light"] .feedback-icon-button:hover {
+  color: rgba(18, 44, 84, 0.92);
+  background: rgba(36, 72, 122, 0.16);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
 }
 
 .window-shell[data-tone="light"] .chat-message.incoming-payload {
@@ -3852,15 +3889,21 @@ button {
 }
 
 .chat-attach-trigger {
-  width: 46px;
-  height: 46px;
+  display: inline-grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.05);
   color: inherit;
-  font-size: 1.5rem;
+  font-size: 2rem;
   line-height: 1;
+  text-align: center;
   cursor: pointer;
+
+
   transition:
     border-color 160ms ease,
     background 160ms ease,
@@ -7162,6 +7205,7 @@ button {
   align-items: center;
   justify-content: space-between;
   overflow: hidden;
+  width: fit-content;
 }
 
 .window-shell[data-tone="dark"][data-mode="compact"] .overlay-card {

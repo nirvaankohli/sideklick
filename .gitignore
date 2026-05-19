@@ -3,6 +3,8 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+kill-proj
+
 # Dependency directories
 node_modules/
 convo-summaries/
