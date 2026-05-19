@@ -7,7 +7,7 @@ const { pathToFileURL } = require("node:url");
 async function loadSchemaModule() {
   return import(
     pathToFileURL(
-      path.join(__dirname, "..", "backend", "src", "schema", "index.ts"),
+      path.join(__dirname, "..", "apps", "backend", "src", "schema", "index.ts"),
     ).href
   );
 }
@@ -114,11 +114,11 @@ test("cram plan schemas accept the saved plan generator contract", async () => {
 
 test("home renderer keeps cram plans in the folder tree and bridges quiz flow", () => {
   const homeJs = fs.readFileSync(
-    path.join(__dirname, "..", "src", "home.js"),
+    path.join(__dirname, "..", "apps", "desktop", "src", "home.js"),
     "utf8",
   );
   const homeHtml = fs.readFileSync(
-    path.join(__dirname, "..", "src", "home.html"),
+    path.join(__dirname, "..", "apps", "desktop", "src", "home.html"),
     "utf8",
   );
 

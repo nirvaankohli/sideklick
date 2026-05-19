@@ -5,7 +5,7 @@ const { pathToFileURL } = require("node:url");
 
 async function loadSessionModule() {
   return import(
-    pathToFileURL(path.join(__dirname, "..", "src", "main", "session.ts")).href
+    pathToFileURL(path.join(__dirname, "..", "apps", "desktop", "src", "main", "session.ts")).href
   );
 }
 

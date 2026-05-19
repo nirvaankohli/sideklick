@@ -1,0 +1,9 @@
+{
+  "name": "@sideklick/backend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "start": "node --import tsx --eval \"import('./src/server.ts').then((mod) => { const api = mod.startServer ? mod : mod.default; return api.startServer(); })\"",
+    "dev": "node --import tsx --eval \"import('./src/server.ts').then((mod) => { const api = mod.startServer ? mod : mod.default; return api.startServer(); })\""
+  }
+}

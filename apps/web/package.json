@@ -1,0 +1,8 @@
+{
+  "name": "@sideklick/web",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "echo \"apps/web is a placeholder workspace.\""
+  }
+}

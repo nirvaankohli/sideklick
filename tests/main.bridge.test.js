@@ -9,7 +9,7 @@ const { pathToFileURL } = require("node:url");
 
 async function loadBridgeModule() {
   return import(
-    pathToFileURL(path.join(__dirname, "..", "src", "main", "bridge.ts")).href
+    pathToFileURL(path.join(__dirname, "..", "apps", "desktop", "src", "main", "bridge.ts")).href
   );
 }
 
