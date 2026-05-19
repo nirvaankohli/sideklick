@@ -9,3 +9,8 @@ script = ""
 name = "Run"
 icon = "run"
 command = "bun start"
+
+[[actions]]
+name = "Kill"
+icon = "tool"
+command = "kill"
