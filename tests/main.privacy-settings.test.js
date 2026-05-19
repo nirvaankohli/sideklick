@@ -6,7 +6,7 @@ const { pathToFileURL } = require("node:url");
 async function loadPrivacySettingsModule() {
   return import(
     pathToFileURL(
-      path.join(__dirname, "..", "src", "main", "privacy", "settings.ts"),
+      path.join(__dirname, "..", "apps", "desktop", "src", "main", "privacy", "settings.ts"),
     ).href
   );
 }

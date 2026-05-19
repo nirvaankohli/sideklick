@@ -28,6 +28,46 @@
         "typescript": "^6.0.2",
       },
     },
+    "apps/backend": {
+      "name": "@sideklick/backend",
+      "version": "0.1.0",
+    },
+    "apps/desktop": {
+      "name": "@sideklick/desktop",
+      "version": "0.1.0",
+    },
+    "apps/extension": {
+      "name": "@sideklick/extension",
+      "version": "0.1.0",
+    },
+    "apps/web": {
+      "name": "@sideklick/web",
+      "version": "0.1.0",
+    },
+    "packages/api-client": {
+      "name": "@sideklick/api-client",
+      "version": "0.1.0",
+    },
+    "packages/config": {
+      "name": "@sideklick/config",
+      "version": "0.1.0",
+    },
+    "packages/contracts": {
+      "name": "@sideklick/contracts",
+      "version": "0.1.0",
+    },
+    "packages/domain": {
+      "name": "@sideklick/domain",
+      "version": "0.1.0",
+    },
+    "packages/telemetry": {
+      "name": "@sideklick/telemetry",
+      "version": "0.1.0",
+    },
+    "packages/test-utils": {
+      "name": "@sideklick/test-utils",
+      "version": "0.1.0",
+    },
   },
   "packages": {
     "@asamuzakjp/css-color": ["@asamuzakjp/css-color@5.1.9", "", { "dependencies": { "@csstools/css-calc": "^3.1.1", "@csstools/css-color-parser": "^4.0.2", "@csstools/css-parser-algorithms": "^4.0.0", "@csstools/css-tokenizer": "^4.0.0" } }, "sha512-zd9c/Wdso6v1U7v6w3i/hbAr4K7NaSHImdpvmLt+Y9ea5BhilnIGNkfhOJ7FEIuPipAnE9tZeDOll05WDT0kgg=="],
@@ -219,6 +259,26 @@
     "@protobufjs/pool": ["@protobufjs/pool@1.1.0", "", {}, "sha512-0kELaGSIDBKvcgS4zkjz1PeddatrjYcmMWOlAuAPwAeccUrPHdUqo/J6LiymHHEiJT5NrF1UVwxY14f+fy4WQw=="],
 
     "@protobufjs/utf8": ["@protobufjs/utf8@1.1.1", "", {}, "sha512-oOAWABowe8EAbMyWKM0tYDKi8Yaox52D+HWZhAIJqQXbqe0xI/GV7FhLWqlEKreMkfDjshR5FKgi3mnle0h6Eg=="],
+
+    "@sideklick/api-client": ["@sideklick/api-client@workspace:packages/api-client"],
+
+    "@sideklick/backend": ["@sideklick/backend@workspace:apps/backend"],
+
+    "@sideklick/config": ["@sideklick/config@workspace:packages/config"],
+
+    "@sideklick/contracts": ["@sideklick/contracts@workspace:packages/contracts"],
+
+    "@sideklick/desktop": ["@sideklick/desktop@workspace:apps/desktop"],
+
+    "@sideklick/domain": ["@sideklick/domain@workspace:packages/domain"],
+
+    "@sideklick/extension": ["@sideklick/extension@workspace:apps/extension"],
+
+    "@sideklick/telemetry": ["@sideklick/telemetry@workspace:packages/telemetry"],
+
+    "@sideklick/test-utils": ["@sideklick/test-utils@workspace:packages/test-utils"],
+
+    "@sideklick/web": ["@sideklick/web@workspace:apps/web"],
 
     "@sindresorhus/is": ["@sindresorhus/is@4.6.0", "", {}, "sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw=="],
 

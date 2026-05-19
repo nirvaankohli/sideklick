@@ -6,7 +6,7 @@ const { pathToFileURL } = require("node:url");
 async function loadQuizModule() {
   return import(
     pathToFileURL(
-      path.join(__dirname, "..", "backend", "src", "services", "quiz.ts"),
+      path.join(__dirname, "..", "apps", "backend", "src", "services", "quiz.ts"),
     ).href,
   );
 }

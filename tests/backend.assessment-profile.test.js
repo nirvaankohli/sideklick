@@ -11,6 +11,7 @@ async function loadAssessmentProfileModule() {
       path.join(
         __dirname,
         "..",
+        "apps",
         "backend",
         "src",
         "services",

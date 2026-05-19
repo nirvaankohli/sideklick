@@ -1,0 +1,11 @@
+{
+  "name": "@sideklick/desktop",
+  "private": true,
+  "version": "0.1.0",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/home.js"
+  }
+}

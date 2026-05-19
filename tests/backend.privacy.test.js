@@ -5,19 +5,19 @@ const { pathToFileURL } = require("node:url");
 
 async function loadMemoryModule() {
   return import(
-    pathToFileURL(path.join(__dirname, "..", "backend", "src", "services", "memory.ts")).href
+    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "services", "memory.ts")).href
   );
 }
 
 async function loadPrivacyModule() {
   return import(
-    pathToFileURL(path.join(__dirname, "..", "backend", "src", "services", "privacy.ts")).href
+    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "services", "privacy.ts")).href
   );
 }
 
 async function loadWorkerModule() {
   return import(
-    pathToFileURL(path.join(__dirname, "..", "backend", "src", "workers", "index.ts")).href
+    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "workers", "index.ts")).href
   );
 }
 

@@ -5,7 +5,7 @@ const { pathToFileURL } = require("node:url");
 
 async function loadCaptureModule() {
   return import(
-    pathToFileURL(path.join(__dirname, "..", "src", "main", "capture.ts")).href
+    pathToFileURL(path.join(__dirname, "..", "apps", "desktop", "src", "main", "capture.ts")).href
   );
 }
 
