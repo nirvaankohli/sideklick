@@ -1,8 +1,11 @@
 # SideKlick Chrome Extension
 
-This Chrome extension sends SideKlick context-menu actions directly to the local Electron app bridge at `http://localhost:4353`.
+This extension sends SideKlick context-menu actions to the desktop app via **Chrome Native Messaging**.
 
-The extension uses signed local requests instead of raw unauthenticated POSTs. Each request includes a per-request nonce, a short expiry, and an HMAC signature over the method, path, expiry, nonce, and JSON body. The desktop app now requires `SIDECLICK_BRIDGE_SECRET` or `BRIDGE_AUTH_SECRET` to be configured before the bridge starts. Keep both values the same in local development if you set both.
+Security model:
+- Extension -> Native host uses Chrome's native messaging channel.
+- Native host -> SideKlick app uses a local IPC socket (`~/.sideklick/native-bridge.sock` on macOS/Linux).
+- No localhost HTTP bridge secrets are required in the extension.
 
 ## Load In Chrome
 
@@ -10,6 +13,23 @@ The extension uses signed local requests instead of raw unauthenticated POSTs. E
 2. Enable `Developer mode`
 3. Click `Load unpacked`
 4. Select this `apps/extension/` folder
+5. Copy the extension ID shown on the card
+
+## Register Native Host
+
+Run from repo root:
+
+```bash
+node scripts/install-native-host.js <extension_id>
+```
+
+For Chromium instead of Chrome:
+
+```bash
+node scripts/install-native-host.js <extension_id> chromium
+```
+
+Then restart Chrome.
 
 ## Available Actions
 
@@ -25,33 +45,11 @@ The extension uses signed local requests instead of raw unauthenticated POSTs. E
 - `Summarize this page`
 - `What should I focus on?`
 
-Each action posts a structured local JSON payload like:
+## Troubleshooting
 
-```json
-{
-  "action_type": "explain",
-  "selected_text": "Selected text here",
-  "page_title": "Current page",
-  "page_url": "https://example.com",
-  "screenshot_data_url": "data:image/png;base64,...",
-  "click_function": "restore-window"
-}
-```
-
-Headers sent with each request:
-
-- `x-sideclick-nonce`
-- `x-sideclick-expires`
-- `x-sideclick-signature`
-
-Signature input:
-
-```text
-POST
-/
-<expires>
-<nonce>
-<raw-json-body>
-```
-
-The desktop app restores the chat window, runs the assist request immediately, shows a waiting animation, and streams the response text into the chat bubble. Browser-triggered actions include a visible-tab screenshot, and Electron also captures a screen screenshot before every assist request.
+- `Specified native messaging host not found.`
+  - Re-run `node scripts/install-native-host.js <extension_id>` and restart Chrome.
+- `Access to the specified native messaging host is forbidden.`
+  - Extension ID in Chrome does not match the one in the installed native host manifest.
+- `Failed to reach desktop app`
+  - Start SideKlick desktop app so it opens the native IPC socket.

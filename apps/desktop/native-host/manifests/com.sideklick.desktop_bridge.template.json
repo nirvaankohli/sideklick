@@ -1,0 +1,9 @@
+{
+  "name": "com.sideklick.desktop_bridge",
+  "description": "SideKlick Native Messaging Bridge",
+  "path": "__HOST_PATH__",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://__EXTENSION_ID__/"
+  ]
+}
