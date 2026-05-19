@@ -1,11 +1,5 @@
-const INBOX_URL = "http://127.0.0.1:4353/";
+const NATIVE_HOST_NAME = "com.sideklick.desktop_bridge";
 const RESTORE_CLICK_FUNCTION = "restore-window";
-const DEFAULT_BRIDGE_AUTH_SECRET = "";
-const BRIDGE_AUTH_SECRET_STORAGE_KEY = "bridgeAuthSecret";
-const BRIDGE_REQUEST_TTL_MS = 30 * 1000;
-const BRIDGE_EXPIRES_HEADER = "x-sideclick-expires";
-const BRIDGE_NONCE_HEADER = "x-sideclick-nonce";
-const BRIDGE_SIGNATURE_HEADER = "x-sideclick-signature";
 
 const MENU_ITEMS = [
   {
@@ -85,84 +79,27 @@ function createContextMenus() {
   });
 }
 
-function encodeUtf8(value) {
-  return new TextEncoder().encode(value);
-}
+function sendNativeMessage(payload) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendNativeMessage(
+      NATIVE_HOST_NAME,
+      payload,
+      (response) => {
+        const runtimeError = chrome.runtime.lastError;
+        if (runtimeError) {
+          reject(new Error(runtimeError.message));
+          return;
+        }
 
-function bytesToHex(bytes) {
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
-}
+        if (!response?.ok) {
+          reject(new Error(response?.error || "Native host rejected request"));
+          return;
+        }
 
-function buildSignatureInput({ method, pathname, expires, nonce, body }) {
-  return [method.toUpperCase(), pathname, expires, nonce, body].join("\n");
-}
-
-async function createBridgeSignature(secret, signatureInput) {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encodeUtf8(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encodeUtf8(signatureInput),
-  );
-  return bytesToHex(new Uint8Array(signature));
-}
-
-async function getBridgeAuthSecret() {
-  const stored = await chrome.storage.local.get(BRIDGE_AUTH_SECRET_STORAGE_KEY);
-  const candidate = stored?.[BRIDGE_AUTH_SECRET_STORAGE_KEY];
-  if (typeof candidate !== "string") {
-    return DEFAULT_BRIDGE_AUTH_SECRET;
-  }
-
-  return candidate.trim();
-}
-
-async function sendIncomingPayload(payload) {
-  const bridgeAuthSecret = await getBridgeAuthSecret();
-  if (!bridgeAuthSecret) {
-    throw new Error(
-      "Missing bridge auth secret. Set chrome.storage.local['bridgeAuthSecret'] to match SIDECLICK_BRIDGE_SECRET.",
+        resolve(response);
+      },
     );
-  }
-
-  const inboxUrl = new URL(INBOX_URL);
-  const nonce =
-    typeof crypto?.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  const rawBody = JSON.stringify(payload);
-  const expires = String(Date.now() + BRIDGE_REQUEST_TTL_MS);
-  const signature = await createBridgeSignature(
-    bridgeAuthSecret,
-    buildSignatureInput({
-      method: "POST",
-      pathname: inboxUrl.pathname || "/",
-      expires,
-      nonce,
-      body: rawBody,
-    }),
-  );
-  const response = await fetch(inboxUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      [BRIDGE_NONCE_HEADER]: nonce,
-      [BRIDGE_EXPIRES_HEADER]: expires,
-      [BRIDGE_SIGNATURE_HEADER]: signature,
-    },
-    body: rawBody,
   });
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => "");
-    throw new Error(message || `SideKlick local inbox returned ${response.status}.`);
-  }
 }
 
 function getMenuItemById(menuItemId) {
@@ -183,13 +120,18 @@ chrome.action.onClicked.addListener(() => {
 
 async function openSideKlick() {
   try {
-    await sendIncomingPayload({
+    await sendNativeMessage({
       action_type: "chat",
       selected_text: "",
+      surrounding_text: null,
+      page_title: "",
+      page_url: "",
+      user_note: "",
+      screenshot_data_url: null,
       click_function: RESTORE_CLICK_FUNCTION,
     });
   } catch (error) {
-    console.error("Failed to open SideKlick:", error);
+    console.error("Failed to open SideKlick via native host:", error);
   }
 }
 
@@ -209,19 +151,21 @@ async function handleContextMenuClick(info, tab) {
   const pageUrl = typeof tab?.url === "string" ? tab.url : "";
 
   try {
-    await sendIncomingPayload({
+    await sendNativeMessage({
       action_type: menuItem.actionType,
       selected_text: menuItem.buildSelectedText({
         selectionText,
         pageTitle,
         pageUrl,
       }),
+      surrounding_text: null,
       page_title: pageTitle,
       page_url: pageUrl,
+      user_note: "",
       screenshot_data_url: null,
       click_function: RESTORE_CLICK_FUNCTION,
     });
   } catch (error) {
-    console.error(`Failed to send ${menuItem.id}:`, error);
+    console.error(`Failed to send ${menuItem.id} via native host:`, error);
   }
 }
