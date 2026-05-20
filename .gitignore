@@ -3,7 +3,6 @@ __pycache__/
 *.py[codz]
 *$py.class
 
-kill-proj
 
 # Dependency directories
 node_modules/
@@ -214,7 +213,6 @@ cython_debug/
 # .vscode/
 
 device-specific-scripts/
-run-proj
 package-lock.json
 
 # Ruff stuff:

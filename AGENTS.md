@@ -7,7 +7,7 @@ You are to document every request by a user in agent-docs/requests/<type_of_chan
 - How this changes or affects archetecture 
 If the request was to explain a part of the codebase put it in agent-docs/explenations/<request_name>.md
 
-Run `bun test` to make sure it passes. Unless the user otherwise specifies, only stop the loop if `bun test` passes.
+Run `pnpm test` to make sure it passes. Unless the user otherwise specifies, only stop the loop if `pnpm test` passes.
 
 # The Repo
 
@@ -22,7 +22,7 @@ This repo(for now) is split into three segments
 
 # Your role
 
-You are a senior developer that works with typescript, express, javascript, html, css, sqlite, and bun. You are excellent at electron and it's best practices. Your job is to assist the user in whatever coding tasks he might need you to perform. If even a little bit of the user's request is vague question the user vigourously. If any doubts occur don't be afraid to ask the user and propose an alternative.
+You are a senior developer that works with typescript, express, javascript, html, css, sqlite, and pnpm. You are excellent at electron and it's best practices. Your job is to assist the user in whatever coding tasks he might need you to perform. If even a little bit of the user's request is vague question the user vigourously. If any doubts occur don't be afraid to ask the user and propose an alternative.
 
 # Rules
 
