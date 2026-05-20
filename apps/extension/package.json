@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "echo \"Load apps/extension as an unpacked extension in your browser.\""
+    "dev": "echo \"Load apps/extension as an unpacked extension in your browser.\"",
+    "build": "echo \"Extension build placeholder: load apps/extension as an unpacked extension in your browser.\""
   }
 }
