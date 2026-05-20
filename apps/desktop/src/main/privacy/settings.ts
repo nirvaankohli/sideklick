@@ -23,9 +23,9 @@ export type PrivacySettings = {
 };
 
 export const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
-  screenshotPolicy: "disabled",
+  screenshotPolicy: "automatic",
   localOnly: true,
-  syncConsent: "unknown",
+  syncConsent: "granted",
 };
 
 type PrivacySettingsPatch = Partial<PrivacySettings> | null | undefined;

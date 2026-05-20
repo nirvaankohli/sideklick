@@ -1,6 +1,6 @@
 # SideKlick
 
-SideKlick is organized as a Bun workspace monorepo.
+SideKlick is organized as a pnpm workspace monorepo.
 
 ## Structure
 
@@ -33,7 +33,8 @@ sideklick/
   tests/
   scripts/
   package.json
-  bun.lock
+  pnpm-lock.yaml
+  pnpm-workspace.yaml
   tsconfig.base.json
 ```
 
@@ -42,31 +43,32 @@ sideklick/
 ## Root Commands
 
 ```bash
-bun install
-bun run dev
-bun run start
-bun run test
-bun run check
+pnpm install
+pnpm dev
+pnpm start
+pnpm test
+pnpm check
 ```
 
 ## Desktop Commands
 
 ```bash
-bun run desktop:dev
-bun run desktop:start
+pnpm desktop:dev
+pnpm desktop:start
 ```
 
 ## Backend Commands
 
 ```bash
-bun run backend:dev
-bun run backend:start
+pnpm backend:dev
+pnpm backend:start
 ```
 
 ## Extension Commands
 
 ```bash
-bun run extension:dev
+pnpm extension:dev
+pnpm extension:build
 ```
 
 Then load `apps/extension/` as an unpacked extension in the browser.
