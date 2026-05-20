@@ -364,7 +364,9 @@
                     </label>
                     <label class="modal-field">
                       <span>Assessment format</span>
-                      <select id="cram-assessment-profile-select" class="cram-select"></select>
+                      <select id="cram-assessment-profile-select" class="cram-select">
+                        <option value="">Generic cram plan</option>
+                      </select>
                     </label>
                   </div>
                   <p id="cram-assessment-profile-meta" class="panel-help">
@@ -524,7 +526,9 @@
 
                   <label class="modal-field">
                     <span>Assessment format</span>
-                    <select id="quiz-assessment-profile-select" class="cram-select"></select>
+                    <select id="quiz-assessment-profile-select" class="cram-select">
+                      <option value="">Generic practice</option>
+                    </select>
                     <p id="quiz-assessment-profile-meta" class="panel-help">
                       Generic quiz mode.
                     </p>
@@ -830,9 +834,9 @@
                             class="settings-select"
                             aria-label="Screenshot policy"
                           >
-                            <option value="disabled">Never</option>
-                            <option value="manual">Manual</option>
                             <option value="automatic">Automatic</option>
+                            <option value="manual">Manual</option>
+                            <option value="disabled">Never</option>
                           </select>
                           <span
                             class="settings-select-chevron"
@@ -850,7 +854,7 @@
 
                     <div class="settings-row">
                       <div class="settings-row-copy">
-                        <p class="panel-label">Sync Consent</p>
+                        <p class="panel-label">Telemetry</p>
                         <p id="privacy-sync-status" class="panel-help">
                           Not set
                         </p>
@@ -860,42 +864,11 @@
                           <select
                             id="privacy-sync-select"
                             class="settings-select"
-                            aria-label="Sync consent"
+                            aria-label="Telemetry consent"
                           >
+                            <option value="granted">On</option>
                             <option value="unknown">Later</option>
-                            <option value="granted">Allow</option>
-                            <option value="denied">Deny</option>
-                          </select>
-                          <span
-                            class="settings-select-chevron"
-                            aria-hidden="true"
-                          >
-                            <svg viewBox="0 0 24 24">
-                              <path
-                                d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"
-                              ></path>
-                            </svg>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="settings-row">
-                      <div class="settings-row-copy">
-                        <p class="panel-label">Local Only</p>
-                        <p id="privacy-local-only-status" class="panel-help">
-                          Local data only
-                        </p>
-                      </div>
-                      <div class="settings-row-control">
-                        <div class="settings-select-wrap">
-                          <select
-                            id="privacy-local-only-select"
-                            class="settings-select"
-                            aria-label="Local only mode"
-                          >
-                            <option value="true">On</option>
-                            <option value="false">Off</option>
+                            <option value="denied">Off</option>
                           </select>
                           <span
                             class="settings-select-chevron"
@@ -918,7 +891,7 @@
                           Not signed in.
                         </p>
                         <p id="settings-privacy-status" class="panel-help">
-                          Review screenshot and sync preferences carefully.
+                          Review screenshot and telemetry preferences carefully.
                         </p>
                       </div>
                       <div class="settings-row-control">

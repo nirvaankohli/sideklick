@@ -20,7 +20,6 @@ const sourceSelect = document.querySelector("#discovery-source-select");
 const profileSelect = document.querySelector("#customer-profile-select");
 const privacyPolicySelect = document.querySelector("#privacy-screenshot-policy-select");
 const syncConsentSelect = document.querySelector("#privacy-sync-consent-select");
-const localOnlySelect = document.querySelector("#privacy-local-only-select");
 const stepPanels = Array.from(document.querySelectorAll("[data-step-panel]"));
 const privacyStatus = document.querySelector("#privacy-onboarding-status");
 const authStatus = document.querySelector("#auth-status");
@@ -59,11 +58,6 @@ const syncConsentLabels = {
   denied: "Off",
 };
 
-const localOnlyLabels = {
-  true: "Local only",
-  false: "Cloud allowed",
-};
-
 function humanLabel(themeSource, shouldUseDarkColors) {
   if (themeSource === "system") {
     return `System (${shouldUseDarkColors ? "Dark" : "Light"})`;
@@ -100,16 +94,14 @@ function applyPreferenceSelections(preferences) {
 }
 
 function applyPrivacySelections(settings) {
-  const { screenshotPolicy, syncConsent, localOnly } = settings;
+  const { screenshotPolicy, syncConsent } = settings;
 
   privacyPolicySelect.value = screenshotPolicy;
   syncConsentSelect.value = syncConsent;
-  localOnlySelect.value = String(Boolean(localOnly));
   privacyPolicySelect.parentElement.dataset.hasValue = "true";
   syncConsentSelect.parentElement.dataset.hasValue = "true";
-  localOnlySelect.parentElement.dataset.hasValue = "true";
 
-  privacyStatus.textContent = `Screenshots: ${screenshotPolicyLabels[screenshotPolicy]}. Sync: ${syncConsentLabels[syncConsent]}. ${localOnlyLabels[String(Boolean(localOnly))]}.`;
+  privacyStatus.textContent = `Screenshots: ${screenshotPolicyLabels[screenshotPolicy]}. Telemetry: ${syncConsentLabels[syncConsent]}.`;
 }
 
 function applyAuthSession(nextSession) {
@@ -218,13 +210,6 @@ privacyPolicySelect.addEventListener("change", async () => {
 syncConsentSelect.addEventListener("change", async () => {
   const settings = await window.overlayApi.updatePrivacySettings({
     syncConsent: syncConsentSelect.value,
-  });
-  applyPrivacySelections(settings);
-});
-
-localOnlySelect.addEventListener("change", async () => {
-  const settings = await window.overlayApi.updatePrivacySettings({
-    localOnly: localOnlySelect.value === "true",
   });
   applyPrivacySelections(settings);
 });

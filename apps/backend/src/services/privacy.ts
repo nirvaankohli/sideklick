@@ -23,8 +23,8 @@ type PrivacySettingsRow = {
 };
 
 const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
-  screenshotPolicy: "disabled",
-  syncConsent: "unknown",
+  screenshotPolicy: "automatic",
+  syncConsent: "granted",
 };
 
 function mapPrivacySettings(row: PrivacySettingsRow | undefined): PrivacySettings {

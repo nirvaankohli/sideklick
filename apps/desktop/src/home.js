@@ -286,16 +286,10 @@ const privacyScreenshotStatus = document.querySelector(
   "#privacy-screenshot-status",
 );
 const privacySyncStatus = document.querySelector("#privacy-sync-status");
-const privacyLocalOnlyStatus = document.querySelector(
-  "#privacy-local-only-status",
-);
 const privacyScreenshotSelect = document.querySelector(
   "#privacy-screenshot-select",
 );
 const privacySyncSelect = document.querySelector("#privacy-sync-select");
-const privacyLocalOnlySelect = document.querySelector(
-  "#privacy-local-only-select",
-);
 const accountAuthStatus = document.querySelector("#account-auth-status");
 const accountSignedOutPanel = document.querySelector(
   "#account-signed-out-panel",
@@ -462,13 +456,8 @@ const screenshotPolicyLabels = {
 
 const syncConsentLabels = {
   unknown: "Ask later",
-  granted: "Allowed",
-  denied: "Denied",
-};
-
-const localOnlyLabels = {
-  true: "Local data only",
-  false: "Cloud features allowed",
+  granted: "On",
+  denied: "Off",
 };
 
 const ASSESSMENT_PRESETS = [
@@ -933,8 +922,6 @@ function applyPrivacySettings(settings) {
   privacyScreenshotStatus.textContent =
     screenshotPolicyLabels[settings.screenshotPolicy];
   privacySyncStatus.textContent = syncConsentLabels[settings.syncConsent];
-  privacyLocalOnlyStatus.textContent =
-    localOnlyLabels[String(Boolean(settings.localOnly))];
   if (privacyScreenshotSelect) {
     privacyScreenshotSelect.value = settings.screenshotPolicy;
     syncCustomSettingsDropdown(privacyScreenshotSelect);
@@ -943,15 +930,10 @@ function applyPrivacySettings(settings) {
     privacySyncSelect.value = settings.syncConsent;
     syncCustomSettingsDropdown(privacySyncSelect);
   }
-  if (privacyLocalOnlySelect) {
-    privacyLocalOnlySelect.value = String(Boolean(settings.localOnly));
-    syncCustomSettingsDropdown(privacyLocalOnlySelect);
-  }
-  settingsPrivacyStatus.textContent = settings.localOnly
-    ? "Local-only mode is on. Screenshots and sync stay under local control."
-    : settings.syncConsent === "denied"
-      ? "Screenshots are controlled locally and sync consent is denied."
-      : "Review screenshot and sync preferences carefully.";
+  settingsPrivacyStatus.textContent =
+    settings.syncConsent === "denied"
+      ? "Telemetry is off. Screenshots still follow your screenshot policy."
+      : "Review screenshot and telemetry preferences carefully.";
 }
 
 function applyAuthSession(nextSession) {
@@ -3353,6 +3335,11 @@ function openCramSetupForCurrentClass() {
   activeCramPath = [...currentPath];
   cramReturnPath = [...currentPath];
   resetCramSetupState();
+  renderClassAssessmentProfileSelect(
+    cramAssessmentProfileSelect,
+    currentClassFolder,
+    "Generic cram plan",
+  );
   cramScreenMeta.textContent = currentClassFolder.name || "Class";
   updateCramAssessmentProfileMeta(currentClassFolder);
   setHomeView("cram");
@@ -5425,7 +5412,6 @@ function attachResizeHandle(handle) {
   settingsProfileSelect,
   privacyScreenshotSelect,
   privacySyncSelect,
-  privacyLocalOnlySelect,
 ].forEach((select) => {
   initCustomSettingsDropdown(select);
 });
@@ -5575,6 +5561,7 @@ openAssessmentConfigButton?.addEventListener("click", () => {
   }
 });
 assessmentBackButton?.addEventListener("click", closeAssessmentProfileView);
+assessmentBreadcrumbClass?.addEventListener("click", closeAssessmentProfileView);
 assessmentCancelButton?.addEventListener("click", closeAssessmentProfileView);
 assessmentEditorBackButton?.addEventListener("click", () => {
   renderAssessmentManager();
@@ -5832,17 +5819,6 @@ if (privacySyncSelect) {
   });
 }
 
-if (privacyLocalOnlySelect) {
-  privacyLocalOnlySelect.addEventListener("change", async () => {
-    if (!requireSignedIn("update privacy settings")) {
-      return;
-    }
-    const settings = await window.overlayApi.updatePrivacySettings({
-      localOnly: privacyLocalOnlySelect.value === "true",
-    });
-    applyPrivacySettings(settings);
-  });
-}
 accountOpenAuthGateButton.addEventListener("click", () => {
   postAuthHomeView = "settings";
   setHomeView("auth");
