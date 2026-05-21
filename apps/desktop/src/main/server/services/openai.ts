@@ -24,7 +24,9 @@ let openAIClient: OpenAI | null = null;
 
 function loadEnvironment(): void {
   const candidatePaths = [
+    path.resolve(process.cwd(), ".env.backend"),
     path.resolve(process.cwd(), ".env"),
+    path.resolve(__dirname, "../../../../.env.backend"),
     path.resolve(__dirname, "../../../../.env"),
   ];
 

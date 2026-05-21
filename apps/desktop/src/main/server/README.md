@@ -49,7 +49,7 @@ This folder contains the lightweight local backend that runs inside the Electron
 - Session goal currently comes from `sessions.title` first, then `sessions.notes`.
 - Folder names are currently `schema` and `type` in the repo, even though the original plan mentioned plural names.
 - `services/openai.ts` expects `OPENAI_API_KEY`, and optionally `OPENAI_MODEL`.
-- Put local secrets in the repo-root `.env` file. It is already ignored by git.
+- Put local backend secrets in `.env.backend` (or `.env` fallback). The file is ignored by git.
 - Model output is validated in two stages: OpenAI structured parsing, then local Zod parsing again before normalization.
 - Successful assist calls now write request payload, response payload, and built context into `interactions`.
 - Gap memory is updated heuristically by topic match within a class, using `weight`, `evidence_count`, `last_seen_at`, and a new `gap_events` record for each returned model gap.

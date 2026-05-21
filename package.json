@@ -13,8 +13,11 @@
   "scripts": {
     "start": "electron .",
     "dev": "pnpm run desktop:dev",
-    "desktop:start": "pnpm run rebuild:native:electron && electron .",
-    "desktop:dev": "pnpm run rebuild:native:electron && pnpm --filter @sideklick/desktop dev",
+    "env:split": "node scripts/split-env.mjs",
+    "dev:desktop:local-backend": "node scripts/dev-desktop-local-backend.mjs",
+    "desktop:start": "electron .",
+    "desktop:dev": "pnpm --filter @sideklick/desktop dev",
+    "desktop:dev:rebuild": "pnpm run rebuild:native:electron && pnpm run desktop:dev",
     "backend:start": "pnpm run rebuild:native:node && node --import tsx --eval \"import('./apps/backend/src/server.ts').then((mod) => { const api = mod.startServer ? mod : mod.default; return api.startServer(); })\"",
     "backend:dev": "pnpm run rebuild:native:node && pnpm --filter @sideklick/backend dev",
     "extension:dev": "pnpm --filter @sideklick/extension dev",
@@ -25,8 +28,12 @@
     "rebuild:native": "pnpm install --force",
     "rebuild:native:node": "npm_config_build_from_source=true pnpm rebuild better-sqlite3",
     "rebuild:native:electron": "npm_config_runtime=electron npm_config_target=37.10.3 npm_config_disturl=https://electronjs.org/headers npm_config_build_from_source=true pnpm rebuild better-sqlite3",
+    "desktop:build": "node scripts/build-desktop.mjs",
+    "desktop:pack": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder --dir",
+    "desktop:dist": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder -mwl",
+    "desktop:dist:mac": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder --mac",
     "check": "node --check apps/desktop/src/main.js && node --check apps/desktop/src/preload.js && node --check apps/desktop/src/renderer.js && node --check apps/desktop/src/home.js",
-    "test": "pnpm -r test",
+    "test": "node --test tests/*.test.js",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck"
@@ -36,9 +43,51 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.6.0",
     "electron": "^37.2.0",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.25.10",
     "jsdom": "^29.0.2",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
+  },
+  "build": {
+    "appId": "com.sideklick.desktop",
+    "productName": "SideKlick",
+    "icon": "apps/desktop/assets/images/logo/app-icon-1024.png",
+    "directories": {
+      "output": "release-builds"
+    },
+    "files": [
+      "dist/desktop/**",
+      "dist/assets/**",
+      "dist/native-host/**",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "dist/desktop/main.cjs"
+    },
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**"
+    ],
+    "mac": {
+      "icon": "apps/desktop/assets/images/logo/app-icon-1024.png",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "icon": "apps/desktop/assets/images/logo/app-icon-1024.png",
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "icon": "apps/desktop/assets/images/logo/app-icon-1024.png",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
   },
   "dependencies": {
     "@langfuse/openai": "^5.3.0",

@@ -6017,13 +6017,17 @@ window.overlayApi.onClassFoldersChanged((nextFolders) => {
   folders = normalizeFolders(Array.isArray(nextFolders) ? nextFolders : []);
   renderFolders();
 });
+if (typeof window.overlayApi.onAuthSessionChanged === "function") {
+  window.overlayApi.onAuthSessionChanged((nextSession) => {
+    applyAuthSession(nextSession);
+  });
+}
 
 window.addEventListener("DOMContentLoaded", async () => {
-  const [storedFolders, preferences, settings, session] = await Promise.all([
+  const [storedFolders, preferences, settings] = await Promise.all([
     window.overlayApi.getClassFolders(),
     window.overlayApi.getPreferences(),
     window.overlayApi.getPrivacySettings(),
-    window.overlayApi.getAuthSession(),
   ]);
   const normalizedFolders = normalizeFolders(storedFolders);
   const shouldPersistNormalized =
@@ -6045,13 +6049,22 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   applyPreferenceSelections(preferences);
   applyPrivacySettings(settings);
-  applyAuthSession(session);
+  applyAuthSession(null);
   setPrivacyAccountStatus(
     "Theme changes apply across Home, Chat, Cram Mode, and quiz views.",
   );
   setHomeView("dashboard");
   renderFolders();
   attachResizeHandle(resizeHandle);
+
+  void window.overlayApi
+    .getAuthSession()
+    .then((session) => {
+      applyAuthSession(session);
+    })
+    .catch(() => {
+      applyAuthSession(null);
+    });
 });
 
 window.addEventListener("resize", scheduleFitText);

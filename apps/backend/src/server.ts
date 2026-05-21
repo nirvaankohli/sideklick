@@ -39,7 +39,9 @@ const DEFAULT_HOST = "127.0.0.1";
 function loadEnvironment() {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
   const candidatePaths = [
+    path.resolve(process.cwd(), ".env.backend"),
     path.resolve(process.cwd(), ".env"),
+    path.resolve(currentDir, "../../../.env.backend"),
     path.resolve(currentDir, "../../../.env"),
   ];
 

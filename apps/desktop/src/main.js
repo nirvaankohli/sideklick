@@ -3,7 +3,9 @@ const fs = require("fs");
 const crypto = require("crypto");
 const https = require("https");
 const dotenv = require("dotenv");
-require("tsx/cjs");
+if (process.env.SIDEKLICK_DISABLE_TSX_LOADER !== "true") {
+  require("tsx/cjs");
+}
 const {
   app,
   BrowserWindow,
@@ -14,26 +16,8 @@ const {
   screen,
 } = require("electron");
 const {
-  startServer,
-  stopServer,
-} = require("../../backend/src/server.ts");
-const {
-  createSession,
-  endSession,
-} = require("../../backend/src/services/sessions.ts");
-const {
-  clearCurrentSessionState,
-  getCurrentSessionState,
-  getStoredClassFolders,
-  hasStoredClassFolders,
-  hasStoredCurrentSession,
-  setCurrentSessionState,
-  setStoredClassFolders,
-} = require("../../backend/src/services/app-state.ts");
-const {
-  getClassProfileById,
-  saveClassProfile,
-} = require("../../backend/src/services/classes.ts");
+  DEFAULT_MANAGED_BACKEND_URL,
+} = require("./main/config/desktop");
 const {
   getFirstRunStartupWindowConfigs,
   getStartupWindowConfigs,
@@ -48,20 +32,13 @@ const {
 } = require("./main/capture.ts");
 const {
   isManagedBackendAuthFailure,
-  resolveStoredAuthAfterSessionRefreshFailure,
 } = require("./main/auth-session.js");
-const {
-  createNativeMessagingIpcServer,
-} = require("./main/native-bridge.ts");
 const {
   getPrivacySettings,
   resetPrivacySettings,
   setPrivacySettings,
   updatePrivacySettings,
 } = require("./main/privacy/settings.ts");
-const {
-  createSessionLifecycle,
-} = require("./main/session.ts");
 const {
   enqueueOfflineRequest,
 } = require("./main/cache/local.ts");
@@ -74,13 +51,98 @@ const windowState = new Map();
 const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
 const LOCAL_API_BASE_URL =
   process.env.LOCAL_API_BASE_URL || "http://127.0.0.1:3001";
-const DEFAULT_MANAGED_BACKEND_URL = "";
 const DEFAULT_MANAGED_BACKEND_JWT = "";
 const MANAGED_AUTH_KEY = "managedAuth";
+const AUTH_REFRESH_TIMEOUT_MS = 2500;
+const LOCAL_DB_FILENAME = "sideklick.sqlite";
+let serverApi = null;
+let sessionServiceApi = null;
+let appStateApi = null;
+let classServiceApi = null;
+let createSessionLifecycle = null;
+let nativeMessagingIpcServer = null;
+let sessionManager = null;
+
+function getServerApi() {
+  if (!serverApi) {
+    serverApi = require("./main/server/index.ts");
+  }
+  return serverApi;
+}
+
+function getSessionServiceApi() {
+  if (!sessionServiceApi) {
+    sessionServiceApi = require("./main/server/services/sessions.ts");
+  }
+  return sessionServiceApi;
+}
+
+function getAppStateApi() {
+  if (!appStateApi) {
+    appStateApi = require("./main/server/services/app-state.ts");
+  }
+  return appStateApi;
+}
+
+function getClassServiceApi() {
+  if (!classServiceApi) {
+    classServiceApi = require("./main/server/services/classes.ts");
+  }
+  return classServiceApi;
+}
+
+function getCreateSessionLifecycle() {
+  if (!createSessionLifecycle) {
+    ({ createSessionLifecycle } = require("./main/session.ts"));
+  }
+  return createSessionLifecycle;
+}
+
+function hasStoredClassFolders() {
+  return getAppStateApi().hasStoredClassFolders();
+}
+
+function getStoredClassFolders() {
+  return getAppStateApi().getStoredClassFolders();
+}
+
+function hasStoredCurrentSession() {
+  return getAppStateApi().hasStoredCurrentSession();
+}
+
+function getCurrentSessionState() {
+  return getAppStateApi().getCurrentSessionState();
+}
+
+function setCurrentSessionState(currentSession) {
+  return getAppStateApi().setCurrentSessionState(currentSession);
+}
+
+function clearCurrentSessionState() {
+  return getAppStateApi().clearCurrentSessionState();
+}
+
+function setStoredClassFolders(classFolders) {
+  return getAppStateApi().setStoredClassFolders(classFolders);
+}
+
+function getClassProfileById(id) {
+  return getClassServiceApi().getClassProfileById(id);
+}
+
+function saveClassProfile(input) {
+  return getClassServiceApi().saveClassProfile(input);
+}
 
 function loadEnvironment() {
+  if (app.isPackaged) {
+    return;
+  }
+
   const candidatePaths = [
+    path.resolve(process.cwd(), ".env.desktop"),
     path.resolve(process.cwd(), ".env"),
+    path.resolve(__dirname, "../../../.env.desktop"),
     path.resolve(__dirname, "../../../.env"),
   ];
 
@@ -230,6 +292,29 @@ function clearStoredManagedAuth() {
   delete nextPreferences[MANAGED_AUTH_KEY];
   writePreferences(nextPreferences);
   return null;
+}
+
+function getLocalDbPath() {
+  return path.join(app.getPath("userData"), LOCAL_DB_FILENAME);
+}
+
+function migrateLegacyLocalDbToUserData() {
+  const targetPath = getLocalDbPath();
+  const legacyPath = path.join(process.cwd(), LOCAL_DB_FILENAME);
+
+  if (targetPath === legacyPath || fs.existsSync(targetPath) || !fs.existsSync(legacyPath)) {
+    process.env.SIDEKLICK_DB_PATH = targetPath;
+    return;
+  }
+
+  try {
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    fs.copyFileSync(legacyPath, targetPath);
+  } catch (error) {
+    console.error("[db] failed to migrate legacy sqlite file", error);
+  }
+
+  process.env.SIDEKLICK_DB_PATH = targetPath;
 }
 
 function readStoredThemeSource() {
@@ -545,7 +630,6 @@ function createManagedWindow(
     icon: getAppLogoPath(),
     frame: browserWindow.frame,
     transparent: browserWindow.transparent,
-    backgroundColor: "#00000000",
     alwaysOnTop: browserWindow.alwaysOnTop,
     resizable: browserWindow.resizable,
     roundedCorners: browserWindow.roundedCorners,
@@ -612,7 +696,7 @@ async function startLocalBackend() {
 
   try {
     ensureLocalBackendJwtSecret();
-    await startServer({
+    await getServerApi().startServer({
       host: "127.0.0.1",
       port: 3001,
     });
@@ -622,6 +706,9 @@ async function startLocalBackend() {
 }
 
 function shouldUseManagedBackend() {
+  if (process.env.SIDEKLICK_FORCE_LOCAL_BACKEND === "true") {
+    return false;
+  }
   return Boolean(getManagedBackendBaseUrl());
 }
 
@@ -631,7 +718,15 @@ function getManagedBackendBaseUrl() {
       ? process.env.MANAGED_BACKEND_URL.trim()
       : "";
 
-  return configuredUrl || DEFAULT_MANAGED_BACKEND_URL;
+  if (configuredUrl) {
+    return configuredUrl;
+  }
+
+  if (app.isPackaged) {
+    return DEFAULT_MANAGED_BACKEND_URL;
+  }
+
+  return "";
 }
 
 function getManagedBackendJwt() {
@@ -804,6 +899,54 @@ function notifyHomeWindowFoldersChanged(classFolders) {
   }
 }
 
+function broadcastAuthSessionChanged(nextSession) {
+  for (const win of windowsByKey.values()) {
+    if (!win || win.isDestroyed()) {
+      continue;
+    }
+    win.webContents.send("auth:sessionChanged", nextSession);
+  }
+}
+
+async function callManagedBackendWithTimeout(endpoint, options = {}, timeoutMs = AUTH_REFRESH_TIMEOUT_MS) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return callManagedBackend(endpoint, options);
+  }
+
+  return Promise.race([
+    callManagedBackend(endpoint, options),
+    new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Managed backend request timed out after ${timeoutMs}ms.`));
+      }, timeoutMs);
+    }),
+  ]);
+}
+
+function refreshAuthSessionInBackground(storedAuth) {
+  if (!storedAuth?.token) {
+    return;
+  }
+
+  void callManagedBackendWithTimeout("/api/auth/me", {
+    method: "GET",
+    authToken: storedAuth.token,
+  })
+    .then((result) => {
+      const nextSession = setStoredManagedAuth({
+        token: storedAuth.token,
+        user: result.user,
+      });
+      broadcastAuthSessionChanged(nextSession);
+    })
+    .catch((error) => {
+      if (isManagedBackendAuthFailure(error)) {
+        clearStoredManagedAuth();
+        broadcastAuthSessionChanged(null);
+      }
+    });
+}
+
 function migrateLegacyStoredState() {
   const preferences = readPreferences();
   let shouldRewritePreferences = false;
@@ -854,25 +997,40 @@ function dispatchIncomingPayload(payload) {
   deliverPayload();
 }
 
-const nativeMessagingIpcServer = createNativeMessagingIpcServer({
-  dispatchIncomingPayload,
-});
-const sessionManager = createSessionLifecycle({
-  createSession,
-  endSession,
-  getClassProfileById,
-  saveClassProfile,
-  getCurrentSessionState,
-  setCurrentSessionState,
-  clearCurrentSessionState,
-  getStoredClassFolders,
-  setStoredClassFolders,
-  windowsByKey,
-  createManagedWindow,
-  notifyHomeWindowFoldersChanged,
-});
+function ensureSessionManager() {
+  if (sessionManager) {
+    return sessionManager;
+  }
+
+  const sessionServices = getSessionServiceApi();
+  sessionManager = getCreateSessionLifecycle()({
+    createSession: sessionServices.createSession,
+    endSession: sessionServices.endSession,
+    getClassProfileById,
+    saveClassProfile,
+    getCurrentSessionState,
+    setCurrentSessionState,
+    clearCurrentSessionState,
+    getStoredClassFolders,
+    setStoredClassFolders,
+    windowsByKey,
+    createManagedWindow,
+    notifyHomeWindowFoldersChanged,
+  });
+  return sessionManager;
+}
 
 app.whenReady().then(async () => {
+  migrateLegacyLocalDbToUserData();
+  const { createNativeMessagingIpcServer } = require("./main/native-bridge.ts");
+  nativeMessagingIpcServer = createNativeMessagingIpcServer({
+    dispatchIncomingPayload,
+  });
+
+  if (process.platform === "darwin" && app.dock) {
+    app.dock.setIcon(getAppLogoPath());
+  }
+
   await startLocalBackend();
   migrateLegacyStoredState();
   const shouldOpenOnboarding = shouldShowOnboardingGate();
@@ -893,7 +1051,9 @@ app.whenReady().then(async () => {
 });
 
 app.on("window-all-closed", () => {
-  nativeMessagingIpcServer.stop();
+  if (nativeMessagingIpcServer) {
+    nativeMessagingIpcServer.stop();
+  }
 
   if (process.platform !== "darwin") {
     app.quit();
@@ -901,7 +1061,7 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
-  void stopServer().catch((error) => {
+  void getServerApi().stopServer().catch((error) => {
     console.error("[local-backend] failed to stop", error);
   });
 });
@@ -1159,7 +1319,9 @@ ipcMain.handle("backend:authRegister", async (_event, payload) => {
     body: payload,
     skipAuth: true,
   });
-  return setStoredManagedAuth(session);
+  const nextSession = setStoredManagedAuth(session);
+  broadcastAuthSessionChanged(nextSession);
+  return nextSession;
 });
 
 ipcMain.handle("backend:authLogin", async (_event, payload) => {
@@ -1168,7 +1330,9 @@ ipcMain.handle("backend:authLogin", async (_event, payload) => {
     body: payload,
     skipAuth: true,
   });
-  return setStoredManagedAuth(session);
+  const nextSession = setStoredManagedAuth(session);
+  broadcastAuthSessionChanged(nextSession);
+  return nextSession;
 });
 
 ipcMain.handle("backend:authLogout", async () => {
@@ -1187,6 +1351,7 @@ ipcMain.handle("backend:authLogout", async () => {
   }
 
   clearStoredManagedAuth();
+  broadcastAuthSessionChanged(null);
 
   if (logoutError) {
     throw logoutError;
@@ -1201,23 +1366,8 @@ ipcMain.handle("backend:authSession", async () => {
     return null;
   }
 
-  try {
-    const result = await callManagedBackend("/api/auth/me", {
-      method: "GET",
-      authToken: storedAuth.token,
-    });
-    return setStoredManagedAuth({
-      token: storedAuth.token,
-      user: result.user,
-    });
-  } catch (error) {
-    if (isManagedBackendAuthFailure(error)) {
-      clearStoredManagedAuth();
-      return null;
-    }
-
-    return resolveStoredAuthAfterSessionRefreshFailure(storedAuth, error);
-  }
+  refreshAuthSessionInBackground(storedAuth);
+  return storedAuth;
 });
 
 ipcMain.handle("backend:exportAccount", async (_event, options) => {
@@ -1251,13 +1401,13 @@ ipcMain.handle("onboarding:complete", (event) => {
 });
 
 ipcMain.handle("session:getCurrent", () => {
-  return sessionManager.getCurrentSession();
+  return ensureSessionManager().getCurrentSession();
 });
 
 ipcMain.handle("session:start", (_event, session) => {
-  return sessionManager.startSession(session);
+  return ensureSessionManager().startSession(session);
 });
 
 ipcMain.handle("session:stop", () => {
-  return sessionManager.stopSession();
+  return ensureSessionManager().stopSession();
 });

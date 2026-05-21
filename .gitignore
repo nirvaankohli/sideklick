@@ -160,6 +160,10 @@ celerybeat.pid
 # Environments
 .env
 !.env.example
+.env.desktop
+.env.backend
+!.env.desktop.example
+!.env.backend.example
 .envrc
 .venv
 env/

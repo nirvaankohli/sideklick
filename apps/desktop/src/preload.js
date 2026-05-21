@@ -56,6 +56,10 @@ contextBridge.exposeInMainWorld("overlayApi", {
     ipcRenderer.on("class-folders:changed", (_event, payload) =>
       callback(payload),
     ),
+  onAuthSessionChanged: (callback) =>
+    ipcRenderer.on("auth:sessionChanged", (_event, payload) =>
+      callback(payload),
+    ),
   onIncomingPayload: (callback) =>
     ipcRenderer.on("incoming:payload", (_event, payload) => callback(payload)),
 });

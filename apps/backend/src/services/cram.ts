@@ -97,7 +97,9 @@ const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
 function loadEnvironment(): void {
   const candidatePaths = [
+    path.resolve(process.cwd(), ".env.backend"),
     path.resolve(process.cwd(), ".env"),
+    path.resolve(currentDir, "../../../../.env.backend"),
     path.resolve(currentDir, "../../../../.env"),
   ];
 

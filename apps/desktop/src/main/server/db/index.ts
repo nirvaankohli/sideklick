@@ -8,6 +8,10 @@ const DATABASE_FILE_NAME = "sideklick.sqlite";
 let database: Database.Database | null = null;
 
 function getDatabaseFilePath(): string {
+  const configuredPath = process.env.SIDEKLICK_DB_PATH;
+  if (typeof configuredPath === "string" && configuredPath.trim().length > 0) {
+    return configuredPath.trim();
+  }
   return path.join(process.cwd(), DATABASE_FILE_NAME);
 }
 

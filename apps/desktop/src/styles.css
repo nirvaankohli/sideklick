@@ -37,7 +37,7 @@ body {
 }
 
 body {
-  padding: 10px;
+  padding: 0;
   color: var(--dark-strong);
   line-height: 1.52;
   text-rendering: optimizeLegibility;
@@ -7183,7 +7183,7 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0;
-  padding: 10px 12px;
+  padding: 1px 1px;
   border-radius: inherit;
   overflow: hidden;
   border-color: rgba(137, 156, 181, 0.14);
