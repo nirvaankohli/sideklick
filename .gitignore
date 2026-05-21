@@ -239,3 +239,5 @@ package-lock.json
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+/requests
