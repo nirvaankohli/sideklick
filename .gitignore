@@ -6,6 +6,7 @@ __pycache__/
 
 # Dependency directories
 node_modules/
+.pnpm-store/
 convo-summaries/
 agent-docs/
 # Build and Packaging
