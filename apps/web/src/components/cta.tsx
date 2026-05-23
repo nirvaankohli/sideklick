@@ -6,7 +6,10 @@ const CTA = () => {
   const downloadLabel = useDownloadLabel();
 
   return (
-    <section className="px-4 py-16 md:px-8 md:py-24" id="download">
+    <section
+      className="px-4 pb-32 pt-12 md:px-8 md:pb-44 md:pt-20"
+      id="download"
+    >
       <div className="mx-auto max-w-5xl border border-white/10 bg-black/24">
         <div className="relative isolate overflow-hidden px-6 py-10 md:px-10 md:py-14">
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/30 to-transparent" />

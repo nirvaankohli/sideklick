@@ -2,11 +2,6 @@
 
 # Every Request
 
-You are to document every request by a user in agent-docs/requests/<type_of_change>/<request_name>.md
-- Include a summary of the request & how you went about implementing this request
-- How this changes or affects archetecture 
-If the request was to explain a part of the codebase put it in agent-docs/explenations/<request_name>.md
-
 Run `pnpm test` to make sure it passes. Unless the user otherwise specifies, only stop the loop if `pnpm test` passes.
 
 # The Repo

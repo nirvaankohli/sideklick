@@ -12,7 +12,7 @@ export const FeaturePlatform = () => {
   return (
     <section
       id="how-it-helps"
-      className="px-4 py-16 md:px-8 md:py-24"
+      className="px-4 py-28 md:px-8 md:py-40"
       ref={sectionRef}
     >
       <div className="mx-auto max-w-6xl">
@@ -22,7 +22,7 @@ export const FeaturePlatform = () => {
           </h2>
         </div>
 
-        <div className="mb-8 grid gap-6 lg:grid-cols-2">
+        <div className="mb-32 grid gap-6 lg:mb-56 lg:grid-cols-2">
           <TimelineAnimation
             animationNum={0}
             className="overflow-hidden rounded-[2rem] border border-violet-200/20 bg-[radial-gradient(circle_at_top,#7b96ff_0%,#5d7fe4_38%,#4a63b8_100%)] p-8 text-white"
@@ -112,7 +112,7 @@ export const FeaturePlatform = () => {
 
         <TimelineAnimation
           animationNum={2}
-          className="border border-white/10 bg-black/18 p-0"
+          className="mt-56 border border-white/10 bg-black/18 p-0 md:mt-80"
           timelineRef={sectionRef}
         >
           <CompareSection />
