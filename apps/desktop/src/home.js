@@ -352,6 +352,7 @@ let quizClassMaterialSelectionInitialized = false;
 let activeQuiz = null;
 let quizHasBeenChecked = false;
 let quizExplanationFollowScroll = true;
+let activeQuizExplanationIndex = null;
 let activeCramPlan = null;
 let uploadedCramMaterials = [];
 let selectedCramClassMaterialKeys = new Set();
@@ -405,7 +406,7 @@ async function ensureAiFeatureAvailable(onUnavailable) {
   if (typeof onUnavailable === "function") {
     onUnavailable(
       status.message ||
-        "Add OPENAI_API_KEY to .env and restart SideKlick to use AI features on this device.",
+        "Add OPENAI_API_KEY to .env.backend and restart SideKlick to use AI features on this device.",
     );
   }
 
@@ -2375,9 +2376,13 @@ function formatSessionDate(value) {
 }
 
 function buildSessionCardSentence(session) {
-  const summarySentence =
+  const summaryText =
     typeof session.summary === "string" && session.summary.trim()
-      ? session.summary.trim().split(/(?<=[.!?])\s+/)[0]
+      ? extractMarkdownText(session.summary)
+      : "";
+  const summarySentence =
+    summaryText
+      ? summaryText.split(/(?<=[.!?])\s+/)[0]
       : `${session.name || "Saved study session"}.`;
   return summarySentence.trim();
 }
@@ -2430,10 +2435,11 @@ function openSessionSummary(session) {
   }
   sessionSummaryTitle.textContent = session.name || "Session Summary";
   sessionSummaryMeta.textContent = `${Number.isFinite(session.requestCount) ? session.requestCount : 0} request${session.requestCount === 1 ? "" : "s"} • Ended ${formatSessionDate(session.endedAt)}${Array.isArray(session.keyTopics) && session.keyTopics.length > 0 ? ` • ${session.keyTopics.slice(0, 3).join(", ")}` : ""}`;
-  sessionSummaryText.textContent =
+  sessionSummaryText.innerHTML = renderMarkdown(
     typeof session.summary === "string" && session.summary.trim()
       ? session.summary.trim()
-      : "No summary was saved for this session.";
+      : "No summary was saved for this session.",
+  );
   sessionSummaryBackdrop.hidden = false;
 }
 
@@ -3450,11 +3456,25 @@ function getRecommendedCramTaskIndex(plan) {
   return 0;
 }
 
+function scrollCramViewToTop() {
+  if (cramTaskDetail instanceof HTMLElement) {
+    cramTaskDetail.scrollTop = 0;
+  }
+  if (cramPageScreen instanceof HTMLElement) {
+    cramPageScreen.scrollTop = 0;
+  }
+  if (document.scrollingElement instanceof HTMLElement) {
+    document.scrollingElement.scrollTop = 0;
+  }
+  window.scrollTo(0, 0);
+}
+
 function openCramOverview() {
   activeCramTaskIndex = -1;
   activeCramOverviewPage = 0;
   if (activeCramPlan) {
     renderCramPlan(activeCramPlan);
+    scrollCramViewToTop();
   }
 }
 
@@ -3463,6 +3483,7 @@ function openCramOverviewPage(page) {
   activeCramOverviewPage = Math.max(0, Math.min(page, 1));
   if (activeCramPlan) {
     renderCramPlan(activeCramPlan);
+    scrollCramViewToTop();
   }
 }
 
@@ -3472,6 +3493,7 @@ function openCramTask(index) {
   }
   activeCramTaskIndex = clampCramTaskIndex(activeCramPlan, index);
   renderCramPlan(activeCramPlan);
+  scrollCramViewToTop();
 }
 
 function openNextCramStep() {
@@ -3520,12 +3542,196 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+function renderInlineMarkdown(source) {
+  const codeSpans = [];
+  const withCodePlaceholders = String(source ?? "").replace(
+    /`([^`]+)`/g,
+    (_match, code) => {
+      const placeholder = `@@CODE${codeSpans.length}@@`;
+      codeSpans.push(`<code>${escapeHtml(code)}</code>`);
+      return placeholder;
+    },
+  );
+
+  const rendered = escapeHtml(withCodePlaceholders)
+    .replace(
+      /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noreferrer">$1</a>',
+    )
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+    .replace(/~~([^~]+)~~/g, "<del>$1</del>");
+
+  return rendered.replace(/@@CODE(\d+)@@/g, (_match, indexText) => {
+    return codeSpans[Number(indexText)] || "";
+  });
+}
+
+function renderMarkdown(source) {
+  const normalized = String(source ?? "").replace(/\r\n/g, "\n").trim();
+  if (!normalized) {
+    return "";
+  }
+
+  const lines = normalized.split("\n");
+  const blocks = [];
+  let paragraphLines = [];
+  let listType = null;
+  let listItems = [];
+  let blockquoteLines = [];
+  let inCodeFence = false;
+  let codeFenceLanguage = "";
+  let codeFenceLines = [];
+
+  const flushParagraph = () => {
+    if (paragraphLines.length === 0) {
+      return;
+    }
+
+    blocks.push(`<p>${renderInlineMarkdown(paragraphLines.join(" "))}</p>`);
+    paragraphLines = [];
+  };
+
+  const flushList = () => {
+    if (!listType || listItems.length === 0) {
+      listType = null;
+      listItems = [];
+      return;
+    }
+
+    blocks.push(
+      `<${listType}>${listItems
+        .map((item) => `<li>${renderInlineMarkdown(item)}</li>`)
+        .join("")}</${listType}>`,
+    );
+    listType = null;
+    listItems = [];
+  };
+
+  const flushBlockquote = () => {
+    if (blockquoteLines.length === 0) {
+      return;
+    }
+
+    blocks.push(
+      `<blockquote>${blockquoteLines
+        .map((line) => `<p>${renderInlineMarkdown(line)}</p>`)
+        .join("")}</blockquote>`,
+    );
+    blockquoteLines = [];
+  };
+
+  const flushCodeFence = () => {
+    blocks.push(
+      `<pre><code${codeFenceLanguage ? ` data-language="${escapeHtml(codeFenceLanguage)}"` : ""}>${escapeHtml(codeFenceLines.join("\n"))}</code></pre>`,
+    );
+    inCodeFence = false;
+    codeFenceLanguage = "";
+    codeFenceLines = [];
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (inCodeFence) {
+      if (trimmed.startsWith("```")) {
+        flushCodeFence();
+      } else {
+        codeFenceLines.push(line);
+      }
+      continue;
+    }
+
+    if (trimmed.startsWith("```")) {
+      flushParagraph();
+      flushList();
+      flushBlockquote();
+      inCodeFence = true;
+      codeFenceLanguage = trimmed.slice(3).trim();
+      codeFenceLines = [];
+      continue;
+    }
+
+    if (!trimmed) {
+      flushParagraph();
+      flushList();
+      flushBlockquote();
+      continue;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,3})\s+(.*)$/);
+    if (headingMatch) {
+      flushParagraph();
+      flushList();
+      flushBlockquote();
+      const level = headingMatch[1].length;
+      blocks.push(
+        `<h${level}>${renderInlineMarkdown(headingMatch[2])}</h${level}>`,
+      );
+      continue;
+    }
+
+    if (/^---+$/.test(trimmed)) {
+      flushParagraph();
+      flushList();
+      flushBlockquote();
+      blocks.push("<hr>");
+      continue;
+    }
+
+    const unorderedMatch = trimmed.match(/^[-*]\s+(.*)$/);
+    if (unorderedMatch) {
+      flushParagraph();
+      flushBlockquote();
+      if (listType && listType !== "ul") {
+        flushList();
+      }
+      listType = "ul";
+      listItems.push(unorderedMatch[1]);
+      continue;
+    }
+
+    const orderedMatch = trimmed.match(/^\d+\.\s+(.*)$/);
+    if (orderedMatch) {
+      flushParagraph();
+      flushBlockquote();
+      if (listType && listType !== "ol") {
+        flushList();
+      }
+      listType = "ol";
+      listItems.push(orderedMatch[1]);
+      continue;
+    }
+
+    const blockquoteMatch = trimmed.match(/^>\s?(.*)$/);
+    if (blockquoteMatch) {
+      flushParagraph();
+      flushList();
+      blockquoteLines.push(blockquoteMatch[1]);
+      continue;
+    }
+
+    paragraphLines.push(trimmed);
+  }
+
+  flushParagraph();
+  flushList();
+  flushBlockquote();
+  if (inCodeFence) {
+    flushCodeFence();
+  }
+
+  return blocks.join("");
+}
+
+function extractMarkdownText(source) {
+  const scratch = document.createElement("div");
+  scratch.innerHTML = renderMarkdown(source);
+  return scratch.textContent.replace(/\s+/g, " ").trim();
+}
+
 function renderInlineCramText(value) {
-  const escaped = escapeHtml(value);
-  return escaped
-    .replace(/(\*\*|__)(.+?)\1/g, "<strong>$2</strong>")
-    .replace(/(\*|_)(.+?)\1/g, "<em>$2</em>")
-    .replace(/`([^`]+)`/g, "<code>$1</code>");
+  return renderInlineMarkdown(value);
 }
 
 function renderCramTakeaways(items = []) {
@@ -4099,10 +4305,22 @@ function showQuizExplanation(question, index) {
     return;
   }
 
+  if (
+    activeQuizExplanationIndex === index &&
+    quizExplanationPanel &&
+    !quizExplanationPanel.hidden
+  ) {
+    activeQuizExplanationIndex = null;
+    setQuizExplanationSidebarOpen(false);
+    return;
+  }
+
+  activeQuizExplanationIndex = index;
   setQuizExplanationSidebarOpen(true);
   quizExplanationTitle.textContent = `Question ${index + 1}`;
   quizExplanationAnswer.textContent = `Correct answer: ${question.options[question.correctIndex]}`;
   quizExplanationText.textContent = question.explanation;
+  updateExplainButtons();
 }
 
 function setQuizExplanationFollowScroll(isEnabled) {
@@ -4129,7 +4347,12 @@ function setQuizExplanationSidebarOpen(isOpen) {
   quizExplanationPanel.hidden = !isOpen;
   quizQuestions.parentElement?.classList.toggle("has-explanation", isOpen);
 
+  if (!isOpen) {
+    activeQuizExplanationIndex = null;
+  }
+
   if (!quizExplanationToggle) {
+    updateExplainButtons();
     return;
   }
 
@@ -4137,11 +4360,13 @@ function setQuizExplanationSidebarOpen(isOpen) {
     ? "Hide Explanation"
     : "Show Explanation";
   quizExplanationToggle.setAttribute("aria-pressed", isOpen ? "true" : "false");
+  updateExplainButtons();
 }
 
 function loadQuizIntoView(quiz, options = {}) {
   activeQuiz = quiz;
   quizHasBeenChecked = false;
+  activeQuizExplanationIndex = null;
   setQuizExplanationFollowScroll(true);
   quizSubtitle.textContent = quiz.subtitle;
   renderQuizQuestions(quiz);
@@ -4163,8 +4388,15 @@ function loadQuizIntoView(quiz, options = {}) {
 
 function updateExplainButtons() {
   quizQuestions.querySelectorAll(".quiz-explain-button").forEach((button) => {
+    const buttonIndex = Number(button.dataset.questionIndex);
+    const isActive =
+      quizHasBeenChecked &&
+      activeQuizExplanationIndex === buttonIndex &&
+      !quizExplanationPanel.hidden;
     button.disabled = !quizHasBeenChecked;
     button.classList.toggle("is-locked", !quizHasBeenChecked);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    button.textContent = isActive ? "Hide Answer" : "Explain Answer";
   });
 }
 
@@ -4546,6 +4778,7 @@ function renderQuizQuestions(quiz) {
     const explainButton = document.createElement("button");
     explainButton.type = "button";
     explainButton.className = "ghost-button quiz-explain-button";
+    explainButton.dataset.questionIndex = String(index);
     explainButton.textContent = "Explain Answer";
     explainButton.disabled = true;
     explainButton.classList.add("is-locked");
@@ -4981,7 +5214,7 @@ function renderFolders() {
       <span class="folder-card-title">${folder.name}</span>
       ${
         isSessionItem || isQuizItem || isMaterialItem
-          ? `<span class="folder-card-summary">${sessionSummaryText}</span>
+          ? `<span class="folder-card-summary">${isSessionItem ? "" : sessionSummaryText}</span>
       <span class="folder-card-session-stats">${isSessionItem ? sessionStatsText : metaText}</span>`
           : `<span class="folder-card-meta">${metaText}</span>`
       }
@@ -5003,6 +5236,9 @@ function renderFolders() {
       }
     }
     if (summaryNode instanceof HTMLElement) {
+      if (isSessionItem) {
+        summaryNode.textContent = sessionSummaryText;
+      }
       summaryNode.title = sessionSummaryText;
     }
     if (statsNode instanceof HTMLElement) {

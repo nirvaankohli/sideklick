@@ -281,6 +281,10 @@ function setAssistantMessageContent(container, copy) {
   container.innerHTML = renderMarkdown(copy);
 }
 
+function setAssistantMetaContent(container, label, copy) {
+  container.innerHTML = `<strong>${escapeHtml(label)}</strong> ${renderInlineMarkdown(copy)}`;
+}
+
 function applyThemeState({ shouldUseDarkColors }) {
   currentTone = shouldUseDarkColors ? "dark" : "light";
   root.dataset.tone = currentTone;
@@ -517,13 +521,15 @@ async function resolvePendingAssistantMessage(pendingMessage, result) {
   setAssistantMessageContent(pendingMessage.paragraph, result.answer);
 
   if (result.nextStep) {
-    pendingMessage.meta.textContent = `Next: ${result.nextStep}`;
+    setAssistantMetaContent(pendingMessage.meta, "Next:", result.nextStep);
   } else {
     pendingMessage.meta.remove();
   }
 
   if (result.interactionId) {
-    pendingMessage.article.appendChild(createFeedbackRow(result.interactionId));
+    pendingMessage.article.appendChild(
+      createFeedbackRow(result.interactionId, result.answer),
+    );
   }
 }
 
@@ -802,7 +808,7 @@ async function executeAssistRequest(normalizedPayload) {
     addMessage(
       "assistant",
       aiStatus.message ||
-        "Add OPENAI_API_KEY to .env and restart SideKlick to use AI assist on this device.",
+        "Add OPENAI_API_KEY to .env.backend and restart SideKlick to use AI assist on this device.",
     );
     return;
   }

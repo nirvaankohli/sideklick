@@ -60,8 +60,8 @@ function getOpenAIModel(): string {
   return process.env.OPENAI_MODEL ?? DEFAULT_OPENAI_MODEL;
 }
 
-function buildSystemPrompt(): string {
-  return [
+function buildSystemPrompt(requestInput: AssistRequest): string {
+  const promptParts = [
     "You are a study assistant inside a local Electron app.",
     "The app gives you explicit memory layers and context tiers. This context is important and should be treated as the app's working memory, episodic memory, and semantic memory for the student.",
     "Do not treat the provided context as optional decoration. Read it carefully and use it on purpose.",
@@ -100,12 +100,24 @@ function buildSystemPrompt(): string {
     "Possible gaps should only include likely recurring weak spots supported by the context or the current request.",
     "Keep possible_gaps empty when there is not enough evidence.",
     "If memory is weak or irrelevant, ignore it instead of forcing it in.",
+    "However, when you can connect a already well known idea to something in the current request, do that to show the student the relevance of what they already know. Connecting strengths to weaknesses is highly encouraged.",
     "next_step should be a detailed carry-forward item, not a vague reminder.",
     "Make next_step one concrete immediate action that names the topic or skill to review, what to do with it, and the intended goal.",
     "A strong next_step should read like a short study instruction the next session can continue from.",
     "Do not give filler, throat-clearing, or generic encouragement.",
     "Do not solve graded work outright if the request appears to ask for a final answer; explain the idea instead.",
-  ].join(" ");
+  ];
+
+  if (requestInput.sessionId) {
+    promptParts.push(
+      "This request is happening inside an active study session.",
+      "When useful, explicitly tie the answer back to the session goal or the last unresolved step so the student can keep momentum.",
+      "If the request has anything to do with their screen, use the screenshot to understand what they are looking at and how it relates to the question. Use it especially when the layout, formatting, or visual elements of the screen matter.",
+      "Connect gaps and strengths to the current session content when relevant. Use the session content as context to understand what the student is struggling with and what they recently covered. Use that understanding to shape the answer in a way that connects to their current learning experience.",
+    );
+  }
+
+  return promptParts.join(" ");
 }
 
 function buildUserTextPayload(
@@ -236,7 +248,7 @@ export async function requestAssistFromOpenAI(
         input: [
           {
             role: "system",
-            content: buildSystemPrompt(),
+            content: buildSystemPrompt(requestInput),
           },
           {
             role: "user",

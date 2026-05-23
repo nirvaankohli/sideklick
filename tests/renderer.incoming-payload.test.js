@@ -217,3 +217,75 @@ test("manual chat submit shows the typed message instead of the action label", a
 
   dom.window.close();
 });
+
+test("session responses render markdown in the answer and next step", async () => {
+  const dom = createDom();
+  installAnimationFrameStub(dom);
+
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.HTMLElement = dom.window.HTMLElement;
+  global.Event = dom.window.Event;
+  global.FileReader = class FakeFileReader {};
+
+  window.overlayApi = {
+    getWindowBounds: async () => ({ width: 100, height: 100 }),
+    resizeWindow: async () => ({}),
+    setThemeSource: async () => ({ shouldUseDarkColors: false }),
+    minimizeToDock: async () => ({}),
+    stopSession: async () => ({}),
+    closeWindow: async () => ({}),
+    expandWindow: async () => ({}),
+    assist: async () => ({
+      interactionId: 11,
+      answer:
+        "## Focus\n\n- Review **mitosis**\n- Compare it to `meiosis`",
+      nextStep: "Practice **one** clean `comparison` next.",
+    }),
+    submitFeedback: async () => ({}),
+    onThemeChanged: () => {},
+    onWindowMode: () => {},
+    onSessionChanged: () => {},
+    onIncomingPayload: () => {},
+    getCurrentSession: async () => ({
+      classId: 7,
+      className: "AP Biology",
+      sessionName: "Meiosis Review",
+      sessionNotes: "Need help with vocab",
+    }),
+  };
+
+  const rendererPath = path.join(__dirname, "..", "apps", "desktop", "src", "renderer.js");
+  delete require.cache[require.resolve(rendererPath)];
+  require(rendererPath);
+
+  await new Promise((resolve) => {
+    window.dispatchEvent(new dom.window.Event("DOMContentLoaded"));
+    setTimeout(resolve, 0);
+  });
+
+  const chatInput = document.querySelector("#chat-input");
+  const chatForm = document.querySelector("#chat-form");
+  chatInput.value = "Help me review";
+  chatForm.dispatchEvent(
+    new dom.window.Event("submit", { bubbles: true, cancelable: true }),
+  );
+
+  await waitFor(() => {
+    const assistantCopy = document.querySelector(
+      ".chat-message.assistant:last-of-type .chat-message-copy",
+    );
+    assert.match(assistantCopy?.innerHTML || "", /<h2>Focus<\/h2>/);
+    assert.match(assistantCopy?.innerHTML || "", /<strong>mitosis<\/strong>/);
+    assert.match(assistantCopy?.innerHTML || "", /<code>meiosis<\/code>/);
+  });
+
+  const assistantMeta = document.querySelector(
+    ".chat-message.assistant:last-of-type .chat-message-meta",
+  );
+  assert.match(assistantMeta?.innerHTML || "", /<strong>Next:<\/strong>/);
+  assert.match(assistantMeta?.innerHTML || "", /<strong>one<\/strong>/);
+  assert.match(assistantMeta?.innerHTML || "", /<code>comparison<\/code>/);
+
+  dom.window.close();
+});
