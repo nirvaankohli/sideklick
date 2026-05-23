@@ -1,10 +1,14 @@
 {
   "name": "sideklick",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.5",
   "productName": "SideKlick",
   "packageManager": "pnpm@10.0.0",
   "description": "AI study sidekick desktop app for class sessions, context-aware help, and quiz generation.",
+  "author": {
+    "name": "Nirvaan Kohli",
+    "email": "nirvaankohli@users.noreply.github.com"
+  },
   "main": "apps/desktop/src/main.js",
   "workspaces": [
     "apps/*",

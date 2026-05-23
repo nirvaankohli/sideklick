@@ -22,6 +22,7 @@ const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 const child = spawn(pnpmCommand, ["rebuild", "better-sqlite3"], {
   stdio: "inherit",
   env,
+  shell: process.platform === "win32",
 });
 
 child.on("exit", (code, signal) => {
