@@ -7,7 +7,7 @@ const testFiles = readdirSync(join(__dirname, "..", "tests"))
   .sort()
   .map((file) => join("tests", file));
 
-const result = spawnSync(process.execPath, ["--test", ...testFiles], {
+const result = spawnSync(process.execPath, ["--import", "tsx", "--test", ...testFiles], {
   stdio: "inherit",
 });
 
