@@ -479,6 +479,10 @@
 
                 <div id="cram-quiz-panel" class="quiz-page-section cram-quiz-panel" hidden>
                   <div class="cram-quiz-toolbar">
+                    <div class="cram-quiz-toolbar-copy">
+                      <p class="panel-label">Quiz</p>
+                      <p id="cram-quiz-meta" class="panel-help cram-quiz-toolbar-title"></p>
+                    </div>
                     <button
                       id="cram-quiz-back-button"
                       class="ghost-button"
@@ -486,7 +490,6 @@
                     >
                       Back to Guide
                     </button>
-                    <p id="cram-quiz-meta" class="panel-help"></p>
                   </div>
                   <div id="cram-quiz-mount"></div>
                 </div>
@@ -496,24 +499,27 @@
             <div id="home-quiz-view" class="home-view" hidden>
               <section class="quiz-screen">
                 <div class="quiz-page-toolbar">
+                  <div class="quiz-page-toolbar-copy">
+                    <p class="panel-label">Quiz Mode</p>
+                    <h2 id="quiz-modal-title" class="cram-title">
+                      Generate Quiz
+                    </h2>
+                    <p class="panel-help quiz-page-subtitle">
+                      Build a quiz from sessions, class material, and saved
+                      context.
+                    </p>
+                  </div>
                   <button
                     id="close-quiz-modal"
                     class="ghost-button quiz-page-back-button"
                     type="button"
                     aria-label="Back to home"
                   >
-                    Back
+                    <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"></path>
+                    </svg>
+                    <span>Back</span>
                   </button>
-                  <div>
-                    <p class="panel-label">Quiz Mode</p>
-                    <h2 id="quiz-modal-title" class="cram-title">
-                      Generate Quiz
-                    </h2>
-                    <p class="panel-help">
-                      Build a quiz from sessions, class material, and saved
-                      context.
-                    </p>
-                  </div>
                 </div>
 
                 <div id="quiz-setup-view" class="quiz-setup-form quiz-page-section">
@@ -621,24 +627,26 @@
                       <p id="quiz-explain-hint" class="quiz-results-hint">
                         Answer explanations unlock after you check answers.
                       </p>
-                      <button
-                        id="quiz-explanation-toggle"
-                        class="ghost-button quiz-explanation-toggle"
-                        type="button"
-                        aria-pressed="false"
-                        hidden
-                      >
-                        Show Explanation
-                      </button>
-                      <button
-                        id="quiz-explanation-follow-toggle"
-                        class="ghost-button quiz-explanation-toggle"
-                        type="button"
-                        aria-pressed="true"
-                        hidden
-                      >
-                        Follow Scroll: On
-                      </button>
+                      <div class="quiz-results-toggle-row">
+                        <button
+                          id="quiz-explanation-toggle"
+                          class="ghost-button quiz-explanation-toggle"
+                          type="button"
+                          aria-pressed="false"
+                          hidden
+                        >
+                          Show Explanation
+                        </button>
+                        <button
+                          id="quiz-explanation-follow-toggle"
+                          class="ghost-button quiz-explanation-toggle"
+                          type="button"
+                          aria-pressed="true"
+                          hidden
+                        >
+                          Follow Scroll: On
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div id="quiz-insights" class="quiz-insights" hidden>
@@ -1263,10 +1271,10 @@
             <div class="session-summary-preview">
               <p id="session-summary-meta" class="panel-help"></p>
               <div class="session-summary-content">
-                <p
+                <div
                   id="session-summary-text"
                   class="session-summary-placeholder"
-                ></p>
+                ></div>
               </div>
             </div>
           </section>

@@ -160,6 +160,13 @@ function setProgress(step) {
   }
 }
 
+function scrollOnboardingToTop() {
+  if (document.scrollingElement instanceof HTMLElement) {
+    document.scrollingElement.scrollTop = 0;
+  }
+  window.scrollTo(0, 0);
+}
+
 function setActiveStep(nextStep) {
   if (nextStep > 1 && !authSession?.user) {
     activeStep = 1;
@@ -177,6 +184,7 @@ function setActiveStep(nextStep) {
   continueButton.textContent = activeStep === 4 ? "Open SideKlick" : "Continue";
   continueButton.disabled = activeStep === 1 && !authSession?.user;
   backButton.disabled = activeStep === 1;
+  scrollOnboardingToTop();
 }
 
 for (const [source, button] of Object.entries(choiceButtons)) {

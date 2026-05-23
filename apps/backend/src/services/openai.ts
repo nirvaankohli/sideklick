@@ -60,8 +60,8 @@ function getOpenAIModel(): string {
   return process.env.OPENAI_MODEL ?? DEFAULT_OPENAI_MODEL;
 }
 
-function buildSystemPrompt(): string {
-  return [
+function buildSystemPrompt(requestInput: AssistRequest): string {
+  const promptParts = [
     "You are a study assistant inside a local Electron app.",
     "The app gives you explicit memory layers and context tiers. This context is important and should be treated as the app's working memory, episodic memory, and semantic memory for the student.",
     "Do not treat the provided context as optional decoration. Read it carefully and use it on purpose.",
@@ -105,7 +105,18 @@ function buildSystemPrompt(): string {
     "A strong next_step should read like a short study instruction the next session can continue from.",
     "Do not give filler, throat-clearing, or generic encouragement.",
     "Do not solve graded work outright if the request appears to ask for a final answer; explain the idea instead.",
-  ].join(" ");
+  ];
+
+  if (requestInput.sessionId) {
+    promptParts.push(
+      "This request is happening inside an active study session.",
+      "Treat the session goal and recent session-window interactions as the default frame for the reply.",
+      "Keep continuity with what the student was already working on in this session unless the current request clearly changes topics.",
+      "When useful, explicitly tie the answer back to the session goal or the last unresolved step so the student can keep momentum.",
+    );
+  }
+
+  return promptParts.join(" ");
 }
 
 function buildUserTextPayload(
@@ -236,7 +247,7 @@ export async function requestAssistFromOpenAI(
         input: [
           {
             role: "system",
-            content: buildSystemPrompt(),
+            content: buildSystemPrompt(requestInput),
           },
           {
             role: "user",

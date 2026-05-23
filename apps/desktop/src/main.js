@@ -141,18 +141,19 @@ function loadEnvironment() {
 
   const candidatePaths = [
     path.resolve(process.cwd(), ".env.desktop"),
+    path.resolve(process.cwd(), ".env.backend"),
     path.resolve(process.cwd(), ".env"),
     path.resolve(__dirname, "../../../.env.desktop"),
+    path.resolve(__dirname, "../../../.env.backend"),
     path.resolve(__dirname, "../../../.env"),
   ];
 
-  for (const envPath of candidatePaths) {
+  for (const envPath of new Set(candidatePaths)) {
     if (!fs.existsSync(envPath)) {
       continue;
     }
 
     dotenv.config({ path: envPath });
-    return;
   }
 }
 
@@ -772,7 +773,7 @@ function getAiBackendStatus() {
     available: false,
     provider: "local",
     message:
-      "Add OPENAI_API_KEY to .env and restart SideKlick to use quiz, cram, and AI assist on this device.",
+      "Add OPENAI_API_KEY to .env.backend and restart SideKlick to use quiz, cram, and AI assist on this device.",
   };
 }
 
