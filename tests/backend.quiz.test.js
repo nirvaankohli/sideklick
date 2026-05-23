@@ -1,13 +1,11 @@
 const { test } = require("./helpers/test-runner");
 const assert = require("node:assert/strict");
 const path = require("node:path");
-const { pathToFileURL } = require("node:url");
+const { importModule } = require("./helpers/import-module");
 
 async function loadQuizModule() {
-  return import(
-    pathToFileURL(
-      path.join(__dirname, "..", "apps", "backend", "src", "services", "quiz.ts"),
-    ).href,
+  return importModule(
+    path.join(__dirname, "..", "apps", "backend", "src", "services", "quiz.ts"),
   );
 }
 

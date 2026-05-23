@@ -1,23 +1,23 @@
 const { test } = require("./helpers/test-runner");
 const assert = require("node:assert/strict");
 const path = require("node:path");
-const { pathToFileURL } = require("node:url");
+const { importModule } = require("./helpers/import-module");
 
 async function loadMemoryModule() {
-  return import(
-    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "services", "memory.ts")).href
+  return importModule(
+    path.join(__dirname, "..", "apps", "backend", "src", "services", "memory.ts")
   );
 }
 
 async function loadPrivacyModule() {
-  return import(
-    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "services", "privacy.ts")).href
+  return importModule(
+    path.join(__dirname, "..", "apps", "backend", "src", "services", "privacy.ts")
   );
 }
 
 async function loadWorkerModule() {
-  return import(
-    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "workers", "index.ts")).href
+  return importModule(
+    path.join(__dirname, "..", "apps", "backend", "src", "workers", "index.ts")
   );
 }
 

@@ -1,23 +1,21 @@
 const { test } = require("./helpers/test-runner");
 const assert = require("node:assert/strict");
 const path = require("node:path");
-const { pathToFileURL } = require("node:url");
+const { importModule } = require("./helpers/import-module");
 
 process.env.DISABLE_OPENAI_ASSESSMENT_PROFILE = "1";
 
 async function loadAssessmentProfileModule() {
-  return import(
-    pathToFileURL(
-      path.join(
-        __dirname,
-        "..",
-        "apps",
-        "backend",
-        "src",
-        "services",
-        "assessment-profile.ts",
-      ),
-    ).href,
+  return importModule(
+    path.join(
+      __dirname,
+      "..",
+      "apps",
+      "backend",
+      "src",
+      "services",
+      "assessment-profile.ts",
+    ),
   );
 }
 

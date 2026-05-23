@@ -1,23 +1,23 @@
 const { test } = require("./helpers/test-runner");
 const assert = require("node:assert/strict");
 const path = require("node:path");
-const { pathToFileURL } = require("node:url");
+const { importModule } = require("./helpers/import-module");
 
 async function loadAuthServiceModule() {
-  return import(
-    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "services", "auth.ts")).href
+  return importModule(
+    path.join(__dirname, "..", "apps", "backend", "src", "services", "auth.ts")
   );
 }
 
 async function loadAuthMiddlewareModule() {
-  return import(
-    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "middleware", "auth.ts")).href
+  return importModule(
+    path.join(__dirname, "..", "apps", "backend", "src", "middleware", "auth.ts")
   );
 }
 
 async function loadRateLimitModule() {
-  return import(
-    pathToFileURL(path.join(__dirname, "..", "apps", "backend", "src", "middleware", "rate-limit.ts")).href
+  return importModule(
+    path.join(__dirname, "..", "apps", "backend", "src", "middleware", "rate-limit.ts")
   );
 }
 

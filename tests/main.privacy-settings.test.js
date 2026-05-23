@@ -1,13 +1,11 @@
 const { test } = require("./helpers/test-runner");
 const assert = require("node:assert/strict");
 const path = require("node:path");
-const { pathToFileURL } = require("node:url");
+const { importModule } = require("./helpers/import-module");
 
 async function loadPrivacySettingsModule() {
-  return import(
-    pathToFileURL(
-      path.join(__dirname, "..", "apps", "desktop", "src", "main", "privacy", "settings.ts"),
-    ).href
+  return importModule(
+    path.join(__dirname, "..", "apps", "desktop", "src", "main", "privacy", "settings.ts")
   );
 }
 
