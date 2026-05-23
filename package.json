@@ -33,7 +33,7 @@
     "desktop:dist": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder -mwl",
     "desktop:dist:mac": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder --mac",
     "check": "node --check apps/desktop/src/main.js && node --check apps/desktop/src/preload.js && node --check apps/desktop/src/renderer.js && node --check apps/desktop/src/home.js",
-    "test": "node --test tests/*.test.js",
+    "test": "node scripts/run-tests.js",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck"
