@@ -1,7 +1,7 @@
 {
   "name": "sideklick",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.3",
   "productName": "SideKlick",
   "packageManager": "pnpm@10.0.0",
   "description": "AI study sidekick desktop app for class sessions, context-aware help, and quiz generation.",
@@ -32,6 +32,8 @@
     "desktop:pack": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder --dir",
     "desktop:dist": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder -mwl",
     "desktop:dist:mac": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder --mac",
+    "desktop:dist:win": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder --win --publish always",
+    "desktop:dist:linux": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder --linux --publish always",
     "check": "node --check apps/desktop/src/main.js && node --check apps/desktop/src/preload.js && node --check apps/desktop/src/renderer.js && node --check apps/desktop/src/home.js",
     "test": "node scripts/run-tests.js",
     "build": "pnpm -r build",

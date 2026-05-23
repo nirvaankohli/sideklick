@@ -17,9 +17,9 @@ jobs:
           - os: macos-latest
             command: pnpm run desktop:dist:mac
           - os: windows-latest
-            command: pnpm exec electron-builder --win --publish always
+            command: pnpm run desktop:dist:win
           - os: ubuntu-latest
-            command: pnpm exec electron-builder --linux --publish always
+            command: pnpm run desktop:dist:linux
 
     runs-on: ${{ matrix.os }}
 
