@@ -78,7 +78,10 @@ function pickDownloadAssetUrl(
 ): { url: string; name: string } | undefined {
   const validAssets = assets.filter(
     (asset): asset is { name: string; browser_download_url: string } =>
-      Boolean(asset.name) && Boolean(asset.browser_download_url),
+      Boolean(asset.name) &&
+      Boolean(asset.browser_download_url) &&
+      !asset.name.endsWith(".yml") &&
+      !asset.name.endsWith(".blockmap"),
   );
 
   if (validAssets.length === 0) {
