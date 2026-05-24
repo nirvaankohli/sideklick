@@ -78,20 +78,13 @@ function pickDownloadAssetUrl(
 ): { url: string; name: string } | undefined {
   const validAssets = assets.filter(
     (asset): asset is { name: string; browser_download_url: string } =>
-      Boolean(asset.name) &&
-      Boolean(asset.browser_download_url) &&
-      !asset.name.endsWith(".yml") &&
-      !asset.name.endsWith(".blockmap"),
+      Boolean(asset.name) && Boolean(asset.browser_download_url),
   );
 
-  if (validAssets.length === 0) {
-    return undefined;
-  }
-
   const patternByPlatform: Record<DesktopPlatform, RegExp[]> = {
-    mac: [/\bmac\b/i, /\bdarwin\b/i, /\.dmg$/i, /\.pkg$/i],
-    windows: [/\bwin(dows)?\b/i, /\.exe$/i, /\.msi$/i],
-    linux: [/\blinux\b/i, /\.appimage$/i, /\.deb$/i, /\.rpm$/i],
+    mac: [/\.dmg$/i, /\.pkg$/i],
+    windows: [/\.exe$/i, /\.msi$/i],
+    linux: [/\.deb$/i, /\.appimage$/i],
   };
 
   const patterns = patternByPlatform[platform];
@@ -106,15 +99,7 @@ function pickDownloadAssetUrl(
     };
   }
 
-  const firstAsset = validAssets[0];
-  if (!firstAsset) {
-    return undefined;
-  }
-
-  return {
-    url: firstAsset.browser_download_url,
-    name: firstAsset.name,
-  };
+  return undefined;
 }
 
 function triggerBrowserDownload(url: string, fileName: string) {
@@ -175,12 +160,12 @@ export function useDownloadTarget() {
         const asset = desktopPlatform
           ? pickDownloadAssetUrl(assets, desktopPlatform)
           : undefined;
-        setDownloadUrl(asset?.url ?? "");
-        setDownloadFileName(asset?.name ?? "sideklick");
+        setDownloadUrl(asset?.url ?? release.html_url ?? GITHUB_RELEASES_PAGE_URL);
+        setDownloadFileName(asset?.name ?? "releases");
       } catch {
         if (!isCancelled) {
-          setDownloadUrl("");
-          setDownloadFileName("sideklick");
+          setDownloadUrl(GITHUB_RELEASES_PAGE_URL);
+          setDownloadFileName("releases");
         }
       }
     };
