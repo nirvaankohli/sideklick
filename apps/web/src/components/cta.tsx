@@ -1,9 +1,15 @@
+import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
+import {
+  downloadAssetToDevice,
+  useDownloadTarget,
+} from "@/components/download-target";
 import { Button } from "@/components/ui/button";
-import { useDownloadLabel } from "@/lib/download-label";
 
 const CTA = () => {
-  const downloadLabel = useDownloadLabel();
+  const [isDownloading, setIsDownloading] = useState(false);
+  const { canDownload, downloadFileName, downloadLabel, downloadUrl, isMobile } =
+    useDownloadTarget();
 
   return (
     <section
@@ -21,12 +27,37 @@ const CTA = () => {
             it help with the parts you are most likely to miss.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button
-              className="bg-white text-black hover:bg-white/90"
-              size="lg"
-            >
-              {downloadLabel} <ArrowUpRight />
-            </Button>
+            {isMobile ? (
+              <Button
+                className="bg-white text-black hover:bg-white/90"
+                disabled
+                size="lg"
+                title="Desktop app downloads are only available on desktop devices."
+              >
+                {downloadLabel} <ArrowUpRight />
+              </Button>
+            ) : (
+              <Button
+                className="bg-white text-black hover:bg-white/90"
+                disabled={isDownloading || !canDownload}
+                onClick={() => {
+                  void (async () => {
+                    if (!canDownload) {
+                      return;
+                    }
+                    try {
+                      setIsDownloading(true);
+                      await downloadAssetToDevice(downloadUrl, downloadFileName);
+                    } finally {
+                      setIsDownloading(false);
+                    }
+                  })();
+                }}
+                size="lg"
+              >
+                {isDownloading ? "Downloading..." : downloadLabel} <ArrowUpRight />
+              </Button>
+            )}
             <Button
               className="border-white/14 bg-transparent text-white hover:bg-white/8"
               size="lg"

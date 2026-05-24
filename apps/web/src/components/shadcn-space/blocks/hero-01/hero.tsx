@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
+import { GITHUB_RELEASES_PAGE_URL } from "@/components/download-target";
 
 import demoVideo from "../../../../../assets/cover.mp4";
 
@@ -42,13 +43,22 @@ function HeroSection() {
                 transition={{ duration: 1, delay: 0.2, ease: "easeInOut" }}
                 className="flex items-center justify-center"
               >
-                <Button className="group relative h-12 w-fit cursor-pointer overflow-hidden rounded-full p-1 ps-6 pe-14 text-sm font-medium transition-all duration-500 hover:ps-14 hover:pe-6">
-                  <span className="relative z-10 transition-all duration-500">
-                    Other releases
-                  </span>
-                  <span className="absolute right-1 flex h-10 w-10 items-center justify-center rounded-full bg-background text-foreground transition-all duration-500 group-hover:right-[calc(100%-44px)] group-hover:rotate-45">
-                    <ArrowUpRight size={16} />
-                  </span>
+                <Button
+                  asChild
+                  className="group relative h-12 w-fit cursor-pointer overflow-hidden rounded-full p-1 ps-6 pe-14 text-sm font-medium transition-all duration-500 hover:ps-14 hover:pe-6"
+                >
+                  <a
+                    href={GITHUB_RELEASES_PAGE_URL}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    <span className="relative z-10 transition-all duration-500">
+                      Other releases
+                    </span>
+                    <span className="absolute right-1 flex h-10 w-10 items-center justify-center rounded-full bg-background text-foreground transition-all duration-500 group-hover:right-[calc(100%-44px)] group-hover:rotate-45">
+                      <ArrowUpRight size={16} />
+                    </span>
+                  </a>
                 </Button>
               </motion.div>
               <motion.div

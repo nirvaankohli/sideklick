@@ -1,3 +1,5 @@
+import { GITHUB_RELEASES_PAGE_URL } from "@/components/download-target";
+
 export const BoldFooter = () => {
   return (
     <footer className="w-full overflow-hidden border-t border-white/10 bg-[#070707] text-white">
@@ -40,7 +42,12 @@ export const BoldFooter = () => {
                 <a href="#" className="hover:text-white">
                   Extension
                 </a>
-                <a href="#" className="hover:text-white">
+                <a
+                  href={GITHUB_RELEASES_PAGE_URL}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  className="hover:text-white"
+                >
                   Other releases
                 </a>
                 <a href="mailto:nirvaan.kohli@gmail.com" className="hover:text-white">

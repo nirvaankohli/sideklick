@@ -14,7 +14,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useDownloadLabel } from "@/lib/download-label";
+import {
+  downloadAssetToDevice,
+  useDownloadTarget,
+} from "@/components/download-target";
 import { cn } from "@/lib/utils";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import { motion } from "motion/react";
@@ -34,7 +37,29 @@ type HeaderProps = {
 };
 
 const CollaborateButton = ({ className }: { className?: string }) => {
-  const downloadLabel = useDownloadLabel();
+  const [isDownloading, setIsDownloading] = useState(false);
+  const { canDownload, downloadFileName, downloadLabel, downloadUrl, isMobile } =
+    useDownloadTarget();
+
+  if (isMobile) {
+    return (
+      <Button
+        className={cn(
+          "group relative h-10 w-fit cursor-pointer overflow-hidden rounded-full p-1 ps-4 pe-12 text-sm font-medium transition-all duration-500 hover:ps-12 hover:pe-4",
+          className,
+        )}
+        disabled
+        title="Desktop app downloads are only available on desktop devices."
+      >
+        <span className="relative z-10 transition-all duration-500">
+          {downloadLabel}
+        </span>
+        <span className="absolute right-1 flex h-8 w-8 items-center justify-center rounded-full bg-background text-foreground transition-all duration-500 group-hover:right-[calc(100%-36px)] group-hover:rotate-45">
+          <ArrowUpRight size={16} />
+        </span>
+      </Button>
+    );
+  }
 
   return (
     <Button
@@ -42,9 +67,23 @@ const CollaborateButton = ({ className }: { className?: string }) => {
         "group relative h-10 w-fit cursor-pointer overflow-hidden rounded-full p-1 ps-4 pe-12 text-sm font-medium transition-all duration-500 hover:ps-12 hover:pe-4",
         className,
       )}
+      disabled={isDownloading || !canDownload}
+      onClick={() => {
+        void (async () => {
+          if (!canDownload) {
+            return;
+          }
+          try {
+            setIsDownloading(true);
+            await downloadAssetToDevice(downloadUrl, downloadFileName);
+          } finally {
+            setIsDownloading(false);
+          }
+        })();
+      }}
     >
       <span className="relative z-10 transition-all duration-500">
-        {downloadLabel}
+        {isDownloading ? "Downloading..." : downloadLabel}
       </span>
       <span className="absolute right-1 flex h-8 w-8 items-center justify-center rounded-full bg-background text-foreground transition-all duration-500 group-hover:right-[calc(100%-36px)] group-hover:rotate-45">
         <ArrowUpRight size={16} />
