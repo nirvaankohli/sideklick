@@ -19,7 +19,7 @@ async function bundleMainProcess() {
     format: "cjs",
     platform: "node",
     target: "node20",
-    external: ["electron", "better-sqlite3"],
+    external: ["electron", "better-sqlite3", "pdf-parse"],
     define: {
       "process.env.SIDEKLICK_DISABLE_TSX_LOADER": "\"true\"",
     },

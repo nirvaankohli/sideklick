@@ -1568,6 +1568,144 @@ button {
   align-items: center;
 }
 
+.settings-row-control-inline-actions {
+  gap: 8px;
+}
+
+.settings-update-guide-page {
+  margin-top: 10px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  display: grid;
+  gap: 12px;
+}
+
+.settings-update-guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-update-guide-kicker {
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  font-size: 0.78rem;
+  color: var(--dark-muted);
+}
+
+.settings-update-guide-intro {
+  margin: 0;
+}
+
+.settings-update-guide-page ol {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.settings-update-guide-page code {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-family: "Consolas", "Cascadia Mono", "Courier New", monospace;
+  font-size: 0.92em;
+}
+
+.settings-update-guide-page pre {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(4, 8, 18, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  overflow: auto;
+}
+
+.settings-update-guide-page pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.settings-update-step-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+}
+
+.settings-update-step-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--dark-text);
+}
+
+.settings-update-step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  color: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.settings-update-guide-image {
+  display: block;
+  width: min(100%, 380px);
+  border-radius: 12px;
+  border: 1px solid rgba(143, 211, 255, 0.24);
+  box-shadow: 0 16px 30px rgba(4, 8, 18, 0.28);
+}
+
+.settings-update-guide-image-wide {
+  width: min(100%, 900px);
+}
+
+.window-shell[data-tone="light"] .settings-update-guide-page {
+  border-color: rgba(36, 72, 122, 0.2);
+  background: transparent;
+}
+
+.window-shell[data-tone="light"] .settings-update-guide-kicker {
+  color: var(--light-muted);
+  border-color: rgba(36, 72, 122, 0.2);
+  background: transparent;
+}
+
+.window-shell[data-tone="light"] .settings-update-guide-page code {
+  background: rgba(24, 39, 61, 0.08);
+}
+
+.window-shell[data-tone="light"] .settings-update-guide-page pre {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(36, 72, 122, 0.14);
+}
+
+.window-shell[data-tone="light"] .settings-update-guide-image {
+  border-color: rgba(36, 72, 122, 0.2);
+  box-shadow: 0 14px 24px rgba(24, 39, 61, 0.16);
+}
+
+.window-shell[data-tone="light"] .settings-update-step-card {
+  border-color: rgba(36, 72, 122, 0.16);
+  background: transparent;
+}
+
 .settings-select {
   position: absolute;
   inset: 0;

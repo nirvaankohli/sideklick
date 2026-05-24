@@ -1,7 +1,7 @@
 {
   "name": "sideklick",
   "private": true,
-  "version": "0.1.11",
+  "version": "0.1.12",
   "productName": "SideKlick",
   "packageManager": "pnpm@10.0.0",
   "description": "AI study sidekick desktop app for class sessions, context-aware help, and quiz generation.",
@@ -27,6 +27,7 @@
     "extension:dev": "pnpm --filter @sideklick/extension dev",
     "extension:build": "pnpm --filter @sideklick/extension build",
     "kill:sideklick": "node scripts/device-specific/kill-sideklick-processes.js",
+    "cleanup:mac-downloads": "node scripts/device-specific/cleanup-old-mac-downloads.js",
     "reset:first-launch": "node scripts/reset-first-launch.js",
     "reset:first-launch:full": "node scripts/reset-first-launch.js --full",
     "rebuild:native": "pnpm install --force",
@@ -79,7 +80,8 @@
       "main": "dist/desktop/main.cjs"
     },
     "asarUnpack": [
-      "**/node_modules/better-sqlite3/**"
+      "**/node_modules/better-sqlite3/**",
+      "**/node_modules/pdf-parse/**"
     ],
     "mac": {
       "icon": "apps/desktop/assets/images/logo/app-icon-1024.png",
@@ -104,7 +106,7 @@
         },
         {
           "x": 794,
-          "y": 320,
+          "y": 350,
           "type": "link",
           "path": "/Applications"
         }

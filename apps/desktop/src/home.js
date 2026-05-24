@@ -10,6 +10,7 @@ const homeDashboardView = document.querySelector("#home-dashboard-view");
 const homeAssessmentView = document.querySelector("#home-assessment-view");
 const homeCramView = document.querySelector("#home-cram-view");
 const homeSettingsView = document.querySelector("#home-settings-view");
+const homeUpdateGuideView = document.querySelector("#home-update-guide-view");
 const homeAuthGateView = document.querySelector("#home-auth-gate-view");
 const settingsHomeButton = document.querySelector("#settings-home-button");
 const backFolderButton = document.querySelector("#back-folder");
@@ -310,6 +311,10 @@ const privacyAccountStatus = document.querySelector("#privacy-account-status");
 const settingsUpdateStatus = document.querySelector("#settings-update-status");
 const settingsCheckUpdateButton = document.querySelector("#settings-check-update-button");
 const settingsActionUpdateButton = document.querySelector("#settings-action-update-button");
+const updateGuideBackButton = document.querySelector("#update-guide-back-button");
+const settingsUpdateQuarantineCommand = document.querySelector(
+  "#settings-update-quarantine-command",
+);
 const authGateStatus = document.querySelector("#auth-gate-status");
 const authGateEmailInput = document.querySelector("#auth-gate-email-input");
 const authGatePasswordInput = document.querySelector(
@@ -751,6 +756,8 @@ function setHomeView(nextView) {
           ? "assessment"
           : nextView === "cram"
             ? "cram"
+            : nextView === "update-guide"
+              ? "update-guide"
             : nextView === "auth"
               ? "auth"
               : "dashboard";
@@ -765,12 +772,15 @@ function setHomeView(nextView) {
             ? "Cram Mode"
             : activeHomeView === "settings"
               ? "Settings"
+              : activeHomeView === "update-guide"
+                ? "Update Guide"
               : "Sign In";
   homeDashboardView.hidden = activeHomeView !== "dashboard";
   homeQuizView.hidden = activeHomeView !== "quiz";
   homeAssessmentView.hidden = activeHomeView !== "assessment";
   homeCramView.hidden = activeHomeView !== "cram";
   homeSettingsView.hidden = activeHomeView !== "settings";
+  homeUpdateGuideView.hidden = activeHomeView !== "update-guide";
   homeAuthGateView.hidden = activeHomeView !== "auth";
   homeDashboardView.classList.toggle(
     "home-view-active",
@@ -786,6 +796,10 @@ function setHomeView(nextView) {
     "home-view-active",
     activeHomeView === "settings",
   );
+  homeUpdateGuideView.classList.toggle(
+    "home-view-active",
+    activeHomeView === "update-guide",
+  );
   homeAuthGateView.classList.toggle(
     "home-view-active",
     activeHomeView === "auth",
@@ -797,7 +811,9 @@ function setHomeView(nextView) {
   }
   if (openSettingsButton) {
     const shouldGoHome =
-      activeHomeView === "settings" || activeHomeView === "assessment";
+      activeHomeView === "settings" ||
+      activeHomeView === "assessment" ||
+      activeHomeView === "update-guide";
     openSettingsButton.setAttribute(
       "aria-label",
       shouldGoHome ? "Back to home" : "Open settings",
@@ -5700,7 +5716,9 @@ shrinkWindow.addEventListener("click", async () => {
 
 openSettingsButton.addEventListener("click", () => {
   setHomeView(
-    activeHomeView === "settings" || activeHomeView === "assessment"
+    activeHomeView === "settings" ||
+      activeHomeView === "assessment" ||
+      activeHomeView === "update-guide"
       ? "dashboard"
       : "settings",
   );
@@ -5708,6 +5726,10 @@ openSettingsButton.addEventListener("click", () => {
 
 settingsHomeButton.addEventListener("click", () => {
   setHomeView("dashboard");
+});
+
+updateGuideBackButton?.addEventListener("click", () => {
+  setHomeView("settings");
 });
 
 quizThemeToggle?.addEventListener("click", async () => {
@@ -6266,6 +6288,15 @@ quizExplanationFollowToggle?.addEventListener("click", () => {
   setQuizExplanationFollowScroll(!quizExplanationFollowScroll);
 });
 let updateDownloadUrl = "";
+const SIDEKLICK_MAC_QUARANTINE_FIX_COMMAND =
+  "sudo xattr -rd com.apple.quarantine /Applications/SideKlick.app/";
+const isMacClient = navigator.platform.toLowerCase().includes("mac");
+let hasShownUpdateAvailableNotice = false;
+
+if (settingsUpdateQuarantineCommand) {
+  settingsUpdateQuarantineCommand.textContent =
+    SIDEKLICK_MAC_QUARANTINE_FIX_COMMAND;
+}
 
 function handleUpdateStatus(info) {
   if (!settingsUpdateStatus) return;
@@ -6292,7 +6323,7 @@ function handleUpdateStatus(info) {
       if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = false;
       break;
     case "available":
-      settingsUpdateStatus.textContent = `Update v${info.version} available! Downloading...`;
+      settingsUpdateStatus.textContent = `Update ${info.version} available. Downloading...`;
       settingsUpdateStatus.dataset.tone = "neutral";
       if (settingsActionUpdateButton) settingsActionUpdateButton.hidden = true;
       if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = true;
@@ -6313,14 +6344,26 @@ function handleUpdateStatus(info) {
       if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = true;
       break;
     case "manual-available":
-      settingsUpdateStatus.textContent = `New version v${info.version} is available!`;
+      settingsUpdateStatus.textContent = `New version ${info.version} is available.`;
       settingsUpdateStatus.dataset.tone = "success";
       if (settingsActionUpdateButton) {
-        settingsActionUpdateButton.textContent = "Download";
+        settingsActionUpdateButton.textContent = isMacClient
+          ? "Download DMG"
+          : "Download";
         settingsActionUpdateButton.hidden = false;
       }
       if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = false;
       updateDownloadUrl = info.url;
+      if (!hasShownUpdateAvailableNotice) {
+        hasShownUpdateAvailableNotice = true;
+        try {
+          new window.Notification("SideKlick update available", {
+            body: "Open Settings to download and install the new version.",
+          });
+        } catch (_error) {
+          // notifications can be unavailable in some environments
+        }
+      }
       break;
     case "error":
       settingsUpdateStatus.textContent = info.message ? `Update error: ${info.message}` : "Failed to check for updates.";
@@ -6357,8 +6400,15 @@ settingsCheckUpdateButton?.addEventListener("click", async () => {
 settingsActionUpdateButton?.addEventListener("click", async () => {
   if (settingsActionUpdateButton.textContent === "Restart") {
     await window.overlayApi.quitAndInstallUpdate();
-  } else if (settingsActionUpdateButton.textContent === "Download" && updateDownloadUrl) {
+  } else if (
+    (settingsActionUpdateButton.textContent === "Download" ||
+      settingsActionUpdateButton.textContent === "Download DMG") &&
+    updateDownloadUrl
+  ) {
     await window.overlayApi.openExternalUpdateUrl(updateDownloadUrl);
+    if (isMacClient) {
+      setHomeView("update-guide");
+    }
   }
 });
 

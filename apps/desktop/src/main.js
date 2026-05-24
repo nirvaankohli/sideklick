@@ -14,6 +14,7 @@ const {
   ipcMain,
   nativeTheme,
   screen,
+  shell,
 } = require("electron");
 const {
   DEFAULT_MANAGED_BACKEND_URL,
@@ -1426,13 +1427,15 @@ let autoUpdater = null;
 if (process.platform === "win32") {
   try {
     ({ autoUpdater } = require("electron-updater"));
-    autoUpdater.autoDownload = true;
+    // Trigger downloads ourselves so the state machine is predictable.
+    autoUpdater.autoDownload = false;
   } catch (error) {
     console.error("[updater] failed to load electron-updater", error);
   }
 }
 
 let updateStatus = { status: "idle", version: app.getVersion(), progress: 0 };
+let updateDownloadPromise = null;
 
 function broadcastUpdateStatus() {
   for (const { win } of windowState.values()) {
@@ -1443,7 +1446,7 @@ function broadcastUpdateStatus() {
 }
 
 function initializeAutoUpdater() {
-  if (process.platform !== "win32" || !autoUpdater) {
+  if (!autoUpdater) {
     return;
   }
 
@@ -1457,14 +1460,17 @@ function initializeAutoUpdater() {
   autoUpdater.on("update-available", (info) => {
     updateStatus = { status: "available", version: info.version };
     broadcastUpdateStatus();
+    void triggerAutoUpdateDownload(info.version);
   });
 
   autoUpdater.on("update-not-available", () => {
+    updateDownloadPromise = null;
     updateStatus = { status: "up-to-date", version: app.getVersion() };
     broadcastUpdateStatus();
   });
 
   autoUpdater.on("error", (err) => {
+    updateDownloadPromise = null;
     updateStatus = { status: "error", version: app.getVersion(), message: err.message };
     broadcastUpdateStatus();
   });
@@ -1475,19 +1481,144 @@ function initializeAutoUpdater() {
   });
 
   autoUpdater.on("update-downloaded", () => {
+    updateDownloadPromise = null;
     updateStatus = { status: "downloaded", version: updateStatus.version };
     broadcastUpdateStatus();
   });
 }
 
-function isNewerVersion(latest, current) {
-  const clean = (v) => v.replace(/^v/, "").split(".").map(Number);
-  const [lMajor, lMinor, lPatch] = clean(latest);
-  const [cMajor, cMinor, cPatch] = clean(current);
+function triggerAutoUpdateDownload(version) {
+  if (!autoUpdater) {
+    return Promise.resolve();
+  }
 
-  if (lMajor !== cMajor) return lMajor > cMajor;
-  if (lMinor !== cMinor) return lMinor > cMinor;
-  return lPatch > cPatch;
+  if (updateDownloadPromise) {
+    return updateDownloadPromise;
+  }
+
+  updateStatus = { status: "downloading", version, progress: 0 };
+  broadcastUpdateStatus();
+
+  updateDownloadPromise = autoUpdater
+    .downloadUpdate()
+    .catch((error) => {
+      updateDownloadPromise = null;
+      updateStatus = { status: "error", version: app.getVersion(), message: error.message };
+      broadcastUpdateStatus();
+      throw error;
+    });
+
+  return updateDownloadPromise;
+}
+
+function parseVersion(version) {
+  return version
+    .replace(/^v/, "")
+    .split("-")[0]
+    .split(".")
+    .map((part) => Number.parseInt(part, 10))
+    .filter((part) => Number.isFinite(part));
+}
+
+function isNewerVersion(latest, current) {
+  const latestParts = parseVersion(latest);
+  const currentParts = parseVersion(current);
+  const maxLength = Math.max(latestParts.length, currentParts.length);
+
+  for (let index = 0; index < maxLength; index += 1) {
+    const latestPart = latestParts[index] ?? 0;
+    const currentPart = currentParts[index] ?? 0;
+    if (latestPart > currentPart) {
+      return true;
+    }
+    if (latestPart < currentPart) {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+function getPlatformAssetExtensions() {
+  if (process.platform === "win32") {
+    return [".exe", ".msi"];
+  }
+  if (process.platform === "darwin") {
+    return [".dmg", ".zip", ".pkg"];
+  }
+  if (process.platform === "linux") {
+    return [".appimage", ".deb", ".rpm", ".pacman", ".tar.gz"];
+  }
+  return [];
+}
+
+function getAssetExtensionWeight(name) {
+  if (process.platform === "darwin") {
+    if (name.endsWith(".dmg")) return 30;
+    if (name.endsWith(".pkg")) return 20;
+    if (name.endsWith(".zip")) return 10;
+  }
+  return 0;
+}
+
+function pickReleaseAssetUrl(releaseInfo) {
+  const assets = Array.isArray(releaseInfo?.assets) ? releaseInfo.assets : [];
+  if (assets.length === 0) {
+    return releaseInfo?.html_url || null;
+  }
+
+  const expectedArchToken = process.arch === "x64" ? "x64" : process.arch;
+  const expectedExtensions = getPlatformAssetExtensions();
+
+  const scoredAssets = assets
+    .map((asset) => {
+      const url = typeof asset?.browser_download_url === "string" ? asset.browser_download_url : "";
+      const name = String(asset?.name || "").toLowerCase();
+      if (!url || !name) {
+        return null;
+      }
+
+      const hasExpectedExtension = expectedExtensions.some((ext) => name.endsWith(ext));
+      const matchesPlatform = name.includes(process.platform === "darwin" ? "mac" : process.platform);
+      const matchesArch = name.includes(expectedArchToken);
+      const score =
+        (hasExpectedExtension ? 100 : 0) +
+        (matchesPlatform ? 10 : 0) +
+        (matchesArch ? 5 : 0) +
+        getAssetExtensionWeight(name);
+
+      return { score, url };
+    })
+    .filter(Boolean)
+    .sort((left, right) => right.score - left.score);
+
+  if (scoredAssets.length === 0) {
+    return releaseInfo?.html_url || null;
+  }
+
+  return scoredAssets[0].url || releaseInfo?.html_url || null;
+}
+
+async function triggerManualReleaseCheck(currentVersion) {
+  const releaseInfo = await fetchLatestGitHubRelease("nirvaankohli", "sideklick");
+  if (releaseInfo && releaseInfo.tag_name) {
+    const latestVersion = releaseInfo.tag_name;
+    if (isNewerVersion(latestVersion, currentVersion)) {
+      updateStatus = {
+        status: "manual-available",
+        version: latestVersion,
+        url:
+          pickReleaseAssetUrl(releaseInfo) ||
+          "https://github.com/nirvaankohli/sideklick/releases/latest"
+      };
+      broadcastUpdateStatus();
+      return true;
+    }
+  }
+
+  updateStatus = { status: "up-to-date", version: currentVersion };
+  broadcastUpdateStatus();
+  return false;
 }
 
 function fetchLatestGitHubRelease(owner, repo) {
@@ -1523,32 +1654,29 @@ function fetchLatestGitHubRelease(owner, repo) {
 
 async function triggerUpdateCheck() {
   const currentVersion = app.getVersion();
-  if (process.platform === "win32" && autoUpdater) {
-    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
-      console.error("[updater] win32 check error", err);
-      updateStatus = { status: "error", version: currentVersion, message: err.message };
-      broadcastUpdateStatus();
-    });
+  if (autoUpdater) {
+    updateStatus = { status: "checking", version: currentVersion };
+    broadcastUpdateStatus();
+    try {
+      await autoUpdater.checkForUpdates();
+      return;
+    } catch (err) {
+      console.error("[updater] check error", err);
+      try {
+        await triggerManualReleaseCheck(currentVersion);
+      } catch (fallbackError) {
+        console.error("[updater] manual fallback check error", fallbackError);
+        updateStatus = { status: "error", version: currentVersion, message: err.message };
+        broadcastUpdateStatus();
+      }
+      return;
+    }
   } else {
     updateStatus = { status: "checking", version: currentVersion };
     broadcastUpdateStatus();
 
     try {
-      const releaseInfo = await fetchLatestGitHubRelease("nirvaankohli", "sideklick");
-      if (releaseInfo && releaseInfo.tag_name) {
-        const latestVersion = releaseInfo.tag_name;
-        if (isNewerVersion(latestVersion, currentVersion)) {
-          updateStatus = {
-            status: "manual-available",
-            version: latestVersion,
-            url: releaseInfo.html_url || "https://github.com/nirvaankohli/sideklick/releases/latest"
-          };
-          broadcastUpdateStatus();
-          return;
-        }
-      }
-      updateStatus = { status: "up-to-date", version: currentVersion };
-      broadcastUpdateStatus();
+      await triggerManualReleaseCheck(currentVersion);
     } catch (err) {
       console.error("[updater] custom check error", err);
       updateStatus = { status: "error", version: currentVersion, message: err.message };
@@ -1564,7 +1692,7 @@ ipcMain.handle("update:check", async () => {
 });
 
 ipcMain.handle("update:quitAndInstall", () => {
-  if (process.platform === "win32" && autoUpdater) {
+  if (autoUpdater) {
     autoUpdater.quitAndInstall();
   }
 });
@@ -1578,4 +1706,3 @@ ipcMain.handle("update:openDownload", (_event, url) => {
 ipcMain.handle("update:getStatus", () => {
   return updateStatus;
 });
-
