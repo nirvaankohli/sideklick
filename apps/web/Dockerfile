@@ -7,12 +7,9 @@ ENV PATH=$PNPM_HOME:$PATH
 
 RUN corepack enable
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/web/package.json apps/web/package.json
+COPY . .
 
 RUN pnpm install --frozen-lockfile
-
-COPY . .
 
 RUN pnpm --filter @sideklick/web build
 
