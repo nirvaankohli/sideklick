@@ -1816,6 +1816,9 @@ function renderAssessmentManager() {
       summary.analysis.conciseSummary || summary.testFormat || "Ready to edit.";
     const uploadCount = profile.uploads.length;
     const statsText = `${uploadCount} file${uploadCount === 1 ? "" : "s"} uploaded`;
+    const safeProfileName = escapeHtml(profile.name || `Template ${index + 1}`);
+    const safeMetaText = escapeHtml(metaText);
+    const safeStatsText = escapeHtml(statsText);
 
     openButton.innerHTML = `
       <span class="folder-card-icon" aria-hidden="true">
@@ -1823,9 +1826,9 @@ function renderAssessmentManager() {
           <path d="M9 2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v10a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2zm0 6H7v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8h-2v2h-2V8h-4v2H9V8zm2-4v2h4V4h-4z"></path>
         </svg>
       </span>
-      <span class="folder-card-title">${profile.name || `Template ${index + 1}`}</span>
-      <span class="folder-card-summary">${metaText}</span>
-      <span class="folder-card-session-stats">${statsText}</span>
+      <span class="folder-card-title">${safeProfileName}</span>
+      <span class="folder-card-summary">${safeMetaText}</span>
+      <span class="folder-card-session-stats">${safeStatsText}</span>
     `;
     openButton.addEventListener("click", () => {
       switchActiveAssessmentProfile(profile.id);
@@ -1945,10 +1948,12 @@ function renderAssessmentUploadRollup() {
   draft.uploads.forEach((upload) => {
     const chip = document.createElement("article");
     chip.className = "assessment-upload-chip";
+    const safeUploadName = escapeHtml(upload.name || "file");
+    const safeUploadHandler = escapeHtml(String(upload.handler || "text").toUpperCase());
     chip.innerHTML = `
       <div class="assessment-upload-chip-copy">
-        <strong>${upload.name}</strong>
-        <span>${upload.handler.toUpperCase()} • ${upload.compressedCharacters.toLocaleString()} chars</span>
+        <strong>${safeUploadName}</strong>
+        <span>${safeUploadHandler} • ${upload.compressedCharacters.toLocaleString()} chars</span>
       </div>
     `;
 
@@ -3140,9 +3145,10 @@ function renderClassMaterialRollup() {
   for (const upload of classMaterialUploads) {
     const chip = document.createElement("span");
     chip.className = "assessment-upload-rollup-chip";
+    const safeUploadName = escapeHtml(upload.name || "file");
     chip.innerHTML = `
-      <span class="assessment-upload-rollup-chip-name">${upload.name || "file"}</span>
-      <button class="assessment-upload-rollup-chip-remove" type="button" aria-label="Remove ${upload.name || "file"}">&times;</button>
+      <span class="assessment-upload-rollup-chip-name">${safeUploadName}</span>
+      <button class="assessment-upload-rollup-chip-remove" type="button" aria-label="Remove ${safeUploadName}">&times;</button>
     `;
     chip
       .querySelector(".assessment-upload-rollup-chip-remove")
@@ -5206,6 +5212,9 @@ function renderFolders() {
                   : "Saved cram plan"
             : "";
     const sessionStatsText = isSessionItem ? buildSessionCardStats(folder) : "";
+    const safeFolderName = escapeHtml(folder.name || "");
+    const safeSessionSummaryText = escapeHtml(sessionSummaryText || "");
+    const safeMetaText = escapeHtml(metaText || "");
 
     openButton.innerHTML = `
       <span class="folder-card-icon" aria-hidden="true">
@@ -5223,12 +5232,12 @@ function renderFolders() {
           }
         </svg>
       </span>
-      <span class="folder-card-title">${folder.name}</span>
+      <span class="folder-card-title">${safeFolderName}</span>
       ${
         isSessionItem || isQuizItem || isMaterialItem
-          ? `<span class="folder-card-summary">${isSessionItem ? "" : sessionSummaryText}</span>
-      <span class="folder-card-session-stats">${isSessionItem ? sessionStatsText : metaText}</span>`
-          : `<span class="folder-card-meta">${metaText}</span>`
+          ? `<span class="folder-card-summary">${isSessionItem ? "" : safeSessionSummaryText}</span>
+      <span class="folder-card-session-stats">${isSessionItem ? escapeHtml(sessionStatsText || "") : safeMetaText}</span>`
+          : `<span class="folder-card-meta">${safeMetaText}</span>`
       }
     `;
     const titleNode = openButton.querySelector(".folder-card-title");

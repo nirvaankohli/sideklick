@@ -37,7 +37,7 @@ export function createServer(): Express {
   app.use("/api/feedback", feedbackRouter);
   app.use("/api/quiz", quizRouter);
 
-  app.get("/health", (_request, response) => {
+  app.get(["/health", "/api/health"], (_request, response) => {
     const status: LocalServerStatus = {
       ok: true,
       service: "sideklick-local-backend",

@@ -56,14 +56,20 @@ function getPoolConstructor() {
 }
 
 function buildSslConfig() {
+  const shouldUseSsl = process.env.POSTGRES_SSL === "true";
+  if (!shouldUseSsl) {
+    return undefined;
+  }
+
+  const rejectUnauthorized = process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED !== "false";
   const caPath = process.env.POSTGRES_CA_CERT_PATH;
   if (!caPath) {
-    return process.env.POSTGRES_SSL === "true" ? { rejectUnauthorized: false } : undefined;
+    return { rejectUnauthorized };
   }
 
   return {
     ca: fs.readFileSync(caPath, "utf8"),
-    rejectUnauthorized: process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED !== "false",
+    rejectUnauthorized,
   };
 }
 

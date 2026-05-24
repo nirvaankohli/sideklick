@@ -4,6 +4,8 @@ const DEFAULT_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 120;
 const DEFAULT_AUTH_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const DEFAULT_AUTH_RATE_LIMIT_MAX_REQUESTS = 5;
+const DEFAULT_RATE_LIMIT_MAX_BUCKETS = 20_000;
+const DEFAULT_AUTH_RATE_LIMIT_MAX_BUCKETS = 10_000;
 
 type RateLimitBucket = {
   count: number;
@@ -13,6 +15,7 @@ type RateLimitBucket = {
 type RateLimitOptions = {
   errorMessage: string;
   keyBuilder: (request: Request) => string | null;
+  maxBuckets: number;
   maxRequests: number;
   shouldLimit?: (request: Request) => boolean;
   windowMs: number;
@@ -28,6 +31,25 @@ function normalizeEmail(value: unknown): string {
 
 function createFixedWindowRateLimitMiddleware(options: RateLimitOptions) {
   const bucket = new Map<string, RateLimitBucket>();
+  const maxBuckets = Math.max(100, Number(options.maxBuckets) || 100);
+
+  const pruneExpiredBuckets = (now: number) => {
+    for (const [bucketKey, bucketValue] of bucket.entries()) {
+      if (bucketValue.resetsAt <= now) {
+        bucket.delete(bucketKey);
+      }
+    }
+  };
+
+  const enforceBucketLimit = () => {
+    while (bucket.size >= maxBuckets) {
+      const oldestKey = bucket.keys().next().value;
+      if (oldestKey === undefined) {
+        break;
+      }
+      bucket.delete(oldestKey);
+    }
+  };
 
   return (
     request: Request,
@@ -46,12 +68,16 @@ function createFixedWindowRateLimitMiddleware(options: RateLimitOptions) {
     }
 
     const now = Date.now();
+    pruneExpiredBuckets(now);
     const existingEntry = bucket.get(key);
     const currentEntry =
       existingEntry && existingEntry.resetsAt > now
         ? existingEntry
         : { count: 0, resetsAt: now + options.windowMs };
 
+    if (!existingEntry) {
+      enforceBucketLimit();
+    }
     currentEntry.count += 1;
     bucket.set(key, currentEntry);
 
@@ -68,9 +94,13 @@ function createFixedWindowRateLimitMiddleware(options: RateLimitOptions) {
 export function createApiRateLimitMiddleware() {
   const windowMs = Number(process.env.BACKEND_RATE_LIMIT_WINDOW_MS || DEFAULT_RATE_LIMIT_WINDOW_MS);
   const maxRequests = Number(process.env.BACKEND_RATE_LIMIT_MAX_REQUESTS || DEFAULT_RATE_LIMIT_MAX_REQUESTS);
+  const maxBuckets = Number(
+    process.env.BACKEND_RATE_LIMIT_MAX_BUCKETS || DEFAULT_RATE_LIMIT_MAX_BUCKETS,
+  );
 
   return createFixedWindowRateLimitMiddleware({
     windowMs,
+    maxBuckets,
     maxRequests,
     errorMessage: "Rate limit exceeded.",
     shouldLimit(request) {
@@ -89,9 +119,13 @@ export function createAuthRateLimitMiddleware() {
   const maxRequests = Number(
     process.env.BACKEND_AUTH_RATE_LIMIT_MAX_REQUESTS || DEFAULT_AUTH_RATE_LIMIT_MAX_REQUESTS,
   );
+  const maxBuckets = Number(
+    process.env.BACKEND_AUTH_RATE_LIMIT_MAX_BUCKETS || DEFAULT_AUTH_RATE_LIMIT_MAX_BUCKETS,
+  );
 
   return createFixedWindowRateLimitMiddleware({
     windowMs,
+    maxBuckets,
     maxRequests,
     errorMessage: "Too many authentication attempts.",
     keyBuilder(request) {
