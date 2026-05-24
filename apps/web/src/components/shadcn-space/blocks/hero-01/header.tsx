@@ -21,8 +21,6 @@ import {
 import { cn } from "@/lib/utils";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import { motion } from "motion/react";
-import DarkModeRounded from "@mui/icons-material/DarkModeRounded";
-import type { ThemeMode } from "@/App";
 
 import Logo from "@/assets/logo/logo";
 import { Button } from "@/components/ui/button";
@@ -36,8 +34,6 @@ export type NavigationSection = {
 type HeaderProps = {
   navigationData: NavigationSection[];
   className?: string;
-  onToggleTheme: () => void;
-  themeMode: ThemeMode;
 };
 
 const CollaborateButton = ({ className }: { className?: string }) => {
@@ -99,8 +95,6 @@ const CollaborateButton = ({ className }: { className?: string }) => {
 const Header = ({
   navigationData,
   className,
-  onToggleTheme,
-  themeMode,
 }: HeaderProps) => {
   const [sticky, setSticky] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -170,16 +164,7 @@ const Header = ({
           </NavigationMenu>
         </div>
 
-        <div className="flex items-center gap-2 lg:gap-4">
-          <button
-            aria-label={`Switch to ${themeMode === "dark" ? "light" : "dark"} mode`}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/24 bg-white/10 text-white transition hover:bg-white/16 max-lg:backdrop-blur-md lg:border-border/60 lg:bg-background/70 lg:text-foreground"
-            onClick={onToggleTheme}
-            type="button"
-          >
-            <DarkModeRounded fontSize="small" />
-          </button>
-
+        <div className="flex items-center gap-4">
           <CollaborateButton className="hidden lg:flex" />
 
           <div className="lg:hidden">
