@@ -59,7 +59,7 @@ const CTA = () => {
               </Button>
             )}
             <Button
-              className="border-white/14 bg-transparent text-white hover:bg-white/8"
+              className="cta-extension-button border-white/14 bg-transparent text-white hover:bg-white/8"
               size="lg"
               variant="outline"
             >

@@ -21,6 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 import { ArrowUpRight, Menu, X } from "lucide-react";
 import { motion } from "motion/react";
+import DarkModeRounded from "@mui/icons-material/DarkModeRounded";
+import type { ThemeMode } from "@/App";
 
 import Logo from "@/assets/logo/logo";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,8 @@ export type NavigationSection = {
 type HeaderProps = {
   navigationData: NavigationSection[];
   className?: string;
+  onToggleTheme: () => void;
+  themeMode: ThemeMode;
 };
 
 const CollaborateButton = ({ className }: { className?: string }) => {
@@ -92,7 +96,12 @@ const CollaborateButton = ({ className }: { className?: string }) => {
   );
 };
 
-const Header = ({ navigationData, className }: HeaderProps) => {
+const Header = ({
+  navigationData,
+  className,
+  onToggleTheme,
+  themeMode,
+}: HeaderProps) => {
   const [sticky, setSticky] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -137,7 +146,7 @@ const Header = ({ navigationData, className }: HeaderProps) => {
       >
         <div>
           <a href="#">
-            <Logo className="gap-3" />
+            <Logo className="site-header-logo gap-3" />
           </a>
         </div>
 
@@ -161,7 +170,16 @@ const Header = ({ navigationData, className }: HeaderProps) => {
           </NavigationMenu>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex items-center gap-2 lg:gap-4">
+          <button
+            aria-label={`Switch to ${themeMode === "dark" ? "light" : "dark"} mode`}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/24 bg-white/10 text-white transition hover:bg-white/16 max-lg:backdrop-blur-md lg:border-border/60 lg:bg-background/70 lg:text-foreground"
+            onClick={onToggleTheme}
+            type="button"
+          >
+            <DarkModeRounded fontSize="small" />
+          </button>
+
           <CollaborateButton className="hidden lg:flex" />
 
           <div className="lg:hidden">
@@ -180,7 +198,7 @@ const Header = ({ navigationData, className }: HeaderProps) => {
               >
                 <div className="flex items-center justify-between border-b border-white/10 p-6">
                   <a href="#">
-                    <Logo className="gap-2" />
+                    <Logo className="site-menu-logo gap-2" />
                   </a>
                   <SheetClose id="mobile-menu-close">
                     <span className="block rounded-full border border-white/20 bg-white/8 p-2.5 text-white backdrop-blur-md">

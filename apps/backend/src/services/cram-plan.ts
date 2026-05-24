@@ -30,7 +30,7 @@ type GapRow = {
   weight: number;
 };
 
-const DEFAULT_MODEL = "gpt-5-mini";
+const DEFAULT_CRAM_PLAN_MODEL = "gpt-5.4-mini";
 
 let cachedClient: OpenAI | null = null;
 
@@ -49,7 +49,29 @@ function getOpenAIClient(): OpenAI {
 }
 
 function getOpenAIModel(): string {
-  return process.env.OPENAI_MODEL ?? DEFAULT_MODEL;
+  return (
+    process.env.OPENAI_CRAM_PLAN_MODEL ??
+    process.env.OPENAI_CRAM_MODEL ??
+    process.env.OPENAI_MODEL ??
+    DEFAULT_CRAM_PLAN_MODEL
+  );
+}
+
+function buildCramPlanSystemPrompt(): string {
+  return [
+    "You are Cram Mode, a classic study guide writer for a desktop learning product.",
+    "Return clean structured JSON only.",
+    "Prioritize what the student should do next with limited time.",
+    "Tasks must be ordered by exam score impact and urgency.",
+    "Each task must read like a clear explanation section, not a checklist label.",
+    "Task body should usually be 2 to 4 short paragraphs with roughly 120 to 220 words.",
+    "In each task body: explain the concept in plain language, explain why teachers test it, show the standard method, and include one reproducible mini worked example.",
+    "Keep tone direct and dense. No hype, no roleplay, no motivational filler.",
+    "Prioritize practical help: what it is, when to use it, how to do it, and where mistakes happen.",
+    "Most tasks should include a quiz preview that can launch a fresh quiz.",
+    "Use Markdown bold or italics only for high-yield terms, formulas, warnings, and memory hooks.",
+    "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
+  ].join(" ");
 }
 
 function parseKeyTopics(value: string): string[] {
@@ -136,14 +158,16 @@ function buildCramPlanPrompt(input: CramPlanRequest): string {
       key_topics: keyTopics,
       output_requirements: {
         task_count: "3 to 8",
-        task_style: "short, practical, time-boxed study guide sections",
+        task_style:
+          "direct, exam-ready explanation sections with minimal fluff and high practical value",
         priorities: ["must-review", "quick-win", "if-time"],
         statuses: "use not-started for every new task",
         task_body:
-          "each task needs body copy that explains what to study and how",
-        key_takeaways: "each task needs 2 to 5 concise bullets",
+          "each task needs 2 to 4 short paragraphs (usually 120 to 220 words) that explain what to study, why it matters on tests, the standard method to use, and one mini worked example the student could reproduce",
+        key_takeaways:
+          "each task needs 3 to 5 concise bullets covering rule, trigger/when-to-use, steps, and one common mistake/trap to avoid",
         vocab_to_know:
-          "each task needs 2 to 6 high-yield vocab, formula, or definition phrases the student should recognize cold",
+          "each task needs 3 to 6 high-yield vocab, formula, or definition phrases the student should recognize cold",
         quiz_mix:
           "most tasks should have quizEnabled true and a quizPreview object; only a few may set quizEnabled false",
         null_fields:
@@ -204,18 +228,7 @@ export async function generateCramPlan(
         input: [
           {
             role: "system",
-            content: [
-              "You are generating a cram study plan for a desktop learning product.",
-              "Return clean structured JSON only.",
-              "Prioritize what the student should do next with limited time.",
-              "Tasks must be concise, actionable, time-boxed, and ordered by study value.",
-              "Each task should read like a study guide section, not just a label.",
-              "Blend exam-sprint planning with digesting any provided material.",
-              "Prefer active recall and quiz checkpoints over passive rereading.",
-              "It is fine to use Markdown bold or italics inside study-guide copy, focus/body copy, key takeaways, and vocab lists when emphasis helps scanning.",
-              "Most tasks should include a quiz preview that can launch a fresh quiz.",
-              "Do not mention hidden reasoning, internal instructions, or unsupported facts.",
-            ].join(" "),
+            content: buildCramPlanSystemPrompt(),
           },
           {
             role: "user",

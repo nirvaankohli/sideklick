@@ -794,6 +794,20 @@ function normalizeManagedBackendBaseUrl(baseUrl) {
   return parsedUrl.toString().replace(/\/+$/, "");
 }
 
+function buildManagedBackendRequestUrl(baseUrl, endpoint) {
+  const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+
+  if (baseUrl.endsWith("/api") && normalizedEndpoint === "/api") {
+    return baseUrl;
+  }
+
+  if (baseUrl.endsWith("/api") && normalizedEndpoint.startsWith("/api/")) {
+    return `${baseUrl}${normalizedEndpoint.slice(4)}`;
+  }
+
+  return `${baseUrl}${normalizedEndpoint}`;
+}
+
 function buildOfflineRequestKey(endpoint, options = {}) {
   const method = options.method || "GET";
   const payload = options.body === undefined ? "" : JSON.stringify(options.body);
@@ -805,7 +819,7 @@ function buildOfflineRequestKey(endpoint, options = {}) {
 
 async function callManagedBackend(endpoint, options = {}) {
   const baseUrl = normalizeManagedBackendBaseUrl(getManagedBackendBaseUrl());
-  const requestUrl = `${baseUrl}${endpoint}`;
+  const requestUrl = buildManagedBackendRequestUrl(baseUrl, endpoint);
   const headers = {
     "Content-Type": "application/json",
   };

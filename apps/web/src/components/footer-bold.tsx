@@ -2,7 +2,7 @@ import { GITHUB_RELEASES_PAGE_URL } from "@/components/download-target";
 
 export const BoldFooter = () => {
   return (
-    <footer className="w-full overflow-hidden border-t border-white/10 bg-[#070707] text-white">
+    <footer className="site-footer w-full overflow-hidden border-t border-white/10 bg-[#070707] text-white">
       <div className="mx-auto flex max-w-6xl flex-col px-4 py-16 md:px-8 md:py-20">
         <div className="mb-16 flex w-full flex-col items-start justify-between gap-12 md:flex-row">
           <div className="max-w-md">
@@ -22,7 +22,7 @@ export const BoldFooter = () => {
               <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-white/45">
                 Product
               </p>
-              <nav className="flex flex-col gap-2 text-sm text-white/75">
+              <nav className="footer-nav flex flex-col gap-2 text-sm text-white/75">
                 <a href="#" className="hover:text-white">
                   Home
                 </a>
@@ -38,7 +38,7 @@ export const BoldFooter = () => {
               <p className="mb-4 text-xs font-medium uppercase tracking-[0.18em] text-white/45">
                 More
               </p>
-              <nav className="flex flex-col gap-2 text-sm text-white/75">
+              <nav className="footer-nav flex flex-col gap-2 text-sm text-white/75">
                 <a href="#" className="hover:text-white">
                   Extension
                 </a>
@@ -59,7 +59,7 @@ export const BoldFooter = () => {
         </div>
 
         <div className="relative w-full">
-          <h1 className="pointer-events-none -mb-[2vw] select-none text-[12vw] font-black leading-none tracking-tighter text-white opacity-[0.06]">
+          <h1 className="footer-wordmark pointer-events-none -mb-[2vw] select-none text-[12vw] font-black leading-none tracking-tighter text-white opacity-[0.06]">
             SIDEKLICK
           </h1>
           <div className="relative z-10 flex items-end justify-between border-t border-white/10 pt-8 pb-6">

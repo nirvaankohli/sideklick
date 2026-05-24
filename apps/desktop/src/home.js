@@ -3803,13 +3803,13 @@ function renderCramStudyGuide(task) {
   return `
     <div class="cram-study-guide-markdown">
       <p class="cram-study-guide-intro">
-        Treat this section like a fast exam sheet: understand the main pattern, say it back in plain language, and connect it to one example you could reproduce under pressure.
+        Use this section to learn the rule, the method, and one reproducible example.
       </p>
       <ul class="cram-study-guide-points">
-        <li><strong>Know the idea:</strong> Be able to explain ${escapeHtml(topic)} clearly before you try to memorize details.</li>
-        <li><strong>Know the exam move:</strong> If you see a question on ${escapeHtml(topic)}, identify the pattern first, then connect it to the rule or outcome it produces.</li>
-        <li><strong>Know it cold:</strong> ${renderInlineCramText(takeawayA)}</li>
-        <li><strong>Final check:</strong> ${renderInlineCramText(takeawayB)}</li>
+        <li><strong>Rule:</strong> Understand ${escapeHtml(topic)} in plain language and why it matters on tests.</li>
+        <li><strong>Method:</strong> For questions on ${escapeHtml(topic)}, follow the standard process step-by-step.</li>
+        <li><strong>Key point:</strong> ${renderInlineCramText(takeawayA)}</li>
+        <li><strong>Example:</strong> ${renderInlineCramText(takeawayB)}</li>
       </ul>
     </div>
   `;
