@@ -128,21 +128,7 @@ export async function downloadAssetToDevice(
   url: string,
   fileName: string,
 ): Promise<void> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Download failed: ${response.status}`);
-  }
-
-  const blob = await response.blob();
-  const objectUrl = URL.createObjectURL(blob);
-
-  try {
-    triggerBrowserDownload(objectUrl, fileName);
-  } finally {
-    window.setTimeout(() => {
-      URL.revokeObjectURL(objectUrl);
-    }, 30_000);
-  }
+  triggerBrowserDownload(url, fileName);
 }
 
 export function useDownloadTarget() {
