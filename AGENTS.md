@@ -35,3 +35,6 @@ Match existing style. Don't refactor what isn't broken.
 
 ## Rule 4 — Goal-Driven Execution
 Define success criteria. Loop until verified.
+
+## Rule 5 — Release Tagging & Electron Updates
+When pushing with a release tag, update the Electron version if it is being updated as part of the release.
