@@ -1,0 +1,102 @@
+name: Test and Deploy
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-and-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-deploy:
+    name: PNPM test and deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Check deploy opt-out
+        id: deploy_gate
+        shell: bash
+        env:
+          COMMIT_MESSAGES: ${{ join(github.event.commits.*.message, '\n') }}
+          HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          text="${COMMIT_MESSAGES}"$'\n'"${HEAD_COMMIT_MESSAGE}"$'\n'"${REF_NAME}"
+
+          if printf '%s' "$text" | grep -Eqi 'not[[:space:]_-]+deploy'; then
+            echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping Coolify deploys because a deploy opt-out was found."
+          else
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+            echo "Coolify deploys are enabled."
+          fi
+
+      - name: Trigger Coolify deploy webhooks
+        if: ${{ steps.deploy_gate.outputs.should_deploy == 'true' }}
+        shell: bash
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_MARKETING_WEBHOOK_URL: ${{ secrets.COOLIFY_MARKETING_WEBHOOK_URL }}
+          COOLIFY_BACKEND_WEBHOOK_URL: ${{ secrets.COOLIFY_BACKEND_WEBHOOK_URL }}
+        run: |
+          missing=0
+
+          if [ -z "$COOLIFY_TOKEN" ]; then
+            echo "::error::Missing COOLIFY_TOKEN repository secret."
+            missing=1
+          fi
+
+          if [ -z "$COOLIFY_MARKETING_WEBHOOK_URL" ]; then
+            echo "::error::Missing COOLIFY_MARKETING_WEBHOOK_URL repository secret."
+            missing=1
+          fi
+
+          if [ -z "$COOLIFY_BACKEND_WEBHOOK_URL" ]; then
+            echo "::error::Missing COOLIFY_BACKEND_WEBHOOK_URL repository secret."
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+          trigger_coolify_deploy() {
+            local app_name="$1"
+            local webhook_url="$2"
+
+            echo "Triggering Coolify deploy for ${app_name}..."
+
+            curl --fail --silent --show-error \
+              --request GET "$webhook_url" \
+              --header "Authorization: Bearer ${COOLIFY_TOKEN}"
+
+            echo "Coolify deploy triggered for ${app_name}."
+          }
+
+          trigger_coolify_deploy "marketing website" "$COOLIFY_MARKETING_WEBHOOK_URL"
+          trigger_coolify_deploy "backend" "$COOLIFY_BACKEND_WEBHOOK_URL"
