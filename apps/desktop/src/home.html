@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -325,19 +325,22 @@
             <div id="home-cram-view" class="home-view" hidden>
               <section class="quiz-screen cram-page-screen">
                 <div class="quiz-page-toolbar">
+                  <div>
+                    <p class="panel-label">Cram Mode</p>
+                    <h2 id="cram-screen-title" class="cram-title">Cram Mode</h2>
+                    <p id="cram-screen-meta" class="panel-help"></p>
+                  </div>
                   <button
                     id="cram-back-button"
                     class="ghost-button quiz-page-back-button"
                     type="button"
                     aria-label="Back to home"
                   >
-                    Back
+                    <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"></path>
+                    </svg>
+                    <span>Back</span>
                   </button>
-                  <div>
-                    <p class="panel-label">Cram Mode</p>
-                    <h2 id="cram-screen-title" class="cram-title">Cram Mode</h2>
-                    <p id="cram-screen-meta" class="panel-help"></p>
-                  </div>
                 </div>
 
                 <div id="cram-setup-panel" class="quiz-setup-form quiz-page-section">

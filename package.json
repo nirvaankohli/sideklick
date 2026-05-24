@@ -1,7 +1,7 @@
 {
   "name": "sideklick",
   "private": true,
-  "version": "0.1.8",
+  "version": "0.1.9",
   "productName": "SideKlick",
   "packageManager": "pnpm@10.0.0",
   "description": "AI study sidekick desktop app for class sessions, context-aware help, and quiz generation.",
