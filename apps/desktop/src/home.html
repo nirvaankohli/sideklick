@@ -955,6 +955,33 @@
                       </button>
                     </div>
 
+                    <div class="settings-row settings-row-action">
+                      <div class="settings-row-copy">
+                        <p class="panel-label">Updates</p>
+                        <p id="settings-update-status" class="panel-help">
+                          Checking for updates...
+                        </p>
+                      </div>
+                      <div class="settings-row-control" style="display: flex; gap: 8px; align-items: center;">
+                        <button
+                          id="settings-check-update-button"
+                          class="ghost-button settings-action-button"
+                          type="button"
+                        >
+                          Check
+                        </button>
+                        <button
+                          id="settings-action-update-button"
+                          class="continue-button settings-action-button"
+                          type="button"
+                          style="margin-top: 0; min-width: 92px; height: 36px; padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center;"
+                          hidden
+                        >
+                          Download
+                        </button>
+                      </div>
+                    </div>
+
                     <div
                       class="settings-row settings-row-action settings-danger-row"
                     >

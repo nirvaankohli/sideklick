@@ -1,4 +1,4 @@
-﻿const root = document.querySelector(".window-shell");
+const root = document.querySelector(".window-shell");
 const shrinkWindow = document.querySelector("#shrink-window");
 const openSettingsButton = document.querySelector("#open-settings");
 const openSettingsIconPath = openSettingsButton?.querySelector("path");
@@ -307,6 +307,9 @@ const privacyDeleteAccountButton = document.querySelector(
   "#privacy-delete-account-button",
 );
 const privacyAccountStatus = document.querySelector("#privacy-account-status");
+const settingsUpdateStatus = document.querySelector("#settings-update-status");
+const settingsCheckUpdateButton = document.querySelector("#settings-check-update-button");
+const settingsActionUpdateButton = document.querySelector("#settings-action-update-button");
 const authGateStatus = document.querySelector("#auth-gate-status");
 const authGateEmailInput = document.querySelector("#auth-gate-email-input");
 const authGatePasswordInput = document.querySelector(
@@ -384,6 +387,15 @@ let currentModalActiveAssessmentProfileId = "";
 let privacySettings = null;
 let authSession = null;
 let postAuthHomeView = "dashboard";
+
+function formatErrorMessage(message) {
+  if (!message) return "";
+  const ipcPrefixRegex = /^Error\s+invoking\s+remote\s+method\s+['"][^'"]+['"]:\s+(?:Error:\s+)?/i;
+  let cleanMessage = message.replace(ipcPrefixRegex, "");
+  cleanMessage = cleanMessage.replace(/^Error:\s+/i, "");
+  cleanMessage = cleanMessage.replace(/already exists\b/g, "already exist");
+  return cleanMessage.trim();
+}
 
 async function getAiBackendStatus() {
   if (typeof window.overlayApi?.getAiBackendStatus !== "function") {
@@ -1019,7 +1031,7 @@ async function submitAuthGateRequest(mode) {
     setHomeView(postAuthHomeView);
   } catch (error) {
     setAuthGateStatus(
-      error instanceof Error ? error.message : "Authentication failed.",
+      error instanceof Error ? formatErrorMessage(error.message) : "Authentication failed.",
       "danger",
     );
   } finally {
@@ -2273,7 +2285,7 @@ async function analyzeActiveAssessmentProfile() {
   } catch (error) {
     assessmentUploadError =
       error instanceof Error
-        ? error.message
+        ? formatErrorMessage(error.message)
         : "Could not process this template right now.";
     renderAssessmentSummary();
   } finally {
@@ -4291,7 +4303,7 @@ async function generateCramPlanForCurrentClass() {
     renderCramPlan(plan);
   } catch (error) {
     cramStatus.textContent =
-      error instanceof Error ? error.message : "Cram plan failed.";
+      error instanceof Error ? formatErrorMessage(error.message) : "Cram plan failed.";
   } finally {
     if (generateCramButton) {
       generateCramButton.disabled = false;
@@ -4629,7 +4641,7 @@ async function buildSavedQuizForCramTask(plan, task, classId, targetPath) {
         completedAt: new Date().toISOString(),
         summary:
           error instanceof Error
-            ? error.message
+            ? formatErrorMessage(error.message)
             : "Quiz generation failed. Try again.",
       }),
       targetPath,
@@ -4916,13 +4928,13 @@ async function generateQuizForActiveSession() {
         completedAt: new Date().toISOString(),
         summary:
           error instanceof Error
-            ? error.message
+            ? formatErrorMessage(error.message)
             : "Quiz generation failed. Try again.",
       }),
       targetPath,
     );
     quizSessionMeta.textContent =
-      error instanceof Error ? error.message : "Quiz generation failed.";
+      error instanceof Error ? formatErrorMessage(error.message) : "Quiz generation failed.";
   } finally {
     generateQuizButton.disabled = false;
     generateQuizButton.textContent = "Generate Quiz";
@@ -6091,7 +6103,7 @@ privacyExportButton.addEventListener("click", async () => {
     setPrivacyAccountStatus("Export downloaded.", "success");
   } catch (error) {
     setPrivacyAccountStatus(
-      error instanceof Error ? error.message : "Export failed.",
+      error instanceof Error ? formatErrorMessage(error.message) : "Export failed.",
       "danger",
     );
   } finally {
@@ -6197,7 +6209,7 @@ privacyDeleteAccountButton.addEventListener("click", async () => {
     );
   } catch (error) {
     setPrivacyAccountStatus(
-      error instanceof Error ? error.message : "Account deletion failed.",
+      error instanceof Error ? formatErrorMessage(error.message) : "Account deletion failed.",
       "danger",
     );
   } finally {
@@ -6244,6 +6256,103 @@ quizExplanationToggle?.addEventListener("click", () => {
 quizExplanationFollowToggle?.addEventListener("click", () => {
   setQuizExplanationFollowScroll(!quizExplanationFollowScroll);
 });
+let updateDownloadUrl = "";
+
+function handleUpdateStatus(info) {
+  if (!settingsUpdateStatus) return;
+
+  const currentVersion = info.version || "0.1.0";
+  
+  switch (info.status) {
+    case "idle":
+      settingsUpdateStatus.textContent = `Current version: v${currentVersion}`;
+      settingsUpdateStatus.dataset.tone = "neutral";
+      if (settingsActionUpdateButton) settingsActionUpdateButton.hidden = true;
+      if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = false;
+      break;
+    case "checking":
+      settingsUpdateStatus.textContent = "Checking for updates...";
+      settingsUpdateStatus.dataset.tone = "neutral";
+      if (settingsActionUpdateButton) settingsActionUpdateButton.hidden = true;
+      if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = true;
+      break;
+    case "up-to-date":
+      settingsUpdateStatus.textContent = `Up to date (v${currentVersion})`;
+      settingsUpdateStatus.dataset.tone = "success";
+      if (settingsActionUpdateButton) settingsActionUpdateButton.hidden = true;
+      if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = false;
+      break;
+    case "available":
+      settingsUpdateStatus.textContent = `Update v${info.version} available! Downloading...`;
+      settingsUpdateStatus.dataset.tone = "neutral";
+      if (settingsActionUpdateButton) settingsActionUpdateButton.hidden = true;
+      if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = true;
+      break;
+    case "downloading":
+      settingsUpdateStatus.textContent = `Downloading update: ${Math.round(info.progress || 0)}%`;
+      settingsUpdateStatus.dataset.tone = "neutral";
+      if (settingsActionUpdateButton) settingsActionUpdateButton.hidden = true;
+      if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = true;
+      break;
+    case "downloaded":
+      settingsUpdateStatus.textContent = `Update downloaded and ready to install!`;
+      settingsUpdateStatus.dataset.tone = "success";
+      if (settingsActionUpdateButton) {
+        settingsActionUpdateButton.textContent = "Restart";
+        settingsActionUpdateButton.hidden = false;
+      }
+      if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = true;
+      break;
+    case "manual-available":
+      settingsUpdateStatus.textContent = `New version v${info.version} is available!`;
+      settingsUpdateStatus.dataset.tone = "success";
+      if (settingsActionUpdateButton) {
+        settingsActionUpdateButton.textContent = "Download";
+        settingsActionUpdateButton.hidden = false;
+      }
+      if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = false;
+      updateDownloadUrl = info.url;
+      break;
+    case "error":
+      settingsUpdateStatus.textContent = info.message ? `Update error: ${info.message}` : "Failed to check for updates.";
+      settingsUpdateStatus.dataset.tone = "danger";
+      if (settingsActionUpdateButton) settingsActionUpdateButton.hidden = true;
+      if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = false;
+      break;
+    default:
+      settingsUpdateStatus.textContent = `Current version: v${currentVersion}`;
+      settingsUpdateStatus.dataset.tone = "neutral";
+      if (settingsActionUpdateButton) settingsActionUpdateButton.hidden = true;
+      if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = false;
+  }
+}
+
+settingsCheckUpdateButton?.addEventListener("click", async () => {
+  try {
+    if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = true;
+    if (settingsUpdateStatus) {
+      settingsUpdateStatus.textContent = "Checking for updates...";
+      settingsUpdateStatus.dataset.tone = "neutral";
+    }
+    await window.overlayApi.checkForUpdates();
+  } catch (error) {
+    console.error("[updater] failed to check updates", error);
+    if (settingsUpdateStatus) {
+      settingsUpdateStatus.textContent = "Failed to initiate update check.";
+      settingsUpdateStatus.dataset.tone = "danger";
+    }
+    if (settingsCheckUpdateButton) settingsCheckUpdateButton.disabled = false;
+  }
+});
+
+settingsActionUpdateButton?.addEventListener("click", async () => {
+  if (settingsActionUpdateButton.textContent === "Restart") {
+    await window.overlayApi.quitAndInstallUpdate();
+  } else if (settingsActionUpdateButton.textContent === "Download" && updateDownloadUrl) {
+    await window.overlayApi.openExternalUpdateUrl(updateDownloadUrl);
+  }
+});
+
 
 window.overlayApi.onThemeChanged((payload) => {
   applyThemePreference(payload);
@@ -6301,6 +6410,22 @@ window.addEventListener("DOMContentLoaded", async () => {
     .catch(() => {
       applyAuthSession(null);
     });
+
+  // Set up auto-updater bindings and get initial status
+  if (typeof window.overlayApi.onUpdateStatusChanged === "function") {
+    window.overlayApi.onUpdateStatusChanged((statusPayload) => {
+      handleUpdateStatus(statusPayload);
+    });
+
+    try {
+      const initialStatus = await window.overlayApi.getUpdateStatus();
+      if (initialStatus) {
+        handleUpdateStatus(initialStatus);
+      }
+    } catch (e) {
+      console.warn("[updater] failed to load initial status", e);
+    }
+  }
 });
 
 window.addEventListener("resize", scheduleFitText);

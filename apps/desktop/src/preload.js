@@ -62,4 +62,13 @@ contextBridge.exposeInMainWorld("overlayApi", {
     ),
   onIncomingPayload: (callback) =>
     ipcRenderer.on("incoming:payload", (_event, payload) => callback(payload)),
+  checkForUpdates: () => ipcRenderer.invoke("update:check"),
+  quitAndInstallUpdate: () => ipcRenderer.invoke("update:quitAndInstall"),
+  openExternalUpdateUrl: (url) => ipcRenderer.invoke("update:openDownload", url),
+  getUpdateStatus: () => ipcRenderer.invoke("update:getStatus"),
+  onUpdateStatusChanged: (callback) => {
+    const subscription = (_event, payload) => callback(payload);
+    ipcRenderer.on("update:status", subscription);
+    return () => ipcRenderer.removeListener("update:status", subscription);
+  },
 });

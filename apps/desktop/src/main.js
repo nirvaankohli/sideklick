@@ -1044,6 +1044,13 @@ app.whenReady().then(async () => {
 
   nativeTheme.on("updated", sendThemeState);
 
+  initializeAutoUpdater();
+  setTimeout(() => {
+    triggerUpdateCheck().catch((err) => {
+      console.error("[updater] startup check failed", err);
+    });
+  }, 5000);
+
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createStartupWindows(shouldShowOnboardingGate());
@@ -1412,3 +1419,163 @@ ipcMain.handle("session:start", (_event, session) => {
 ipcMain.handle("session:stop", () => {
   return ensureSessionManager().stopSession();
 });
+
+// --- AUTO UPDATER IMPLEMENTATION ---
+
+let autoUpdater = null;
+if (process.platform === "win32") {
+  try {
+    ({ autoUpdater } = require("electron-updater"));
+    autoUpdater.autoDownload = true;
+  } catch (error) {
+    console.error("[updater] failed to load electron-updater", error);
+  }
+}
+
+let updateStatus = { status: "idle", version: app.getVersion(), progress: 0 };
+
+function broadcastUpdateStatus() {
+  for (const { win } of windowState.values()) {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send("update:status", updateStatus);
+    }
+  }
+}
+
+function initializeAutoUpdater() {
+  if (process.platform !== "win32" || !autoUpdater) {
+    return;
+  }
+
+  autoUpdater.logger = console;
+
+  autoUpdater.on("checking-for-update", () => {
+    updateStatus = { status: "checking", version: app.getVersion() };
+    broadcastUpdateStatus();
+  });
+
+  autoUpdater.on("update-available", (info) => {
+    updateStatus = { status: "available", version: info.version };
+    broadcastUpdateStatus();
+  });
+
+  autoUpdater.on("update-not-available", () => {
+    updateStatus = { status: "up-to-date", version: app.getVersion() };
+    broadcastUpdateStatus();
+  });
+
+  autoUpdater.on("error", (err) => {
+    updateStatus = { status: "error", version: app.getVersion(), message: err.message };
+    broadcastUpdateStatus();
+  });
+
+  autoUpdater.on("download-progress", (progressObj) => {
+    updateStatus = { status: "downloading", version: updateStatus.version, progress: progressObj.percent };
+    broadcastUpdateStatus();
+  });
+
+  autoUpdater.on("update-downloaded", () => {
+    updateStatus = { status: "downloaded", version: updateStatus.version };
+    broadcastUpdateStatus();
+  });
+}
+
+function isNewerVersion(latest, current) {
+  const clean = (v) => v.replace(/^v/, "").split(".").map(Number);
+  const [lMajor, lMinor, lPatch] = clean(latest);
+  const [cMajor, cMinor, cPatch] = clean(current);
+
+  if (lMajor !== cMajor) return lMajor > cMajor;
+  if (lMinor !== cMinor) return lMinor > cMinor;
+  return lPatch > cPatch;
+}
+
+function fetchLatestGitHubRelease(owner, repo) {
+  return new Promise((resolve, reject) => {
+    const url = `https://api.github.com/repos/${owner}/${repo}/releases/latest`;
+    const options = {
+      headers: {
+        "User-Agent": "SideKlick-Updater-Client"
+      }
+    };
+
+    https.get(url, options, (res) => {
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error(`Request Failed. Status Code: ${res.statusCode}`));
+      }
+
+      let rawData = "";
+      res.on("data", (chunk) => { rawData += chunk; });
+      res.on("end", () => {
+        try {
+          const parsedData = JSON.parse(rawData);
+          resolve(parsedData);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }).on("error", (e) => {
+      reject(e);
+    });
+  });
+}
+
+async function triggerUpdateCheck() {
+  const currentVersion = app.getVersion();
+  if (process.platform === "win32" && autoUpdater) {
+    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+      console.error("[updater] win32 check error", err);
+      updateStatus = { status: "error", version: currentVersion, message: err.message };
+      broadcastUpdateStatus();
+    });
+  } else {
+    updateStatus = { status: "checking", version: currentVersion };
+    broadcastUpdateStatus();
+
+    try {
+      const releaseInfo = await fetchLatestGitHubRelease("nirvaankohli", "sideklick");
+      if (releaseInfo && releaseInfo.tag_name) {
+        const latestVersion = releaseInfo.tag_name;
+        if (isNewerVersion(latestVersion, currentVersion)) {
+          updateStatus = {
+            status: "manual-available",
+            version: latestVersion,
+            url: releaseInfo.html_url || "https://github.com/nirvaankohli/sideklick/releases/latest"
+          };
+          broadcastUpdateStatus();
+          return;
+        }
+      }
+      updateStatus = { status: "up-to-date", version: currentVersion };
+      broadcastUpdateStatus();
+    } catch (err) {
+      console.error("[updater] custom check error", err);
+      updateStatus = { status: "error", version: currentVersion, message: err.message };
+      broadcastUpdateStatus();
+    }
+  }
+}
+
+// IPC Handlers for Updates
+ipcMain.handle("update:check", async () => {
+  await triggerUpdateCheck();
+  return { ok: true };
+});
+
+ipcMain.handle("update:quitAndInstall", () => {
+  if (process.platform === "win32" && autoUpdater) {
+    autoUpdater.quitAndInstall();
+  }
+});
+
+ipcMain.handle("update:openDownload", (_event, url) => {
+  if (url) {
+    shell.openExternal(url);
+  }
+});
+
+ipcMain.handle("update:getStatus", () => {
+  return updateStatus;
+});
+
