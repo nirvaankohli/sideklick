@@ -276,6 +276,12 @@ const settingsProfileStatus = document.querySelector(
   "#settings-profile-status",
 );
 const settingsThemeSelect = document.querySelector("#settings-theme-select");
+const settingsTransparencyStatus = document.querySelector(
+  "#settings-transparency-status",
+);
+const settingsTransparencySelect = document.querySelector(
+  "#settings-transparency-select",
+);
 const settingsSourceSelect = document.querySelector("#settings-source-select");
 const settingsProfileSelect = document.querySelector(
   "#settings-profile-select",
@@ -5645,6 +5651,32 @@ function applyThemePreference({ themeSource, shouldUseDarkColors }) {
   }
 }
 
+function applyTransparencyPreference(preferences) {
+  const transparencyMode =
+    preferences?.transparencyMode === "reduced" ||
+    preferences?.transparencyMode === "solid"
+      ? preferences.transparencyMode
+      : preferences?.reduceTransparency
+        ? "reduced"
+        : "normal";
+
+  root.dataset.transparencyMode = transparencyMode;
+  root.dataset.reduceTransparency =
+    transparencyMode !== "normal" ? "true" : "false";
+  if (settingsTransparencySelect) {
+    settingsTransparencySelect.value = transparencyMode;
+    syncCustomSettingsDropdown(settingsTransparencySelect);
+  }
+  if (settingsTransparencyStatus) {
+    settingsTransparencyStatus.textContent =
+      transparencyMode === "reduced"
+        ? "Background blur is stronger and the shell is less see-through."
+        : transparencyMode === "solid"
+          ? "Solid mode removes the glass effect."
+          : "Use the default lighter glass effect.";
+  }
+}
+
 function setMode(mode) {
   root.dataset.mode = mode;
   document.body.dataset.windowMode = mode;
@@ -5681,6 +5713,7 @@ function attachResizeHandle(handle) {
 
 [
   settingsThemeSelect,
+  settingsTransparencySelect,
   settingsSourceSelect,
   settingsProfileSelect,
   privacyScreenshotSelect,
@@ -5947,6 +5980,18 @@ if (settingsThemeSelect) {
       settingsThemeSelect.value,
     );
     applyThemePreference(result);
+  });
+}
+
+if (settingsTransparencySelect) {
+  settingsTransparencySelect.addEventListener("change", async () => {
+    if (!requireSignedIn("change appearance")) {
+      return;
+    }
+    const preferences = await window.overlayApi.updatePreferences({
+      transparencyMode: settingsTransparencySelect.value,
+    });
+    applyTransparencyPreference(preferences);
   });
 }
 
@@ -6416,6 +6461,11 @@ settingsActionUpdateButton?.addEventListener("click", async () => {
 window.overlayApi.onThemeChanged((payload) => {
   applyThemePreference(payload);
 });
+if (typeof window.overlayApi.onPreferencesChanged === "function") {
+  window.overlayApi.onPreferencesChanged((preferences) => {
+    applyTransparencyPreference(preferences);
+  });
+}
 window.overlayApi.onWindowMode(({ mode }) => setMode(mode));
 window.overlayApi.onClassFoldersChanged((nextFolders) => {
   folders = normalizeFolders(Array.isArray(nextFolders) ? nextFolders : []);
@@ -6451,6 +6501,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       preferences.themeSource || "system",
     ),
   });
+  applyTransparencyPreference(preferences);
   applyPreferenceSelections(preferences);
   applyPrivacySettings(settings);
   applyAuthSession(null);

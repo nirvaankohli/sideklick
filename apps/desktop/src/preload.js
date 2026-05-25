@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld("overlayApi", {
   setThemeSource: (source) => ipcRenderer.invoke("theme:setSource", source),
   getPreferences: () => ipcRenderer.invoke("preferences:get"),
   updatePreferences: (patch) => ipcRenderer.invoke("preferences:update", patch),
+  onPreferencesChanged: (callback) =>
+    ipcRenderer.on("preferences:changed", (_event, payload) => callback(payload)),
   getClassFolders: () => ipcRenderer.invoke("class-folders:get"),
   updateClassFolders: (folders) =>
     ipcRenderer.invoke("class-folders:update", folders),

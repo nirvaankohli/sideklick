@@ -50,6 +50,7 @@ const {
 const windowsByKey = new Map();
 const windowState = new Map();
 const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
+const ALLOWED_TRANSPARENCY_MODES = new Set(["normal", "reduced", "solid"]);
 const LOCAL_API_BASE_URL =
   process.env.LOCAL_API_BASE_URL || "http://127.0.0.1:3001";
 const DEFAULT_MANAGED_BACKEND_JWT = "";
@@ -232,6 +233,10 @@ function readPreferences() {
   }
 }
 
+function normalizeTransparencyMode(value, fallback = "normal") {
+  return ALLOWED_TRANSPARENCY_MODES.has(value) ? value : fallback;
+}
+
 function writePreferences(nextPreferences) {
   const preferencePath = getThemePreferencePath();
   fs.mkdirSync(path.dirname(preferencePath), { recursive: true });
@@ -244,10 +249,16 @@ function writePreferences(nextPreferences) {
 
 function getPreferenceSnapshot() {
   const preferences = readPreferences();
+  const transparencyMode = normalizeTransparencyMode(
+    preferences.transparencyMode ||
+      (preferences.reduceTransparency ? "reduced" : "normal"),
+  );
   return {
     themeSource: ALLOWED_THEME_SOURCES.has(preferences.themeSource)
       ? preferences.themeSource
       : "system",
+    transparencyMode,
+    reduceTransparency: transparencyMode !== "normal",
     hasLaunchedBefore: Boolean(preferences.hasLaunchedBefore),
     discoverySource: preferences.discoverySource || "",
     customerProfile: preferences.customerProfile || "",
@@ -430,6 +441,14 @@ function sendThemeState() {
   for (const { win } of windowState.values()) {
     if (win && !win.isDestroyed()) {
       win.webContents.send("theme:changed", themeState);
+    }
+  }
+}
+
+function broadcastPreferencesChanged(preferences) {
+  for (const { win } of windowState.values()) {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send("preferences:changed", preferences);
     }
   }
 }
@@ -1180,20 +1199,40 @@ ipcMain.handle("preferences:get", () => {
 });
 
 ipcMain.handle("preferences:update", (_event, patch) => {
+  const nextTransparencyMode =
+    patch && typeof patch === "object" && "transparencyMode" in patch
+      ? normalizeTransparencyMode(
+          patch.transparencyMode,
+          normalizeTransparencyMode(
+            patch.reduceTransparency ? "reduced" : "normal",
+          ),
+        )
+      : normalizeTransparencyMode(
+          patch && typeof patch === "object" && patch.reduceTransparency
+            ? "reduced"
+            : readPreferences().transparencyMode,
+        );
   const safePatch =
     patch && typeof patch === "object"
       ? Object.fromEntries(
           Object.entries(patch).filter(
-            ([key]) => key !== "classFolders" && key !== "currentSession",
+            ([key]) =>
+              key !== "classFolders" &&
+              key !== "currentSession" &&
+              key !== "reduceTransparency" &&
+              key !== "transparencyMode",
           ),
         )
-      : {};
+    : {};
   const nextPreferences = {
     ...readPreferences(),
     ...safePatch,
+    transparencyMode: nextTransparencyMode,
   };
   writePreferences(nextPreferences);
-  return getPreferenceSnapshot();
+  const preferenceSnapshot = getPreferenceSnapshot();
+  broadcastPreferencesChanged(preferenceSnapshot);
+  return preferenceSnapshot;
 });
 
 ipcMain.handle("class-folders:get", () => {

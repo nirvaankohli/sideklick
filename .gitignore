@@ -225,7 +225,7 @@ package-lock.json
 
 # PyPI configuration file
 .pypirc
-
+.DS_Store
 
 .env.backend
 .env.desktop

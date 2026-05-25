@@ -290,6 +290,20 @@ function applyThemeState({ shouldUseDarkColors }) {
   root.dataset.tone = currentTone;
 }
 
+function applyTransparencyPreference(preferences) {
+  const transparencyMode =
+    preferences?.transparencyMode === "reduced" ||
+    preferences?.transparencyMode === "solid"
+      ? preferences.transparencyMode
+      : preferences?.reduceTransparency
+        ? "reduced"
+        : "normal";
+
+  root.dataset.transparencyMode = transparencyMode;
+  root.dataset.reduceTransparency =
+    transparencyMode !== "normal" ? "true" : "false";
+}
+
 function setMode(mode) {
   root.dataset.mode = mode;
   document.body.dataset.windowMode = mode;
@@ -314,6 +328,10 @@ function createMUIIcon(path, label) {
   wrap.append(icon, text);
   return wrap;
 }
+
+window.overlayApi.onPreferencesChanged?.((preferences) => {
+  applyTransparencyPreference(preferences);
+});
 
 async function copyToClipboard(value) {
   if (navigator.clipboard?.writeText) {
@@ -1101,6 +1119,11 @@ document.addEventListener("click", (event) => {
 window.addEventListener("DOMContentLoaded", async () => {
   const session = await window.overlayApi.getCurrentSession();
   applySession(session);
+  const preferences =
+    typeof window.overlayApi.getPreferences === "function"
+      ? await window.overlayApi.getPreferences()
+      : {};
+  applyTransparencyPreference(preferences);
   attachResizeHandle(resizeHandle);
   renderAttachmentStatus();
 });

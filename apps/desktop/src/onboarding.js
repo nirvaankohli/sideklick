@@ -76,6 +76,20 @@ function applyThemeState({ themeSource, shouldUseDarkColors }) {
   themeStatus.textContent = `Current preference: ${humanLabel(themeSource, shouldUseDarkColors)}`;
 }
 
+function applyTransparencyPreference(preferences) {
+  const transparencyMode =
+    preferences?.transparencyMode === "reduced" ||
+    preferences?.transparencyMode === "solid"
+      ? preferences.transparencyMode
+      : preferences?.reduceTransparency
+        ? "reduced"
+        : "normal";
+
+  root.dataset.transparencyMode = transparencyMode;
+  root.dataset.reduceTransparency =
+    transparencyMode !== "normal" ? "true" : "false";
+}
+
 function applyPreferenceSelections(preferences) {
   const { discoverySource, customerProfile } = preferences;
 
@@ -258,6 +272,11 @@ backButton.addEventListener("click", () => {
 });
 
 window.overlayApi.onThemeChanged(applyThemeState);
+if (typeof window.overlayApi.onPreferencesChanged === "function") {
+  window.overlayApi.onPreferencesChanged((preferences) => {
+    applyTransparencyPreference(preferences);
+  });
+}
 
 window.addEventListener("DOMContentLoaded", async () => {
   const [preferences, privacySettings, session] = await Promise.all([
@@ -266,6 +285,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     window.overlayApi.getAuthSession(),
   ]);
   applyPreferenceSelections(preferences);
+  applyTransparencyPreference(preferences);
   applyPrivacySelections(privacySettings);
   applyAuthSession(session);
   root.dataset.onboardingStage = "intro";

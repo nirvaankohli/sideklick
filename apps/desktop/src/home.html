@@ -762,6 +762,38 @@
 
                     <div class="settings-row">
                       <div class="settings-row-copy">
+                        <p class="panel-label">Transparency</p>
+                        <p id="settings-transparency-status" class="panel-help">
+                          Keep the shell more blurred and less see-through.
+                        </p>
+                      </div>
+                      <div class="settings-row-control">
+                        <div class="settings-select-wrap">
+                          <select
+                            id="settings-transparency-select"
+                            class="settings-select"
+                            aria-label="Transparency mode"
+                          >
+                            <option value="normal">Normal</option>
+                            <option value="reduced">Reduce transparency</option>
+                            <option value="solid">Solid</option>
+                          </select>
+                          <span
+                            class="settings-select-chevron"
+                            aria-hidden="true"
+                          >
+                            <svg viewBox="0 0 24 24">
+                              <path
+                                d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"
+                              ></path>
+                            </svg>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="settings-row">
+                      <div class="settings-row-copy">
                         <p class="panel-label">Discovery</p>
                         <p id="settings-source-status" class="panel-help">
                           No source selected yet.
