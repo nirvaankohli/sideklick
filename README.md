@@ -24,28 +24,45 @@
   <img src="https://img.shields.io/badge/Backend-Express%20%2B%20SQLite-2F80ED" alt="Express and SQLite backend" />
 </p>
 
+<p align="center">
+
+<img width="882" height="674" alt="assist-panel" src="https://github.com/user-attachments/assets/8d7ecbff-137c-4533-92c1-1aabfb9e4834" />
+</p>
+
+
 ## Why SideKlick
 
-SideKlick keeps the study loop in one place. It captures the context around what you are reading or watching, lets you ask for help without leaving the session, and turns that context into quizzes, cram plans, and follow-up answers.
+Most study tools make you bounce between tabs. SideKlick keeps the source, the question, and the review step together so you can stay on task.
 
-The product is cross-platform by design:
+It lets you ask for help without losing your place, and turns that context into quizzes, cram plans, and follow-up answers.
 
-- The desktop app is the primary workspace.
-- The web app handles onboarding, downloads, and product marketing.
-- The browser extension adds page-context handoff from supported browsers.
-- The local backend keeps the desktop experience self-contained.
+You don't have to sacrifice your current workflow to use it. SideKlick fits into how you already study and makes the process faster instead of adding extra steps.
 
-## Highlights
+What users get:
 
-- Live class session capture with context-aware help
-- Instant quiz generation from the current session or selected material
-- Cram mode for focused exam review
-- Notes, prompts, and study context kept close to the active session
-- Browser extension for sending page context to the SideKlick experience
-- Local backend for AI, auth, telemetry, and persistence
-- Desktop app built with Electron
-- Web app and download flow in `apps/web`
-- Browser extension for context handoff from the browser
+- Assessment formats tailored to how your teacher actually makes assessments
+- Quizzes generated from your current class material instead of generic summaries
+- Cram plans that turn weak spots into a focused review session
+- Browser context sent directly into SideKlick so you do not have to copy everything by hand
+- A desktop workspace that keeps the full study flow in one place
+
+## What It Does
+
+- Captures live study context from the active session or browser
+- Generates quizzes from your class material and review goals
+- Produces cram plans for focused study sessions
+- Keeps notes, prompts, and study output close to the session
+- Bridges browser context into SideKlick so your source material stays connected
+- Helps you study in a way that matches how you are actually being tested
+
+## Features
+
+- As you work through class material, SideKlick sits on the side, knows what you understand and what you do not, and helps you get through the hard parts.
+- Quiz mode for turning study material into practice questions fast
+- Cram mode for short, focused review before a test
+- Assessment profiles that shape quizzes to how your teacher actually tests you
+- Folder-style organization for classes, materials, and study output
+- A fresh take on edtech that feels structured, efficient, and easy to keep using
 
 ## Repository Layout
 
@@ -127,5 +144,5 @@ Load `apps/extension/` as an unpacked extension in the browser.
 ## Notes
 
 - `apps/web` is the public-facing site and download surface.
-- The desktop app is the main product surface, but the project is not desktop-only.
-- The browser extension is optional and exists to improve capture and handoff from the browser into the SideKlick experience.
+- The desktop app is the primary product surface, but the project is not desktop-only.
+- The browser extension is optional and exists to improve capture and handoff from the browser into SideKlick.
