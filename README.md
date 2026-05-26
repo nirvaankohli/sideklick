@@ -12,6 +12,14 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/nirvaankohli/sideklick/releases/latest"><strong>Download SideKlick</strong></a>
+  &nbsp;&middot;&nbsp;
+  <a href="apps/web/assets/cover.mp4"><strong>Watch the demo</strong></a>
+  &nbsp;&middot;&nbsp;
+  <a href="https://github.com/nirvaankohli/sideklick/releases"><strong>All releases</strong></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/nirvaankohli/sideklick/releases">
     <img src="https://img.shields.io/github/downloads/nirvaankohli/sideklick/total?label=downloads" alt="GitHub downloads" />
   </a>
@@ -29,6 +37,13 @@
 <img width="882" height="674" alt="assist-panel" src="https://github.com/user-attachments/assets/8d7ecbff-137c-4533-92c1-1aabfb9e4834" />
 </p>
 
+## Try SideKlick
+
+1. Download the latest desktop build from the [releases page](https://github.com/nirvaankohli/sideklick/releases/latest).
+2. Add class material or bring in browser context while you study.
+3. Generate a quiz or cram plan that stays connected to what you are learning.
+
+[Watch the short product demo](apps/web/assets/cover.mp4) to see the workflow before installing.
 
 ## Why SideKlick
 
