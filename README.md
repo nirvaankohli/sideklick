@@ -34,7 +34,12 @@
 
 <p align="center">
 
-<img width="882" height="674" alt="assist-panel" src="https://github.com/user-attachments/assets/8d7ecbff-137c-4533-92c1-1aabfb9e4834" />
+
+
+https://github.com/user-attachments/assets/e490ae89-d240-4edc-b5d2-8217a7b6ecb4
+
+
+
 </p>
 
 ## Try SideKlick
