@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 
 import {
   enforceClassOwnershipFromBody,
+  enforceSessionArrayOwnershipForClassFromBody,
   requireJwtAuth,
 } from "../middleware/auth";
 import { generateCramPlan } from "../services/cram-plan";
@@ -11,6 +12,9 @@ export const cramPlanRouter = Router();
 
 cramPlanRouter.use(requireJwtAuth);
 cramPlanRouter.use(enforceClassOwnershipFromBody("classId"));
+cramPlanRouter.use(
+  enforceSessionArrayOwnershipForClassFromBody("sessionIds", "classId"),
+);
 
 cramPlanRouter.post("/", async (request, response) => {
   try {

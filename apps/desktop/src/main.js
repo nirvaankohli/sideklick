@@ -51,12 +51,17 @@ const windowsByKey = new Map();
 const windowState = new Map();
 const ALLOWED_THEME_SOURCES = new Set(["system", "light", "dark"]);
 const ALLOWED_TRANSPARENCY_MODES = new Set(["normal", "reduced", "solid"]);
+const USER_EDITABLE_PREFERENCE_KEYS = new Set([
+  "customerProfile",
+  "discoverySource",
+]);
 const LOCAL_API_BASE_URL =
   process.env.LOCAL_API_BASE_URL || "http://127.0.0.1:3001";
 const DEFAULT_MANAGED_BACKEND_JWT = "";
-const MANAGED_AUTH_KEY = "managedAuth";
+const MANAGED_AUTH_FILENAME = "managed-auth.json";
 const AUTH_REFRESH_TIMEOUT_MS = 2500;
 const LOCAL_DB_FILENAME = "sideklick.sqlite";
+const OFFLINE_QUEUE_ELIGIBLE_ENDPOINTS = new Set([]);
 let serverApi = null;
 let sessionServiceApi = null;
 let appStateApi = null;
@@ -182,6 +187,10 @@ function getThemePreferencePath() {
   return path.join(app.getPath("userData"), "preferences.json");
 }
 
+function getManagedAuthPath() {
+  return path.join(app.getPath("userData"), MANAGED_AUTH_FILENAME);
+}
+
 function getLocalBackendJwtSecretPath() {
   return path.join(app.getPath("userData"), "local-backend-jwt-secret.txt");
 }
@@ -233,6 +242,20 @@ function readPreferences() {
   }
 }
 
+function readManagedAuthFile() {
+  try {
+    const authPath = getManagedAuthPath();
+    if (!fs.existsSync(authPath)) {
+      return null;
+    }
+
+    const raw = fs.readFileSync(authPath, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 function normalizeTransparencyMode(value, fallback = "normal") {
   return ALLOWED_TRANSPARENCY_MODES.has(value) ? value : fallback;
 }
@@ -268,8 +291,7 @@ function getPreferenceSnapshot() {
 }
 
 function getStoredManagedAuth() {
-  const preferences = readPreferences();
-  const candidate = preferences[MANAGED_AUTH_KEY];
+  const candidate = readManagedAuthFile();
   if (!candidate || typeof candidate !== "object") {
     return null;
   }
@@ -292,19 +314,28 @@ function getStoredManagedAuth() {
 }
 
 function setStoredManagedAuth(authSession) {
-  const nextPreferences = {
-    ...readPreferences(),
-    [MANAGED_AUTH_KEY]: authSession,
-  };
-  writePreferences(nextPreferences);
+  const authPath = getManagedAuthPath();
+  fs.mkdirSync(path.dirname(authPath), { recursive: true });
+  fs.writeFileSync(authPath, JSON.stringify(authSession, null, 2), "utf8");
   return authSession;
 }
 
 function clearStoredManagedAuth() {
-  const nextPreferences = { ...readPreferences() };
-  delete nextPreferences[MANAGED_AUTH_KEY];
-  writePreferences(nextPreferences);
+  const authPath = getManagedAuthPath();
+  if (fs.existsSync(authPath)) {
+    fs.unlinkSync(authPath);
+  }
   return null;
+}
+
+function toRendererAuthSession(authSession) {
+  if (!authSession?.user) {
+    return null;
+  }
+
+  return {
+    user: authSession.user,
+  };
 }
 
 function getLocalDbPath() {
@@ -803,14 +834,30 @@ function normalizeManagedBackendBaseUrl(baseUrl) {
   }
 
   const parsedUrl = new URL(baseUrl);
+  const isLocalUrl = ["localhost", "127.0.0.1", "::1"].includes(
+    parsedUrl.hostname,
+  );
   if (
     parsedUrl.protocol !== "https:" &&
-    process.env.MANAGED_BACKEND_ALLOW_HTTP !== "true"
+    !(
+      process.env.MANAGED_BACKEND_ALLOW_HTTP === "true" &&
+      !app.isPackaged &&
+      isLocalUrl
+    )
   ) {
     throw new Error("Managed backend URL must use HTTPS.");
   }
 
   return parsedUrl.toString().replace(/\/+$/, "");
+}
+
+function isLocalhostUrl(rawUrl) {
+  try {
+    const parsedUrl = new URL(rawUrl);
+    return ["localhost", "127.0.0.1", "::1"].includes(parsedUrl.hostname);
+  } catch {
+    return false;
+  }
 }
 
 function buildManagedBackendRequestUrl(baseUrl, endpoint) {
@@ -834,6 +881,24 @@ function buildOfflineRequestKey(endpoint, options = {}) {
     .createHash("sha256")
     .update(`${method}:${endpoint}:${payload}`)
     .digest("hex");
+}
+
+function canQueueOfflineRequest(endpoint) {
+  return OFFLINE_QUEUE_ELIGIBLE_ENDPOINTS.has(endpoint);
+}
+
+function enqueueManagedOfflineRequest(endpoint, options = {}, retryAfter = null) {
+  if ((options.method || "GET") === "GET" || !canQueueOfflineRequest(endpoint)) {
+    return;
+  }
+
+  enqueueOfflineRequest({
+    requestKey: buildOfflineRequestKey(endpoint, options),
+    endpoint,
+    method: options.method || "GET",
+    payload: options.body ?? null,
+    retryAfter,
+  });
 }
 
 async function callManagedBackend(endpoint, options = {}) {
@@ -863,7 +928,9 @@ async function callManagedBackend(endpoint, options = {}) {
 
   if (
     requestUrl.startsWith("https://") &&
-    process.env.MANAGED_BACKEND_ALLOW_SELF_SIGNED === "true"
+    process.env.MANAGED_BACKEND_ALLOW_SELF_SIGNED === "true" &&
+    !app.isPackaged &&
+    isLocalhostUrl(requestUrl)
   ) {
     fetchOptions.agent = new https.Agent({
       rejectUnauthorized: false,
@@ -874,14 +941,7 @@ async function callManagedBackend(endpoint, options = {}) {
   try {
     response = await fetch(requestUrl, fetchOptions);
   } catch (error) {
-    if ((options.method || "GET") !== "GET") {
-      enqueueOfflineRequest({
-        requestKey: buildOfflineRequestKey(endpoint, options),
-        endpoint,
-        method: options.method || "GET",
-        payload: options.body ?? null,
-      });
-    }
+    enqueueManagedOfflineRequest(endpoint, options);
     throw error;
   }
 
@@ -894,15 +954,11 @@ async function callManagedBackend(endpoint, options = {}) {
   }
 
   if (!response.ok) {
-    if ((options.method || "GET") !== "GET") {
-      enqueueOfflineRequest({
-        requestKey: buildOfflineRequestKey(endpoint, options),
-        endpoint,
-        method: options.method || "GET",
-        payload: options.body ?? null,
-        retryAfter: response.headers.get("retry-after"),
-      });
-    }
+    enqueueManagedOfflineRequest(
+      endpoint,
+      options,
+      response.headers.get("retry-after"),
+    );
     const error = new Error(
       payload && typeof payload.error === "string"
         ? payload.error
@@ -935,11 +991,12 @@ function notifyHomeWindowFoldersChanged(classFolders) {
 }
 
 function broadcastAuthSessionChanged(nextSession) {
+  const rendererSession = toRendererAuthSession(nextSession);
   for (const win of windowsByKey.values()) {
     if (!win || win.isDestroyed()) {
       continue;
     }
-    win.webContents.send("auth:sessionChanged", nextSession);
+    win.webContents.send("auth:sessionChanged", rendererSession);
   }
 }
 
@@ -985,6 +1042,10 @@ function refreshAuthSessionInBackground(storedAuth) {
 function migrateLegacyStoredState() {
   const preferences = readPreferences();
   let shouldRewritePreferences = false;
+  if (preferences.managedAuth && !getStoredManagedAuth()) {
+    setStoredManagedAuth(preferences.managedAuth);
+    shouldRewritePreferences = true;
+  }
 
   if (!hasStoredClassFolders() && Array.isArray(preferences.classFolders)) {
     setStoredClassFolders(preferences.classFolders);
@@ -1007,6 +1068,7 @@ function migrateLegacyStoredState() {
   const {
     classFolders: _legacyClassFolders,
     currentSession: _legacyCurrentSession,
+    managedAuth: _legacyManagedAuth,
     ...nextPreferences
   } = preferences;
   writePreferences(nextPreferences);
@@ -1217,10 +1279,7 @@ ipcMain.handle("preferences:update", (_event, patch) => {
       ? Object.fromEntries(
           Object.entries(patch).filter(
             ([key]) =>
-              key !== "classFolders" &&
-              key !== "currentSession" &&
-              key !== "reduceTransparency" &&
-              key !== "transparencyMode",
+              USER_EDITABLE_PREFERENCE_KEYS.has(key),
           ),
         )
     : {};
@@ -1383,7 +1442,7 @@ ipcMain.handle("backend:authRegister", async (_event, payload) => {
   });
   const nextSession = setStoredManagedAuth(session);
   broadcastAuthSessionChanged(nextSession);
-  return nextSession;
+  return toRendererAuthSession(nextSession);
 });
 
 ipcMain.handle("backend:authLogin", async (_event, payload) => {
@@ -1394,7 +1453,7 @@ ipcMain.handle("backend:authLogin", async (_event, payload) => {
   });
   const nextSession = setStoredManagedAuth(session);
   broadcastAuthSessionChanged(nextSession);
-  return nextSession;
+  return toRendererAuthSession(nextSession);
 });
 
 ipcMain.handle("backend:authLogout", async () => {
@@ -1429,7 +1488,7 @@ ipcMain.handle("backend:authSession", async () => {
   }
 
   refreshAuthSessionInBackground(storedAuth);
-  return storedAuth;
+  return toRendererAuthSession(storedAuth);
 });
 
 ipcMain.handle("backend:exportAccount", async (_event, options) => {

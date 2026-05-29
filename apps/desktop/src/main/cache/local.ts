@@ -13,6 +13,7 @@ type OfflineQueueEntry = {
 };
 
 let database: Database.Database | null = null;
+const DEFAULT_OFFLINE_QUEUE_LIMIT = 25;
 
 function getDatabaseFilePath(): string {
   return path.join(app.getPath("userData"), "local-cache.sqlite");
@@ -41,6 +42,9 @@ function getDatabase(): Database.Database {
       retry_after TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS offline_queue_request_key_idx
+    ON offline_queue(request_key);
   `);
 
   return database;
@@ -115,7 +119,15 @@ export function enqueueOfflineRequest(input: {
   payload: unknown;
   retryAfter?: string | null;
 }): number {
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error("Offline queue storage requires OS-backed encryption.");
+  }
+
   const db = getDatabase();
+  const maxEntries = Math.max(
+    1,
+    Number(process.env.SIDEKLICK_OFFLINE_QUEUE_LIMIT || DEFAULT_OFFLINE_QUEUE_LIMIT),
+  );
   const result = db.prepare(
     `
       INSERT INTO offline_queue (
@@ -131,6 +143,12 @@ export function enqueueOfflineRequest(input: {
         @payload,
         @retryAfter
       )
+      ON CONFLICT(request_key) DO UPDATE SET
+        endpoint = excluded.endpoint,
+        method = excluded.method,
+        payload = excluded.payload,
+        retry_after = excluded.retry_after,
+        created_at = CURRENT_TIMESTAMP
     `,
   ).run({
     requestKey: input.requestKey,
@@ -139,6 +157,18 @@ export function enqueueOfflineRequest(input: {
     payload: encodeStoredValue(input.payload),
     retryAfter: input.retryAfter ?? null,
   });
+
+  db.prepare(
+    `
+      DELETE FROM offline_queue
+      WHERE id NOT IN (
+        SELECT id
+        FROM offline_queue
+        ORDER BY created_at DESC, id DESC
+        LIMIT ?
+      )
+    `,
+  ).run(maxEntries);
 
   return Number(result.lastInsertRowid);
 }

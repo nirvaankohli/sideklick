@@ -263,6 +263,31 @@ test("session authorization fails closed without mutating legacy ownership at re
   assert.equal(db.state.runCalls.length, 0);
 });
 
+test("session array authorization rejects cross-account sessions and class mismatches", async () => {
+  const db = createAuthTestDatabase({
+    classes: [
+      { id: 1, owner_user_id: "owner-1" },
+      { id: 2, owner_user_id: "owner-2" },
+    ],
+    sessions: [
+      { id: 10, class_id: 1, owner_user_id: "owner-1" },
+      { id: 11, class_id: 2, owner_user_id: "owner-2" },
+      { id: 12, class_id: 2, owner_user_id: "owner-1" },
+    ],
+  });
+  const { authorizeSessionIdsForClassAccess } = await loadAuthMiddlewareModule();
+
+  assert.equal(authorizeSessionIdsForClassAccess([10], 1, "owner-1", db), null);
+  assert.deepEqual(authorizeSessionIdsForClassAccess([11], 1, "owner-1", db), {
+    status: 403,
+    error: "Forbidden session resource access.",
+  });
+  assert.deepEqual(authorizeSessionIdsForClassAccess([12], 1, "owner-1", db), {
+    status: 403,
+    error: "Session does not belong to the requested class.",
+  });
+});
+
 test("auth rate limiting is stricter and isolates buckets by normalized email", async () => {
   const previousWindow = process.env.BACKEND_AUTH_RATE_LIMIT_WINDOW_MS;
   const previousMax = process.env.BACKEND_AUTH_RATE_LIMIT_MAX_REQUESTS;

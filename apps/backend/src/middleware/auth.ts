@@ -36,6 +36,19 @@ function readIntegerId(value: unknown): number | null {
     : null;
 }
 
+function readIntegerIds(value: unknown): number[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const ids = value.map((entry) => readIntegerId(entry));
+  if (ids.some((entry) => entry === null)) {
+    return null;
+  }
+
+  return ids as number[];
+}
+
 export function authorizeClassAccess(
   classId: number,
   userId: string,
@@ -101,6 +114,55 @@ export function authorizeSessionAccess(
       status: 403,
       error: "Forbidden session resource access.",
     };
+  }
+
+  return null;
+}
+
+export function authorizeSessionIdsForClassAccess(
+  sessionIds: number[],
+  classId: number,
+  userId: string,
+  db = getDatabase(),
+): AuthorizationFailure | null {
+  for (const sessionId of sessionIds) {
+    const row = db.prepare(
+      `
+        SELECT
+          sessions.owner_user_id AS session_owner_id,
+          classes.owner_user_id AS class_owner_id,
+          sessions.class_id AS class_id
+        FROM sessions
+        LEFT JOIN classes ON classes.id = sessions.class_id
+        WHERE sessions.id = ?
+        LIMIT 1
+      `,
+    ).get(sessionId) as {
+      session_owner_id: string | null;
+      class_owner_id: string | null;
+      class_id: number | null;
+    } | undefined;
+
+    if (!row) {
+      return {
+        status: 404,
+        error: "Session resource not found.",
+      };
+    }
+
+    if (row.session_owner_id !== userId && row.class_owner_id !== userId) {
+      return {
+        status: 403,
+        error: "Forbidden session resource access.",
+      };
+    }
+
+    if (row.class_id !== classId) {
+      return {
+        status: 403,
+        error: "Session does not belong to the requested class.",
+      };
+    }
   }
 
   return null;
@@ -232,6 +294,46 @@ export function enforceSessionOwnershipFromBody(fieldName = "sessionId") {
     } catch (error) {
       response.status(500).json({
         error: error instanceof Error ? error.message : "Failed to validate session ownership.",
+      });
+    }
+  };
+}
+
+export function enforceSessionArrayOwnershipForClassFromBody(
+  sessionIdsFieldName = "sessionIds",
+  classIdFieldName = "classId",
+) {
+  return (
+    request: Request,
+    response: Response,
+    next: NextFunction,
+  ) => {
+    try {
+      const body = request.body as Record<string, unknown> | undefined;
+      const classId = readIntegerId(body?.[classIdFieldName]);
+      const sessionIds = readIntegerIds(body?.[sessionIdsFieldName]);
+      if (!classId || !sessionIds || sessionIds.length === 0) {
+        next();
+        return;
+      }
+
+      const failure = authorizeSessionIdsForClassAccess(
+        sessionIds,
+        classId,
+        getAuthSubject(request as AuthenticatedRequest),
+      );
+      if (failure) {
+        response.status(failure.status).json({ error: failure.error });
+        return;
+      }
+
+      next();
+    } catch (error) {
+      response.status(500).json({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to validate session ownership.",
       });
     }
   };

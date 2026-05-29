@@ -70,3 +70,39 @@ test("backend server exposes /health and /api/health endpoints", async () => {
   assert.equal(mockRes.body.service, "sideklick-local-backend");
   assert.ok(mockRes.body.observability);
 });
+
+test("backend root endpoint does not expose database counts", async () => {
+  process.env.BACKEND_JWT_SECRET = "test-jwt-secret";
+  process.env.DATABASE_URL = "";
+
+  const { createServer } = await loadServerModule();
+  const app = createServer();
+  const rootRoute = app.router.stack
+    .filter((layer) => layer.route)
+    .map((layer) => ({
+      path: layer.route.path,
+      handler: layer.route.stack[layer.route.stack.length - 1].handle,
+    }))
+    .find((route) => route.path === "/");
+
+  assert.ok(rootRoute, "Should find registered root route");
+
+  const mockRes = {
+    statusCode: 200,
+    body: null,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload) {
+      this.body = payload;
+      return this;
+    },
+  };
+
+  rootRoute.handler({}, mockRes);
+
+  assert.equal(mockRes.statusCode, 200);
+  assert.equal(mockRes.body.message, "Local backend is running.");
+  assert.equal("database" in mockRes.body, false);
+});

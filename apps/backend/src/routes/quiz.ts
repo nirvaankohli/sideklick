@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 
 import {
   enforceClassOwnershipFromBody,
+  enforceSessionArrayOwnershipForClassFromBody,
   requireJwtAuth,
 } from "../middleware/auth";
 import { generateQuiz } from "../services/quiz";
@@ -11,6 +12,7 @@ export const quizRouter = Router();
 
 quizRouter.use(requireJwtAuth);
 quizRouter.use(enforceClassOwnershipFromBody("classId"));
+quizRouter.use(enforceSessionArrayOwnershipForClassFromBody("sessionIds", "classId"));
 
 quizRouter.post("/", async (request, response) => {
   try {

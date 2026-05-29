@@ -35,6 +35,8 @@ import { startBackgroundWorkers, stopBackgroundWorkers } from "./workers";
 
 const DEFAULT_PORT = 3001;
 const DEFAULT_HOST = "127.0.0.1";
+const DEFAULT_API_JSON_LIMIT = "25mb";
+const DEFAULT_AUTH_JSON_LIMIT = "16kb";
 
 function loadEnvironment() {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
@@ -106,6 +108,10 @@ function getTlsOptions() {
 export function createServer(): Express {
   assertJwtConfiguration();
   const app = express();
+  const apiJsonLimit =
+    process.env.BACKEND_JSON_LIMIT || DEFAULT_API_JSON_LIMIT;
+  const authJsonLimit =
+    process.env.BACKEND_AUTH_JSON_LIMIT || DEFAULT_AUTH_JSON_LIMIT;
 
   app.disable("x-powered-by");
   app.use(createApiRateLimitMiddleware());
@@ -137,11 +143,11 @@ export function createServer(): Express {
 
     next();
   });
-  app.use(express.json({ limit: "25mb" }));
+  app.use("/api/auth", express.json({ limit: authJsonLimit }), authRouter);
+  app.use(express.json({ limit: apiJsonLimit }));
   // Keep API routes grouped here so Electron/main-process startup only needs
   // to call `startServer()` and the rest of the backend stays modular.
   app.use("/api/assessment-profile", assessmentProfileRouter);
-  app.use("/api/auth", authRouter);
   app.use("/api/assist", assistRouter);
   app.use("/api/classes", classesRouter);
   app.use("/api/cram", cramRouter);
@@ -171,10 +177,9 @@ export function createServer(): Express {
     });
   });
 
-  app.get("/", async (_request, response) => {
+  app.get("/", (_request, response) => {
     response.status(200).json({
       message: "Local backend is running.",
-      database: await getActiveDatabaseCounts(),
     });
   });
 
@@ -187,6 +192,23 @@ export function createServer(): Express {
       }),
       database: await getActiveDatabaseCounts(),
     });
+  });
+
+  app.use((error: unknown, _request: express.Request, response: express.Response, next: express.NextFunction) => {
+    if (!error || typeof error !== "object") {
+      next(error);
+      return;
+    }
+
+    const candidate = error as { type?: string; status?: number; message?: string };
+    if (candidate.type === "entity.too.large" || candidate.status === 413) {
+      response.status(413).json({
+        error: "Request body too large.",
+      });
+      return;
+    }
+
+    next(error);
   });
 
   return app;

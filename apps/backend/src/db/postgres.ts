@@ -22,6 +22,23 @@ type PgPoolConfig = {
 let pool: PgPool | null = null;
 let PoolConstructor: (new (config: PgPoolConfig) => PgPool) | null = null;
 
+function parseDatabaseUrl(connectionString: string): URL | null {
+  try {
+    return new URL(connectionString);
+  } catch {
+    return null;
+  }
+}
+
+function isLocalDatabaseHost(connectionString: string): boolean {
+  const parsed = parseDatabaseUrl(connectionString);
+  if (!parsed) {
+    return false;
+  }
+
+  return ["localhost", "127.0.0.1", "::1"].includes(parsed.hostname);
+}
+
 function getMigrationsDirectoryPath(): string {
   const rootWorkspacePath = path.join(
     process.cwd(),
@@ -55,21 +72,42 @@ function getPoolConstructor() {
   }
 }
 
-function buildSslConfig() {
-  const shouldUseSsl = process.env.POSTGRES_SSL === "true";
-  if (!shouldUseSsl) {
+export function buildSslConfig(connectionString: string = process.env.DATABASE_URL || "") {
+  if (!connectionString) {
     return undefined;
   }
 
-  const rejectUnauthorized = process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED !== "false";
+  const allowInsecureLocalhost =
+    process.env.NODE_ENV !== "production" &&
+    isLocalDatabaseHost(connectionString);
+  const sslExplicitlyDisabled = process.env.POSTGRES_SSL === "false";
+  if (sslExplicitlyDisabled) {
+    if (allowInsecureLocalhost) {
+      return undefined;
+    }
+
+    throw new Error(
+      "PostgreSQL connections must use TLS for non-local DATABASE_URL values.",
+    );
+  }
+
+  if (
+    process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED === "false" &&
+    !allowInsecureLocalhost
+  ) {
+    throw new Error(
+      "PostgreSQL certificate verification cannot be disabled for non-local DATABASE_URL values.",
+    );
+  }
+
   const caPath = process.env.POSTGRES_CA_CERT_PATH;
   if (!caPath) {
-    return { rejectUnauthorized };
+    return { rejectUnauthorized: true };
   }
 
   return {
     ca: fs.readFileSync(caPath, "utf8"),
-    rejectUnauthorized,
+    rejectUnauthorized: true,
   };
 }
 
@@ -84,7 +122,7 @@ function getPoolConfig(): PgPoolConfig {
     max: Number(process.env.POSTGRES_POOL_MAX || 10),
     idleTimeoutMillis: Number(process.env.POSTGRES_IDLE_TIMEOUT_MS || 30_000),
     connectionTimeoutMillis: Number(process.env.POSTGRES_CONNECT_TIMEOUT_MS || 10_000),
-    ssl: buildSslConfig(),
+    ssl: buildSslConfig(connectionString),
   };
 }
 
