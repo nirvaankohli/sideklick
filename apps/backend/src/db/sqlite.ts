@@ -1,6 +1,7 @@
 import path from "node:path";
 import type BetterSqlite3 from "better-sqlite3";
 
+import { ensureBillingTables } from "./billing.ts";
 import type { DatabaseCounts } from "../type/database";
 
 const DATABASE_FILE_NAME = "sideklick.sqlite";
@@ -411,6 +412,7 @@ export function getLegacyDatabase(): DatabaseLike {
   ensureSessionColumns(database);
   ensureUserColumns(database);
   ensureUserConstraints(database);
+  ensureBillingTables(database);
 
   return database;
 }

@@ -34,6 +34,7 @@ export type NavigationSection = {
 type HeaderProps = {
   navigationData: NavigationSection[];
   className?: string;
+  homeHref?: string;
 };
 
 const CollaborateButton = ({ className }: { className?: string }) => {
@@ -95,6 +96,7 @@ const CollaborateButton = ({ className }: { className?: string }) => {
 const Header = ({
   navigationData,
   className,
+  homeHref = "#",
 }: HeaderProps) => {
   const [sticky, setSticky] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -139,7 +141,7 @@ const Header = ({
         )}
       >
         <div>
-          <a href="#">
+          <a href={homeHref}>
             <Logo className="site-header-logo gap-3" />
           </a>
         </div>
@@ -182,7 +184,7 @@ const Header = ({
                 className="w-full border-l border-white/10 bg-[#050505]/96 p-0 text-white backdrop-blur-2xl sm:w-96"
               >
                 <div className="flex items-center justify-between border-b border-white/10 p-6">
-                  <a href="#">
+                  <a href={homeHref}>
                     <Logo className="site-menu-logo gap-2" />
                   </a>
                   <SheetClose id="mobile-menu-close">

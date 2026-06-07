@@ -907,6 +907,9 @@ async function callManagedBackend(endpoint, options = {}) {
   const headers = {
     "Content-Type": "application/json",
   };
+  if (typeof options.idempotencyKey === "string" && options.idempotencyKey.trim()) {
+    headers["X-Idempotency-Key"] = options.idempotencyKey.trim();
+  }
 
   const explicitAuthToken =
     typeof options.authToken === "string" && options.authToken.trim()
@@ -1381,6 +1384,7 @@ ipcMain.handle("backend:assessmentProfileAnalyze", async (_event, payload) => {
   return callManagedBackend("/api/assessment-profile/analyze", {
     method: "POST",
     body: payload,
+    idempotencyKey: crypto.randomUUID(),
   });
 });
 
@@ -1417,6 +1421,7 @@ ipcMain.handle("backend:cram", async (_event, payload) => {
   return callManagedBackend("/api/cram", {
     method: "POST",
     body: payload,
+    idempotencyKey: crypto.randomUUID(),
   });
 });
 
@@ -1424,11 +1429,47 @@ ipcMain.handle("backend:quiz", async (_event, payload) => {
   return callManagedBackend("/api/quiz", {
     method: "POST",
     body: payload,
+    idempotencyKey: crypto.randomUUID(),
   });
 });
 
 ipcMain.handle("backend:cramPlan", async (_event, payload) => {
   return callManagedBackend("/api/cram-plan", {
+    method: "POST",
+    body: payload,
+    idempotencyKey: crypto.randomUUID(),
+  });
+});
+
+ipcMain.handle("backend:billingMe", async () => {
+  return callManagedBackend("/api/billing/me", {
+    method: "GET",
+  });
+});
+
+ipcMain.handle("backend:billingCheckout", async (_event, payload) => {
+  return callManagedBackend("/api/billing/checkout", {
+    method: "POST",
+    body: payload,
+  });
+});
+
+ipcMain.handle("backend:billingPortal", async (_event, payload) => {
+  return callManagedBackend("/api/billing/portal", {
+    method: "POST",
+    body: payload,
+  });
+});
+
+ipcMain.handle("backend:billingRedeemDiscountCode", async (_event, payload) => {
+  return callManagedBackend("/api/billing/discount-codes/redeem", {
+    method: "POST",
+    body: payload,
+  });
+});
+
+ipcMain.handle("backend:creditsQuote", async (_event, payload) => {
+  return callManagedBackend("/api/credits/quote", {
     method: "POST",
     body: payload,
   });
@@ -1531,6 +1572,14 @@ ipcMain.handle("session:start", (_event, session) => {
 
 ipcMain.handle("session:stop", () => {
   return ensureSessionManager().stopSession();
+});
+
+ipcMain.handle("shell:openExternal", (_event, url) => {
+  if (typeof url !== "string" || !/^https?:\/\//i.test(url)) {
+    throw new Error("External URL must be http or https.");
+  }
+  shell.openExternal(url);
+  return { ok: true };
 });
 
 // --- AUTO UPDATER IMPLEMENTATION ---

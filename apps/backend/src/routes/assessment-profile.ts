@@ -5,6 +5,7 @@ import {
   enforceClassOwnershipFromBody,
   requireJwtAuth,
 } from "../middleware/auth";
+import { runChargedAction, sendCreditError } from "./credit-charge";
 import { analyzeAssessmentProfile } from "../services/assessment-profile";
 
 export const assessmentProfileRouter = Router();
@@ -14,9 +15,25 @@ assessmentProfileRouter.use(enforceClassOwnershipFromBody("classId"));
 
 assessmentProfileRouter.post("/analyze", async (request, response) => {
   try {
-    const result = await analyzeAssessmentProfile(request.body);
+    const result = await runChargedAction(
+      request,
+      {
+        actionType: "graded_work_analysis",
+        relatedEntityType:
+          typeof request.body?.classId === "number" ? "class" : null,
+        relatedEntityId:
+          typeof request.body?.classId === "number"
+            ? request.body.classId
+            : null,
+      },
+      () => analyzeAssessmentProfile(request.body),
+    );
     response.status(200).json(result);
   } catch (error) {
+    if (sendCreditError(response, error)) {
+      return;
+    }
+
     if (error instanceof ZodError) {
       response.status(400).json({
         error: "Invalid assessment profile payload or model output.",

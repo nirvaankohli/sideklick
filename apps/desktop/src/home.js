@@ -2,6 +2,7 @@ const root = document.querySelector(".window-shell");
 const shrinkWindow = document.querySelector("#shrink-window");
 const openSettingsButton = document.querySelector("#open-settings");
 const openSettingsIconPath = openSettingsButton?.querySelector("path");
+const studyCreditBalance = document.querySelector("#study-credit-balance");
 const minimizeNative = document.querySelector("#minimize-native");
 const closeWindow = document.querySelector("#close-window");
 const compactCloseWindow = document.querySelector("#compact-close-window");
@@ -314,6 +315,27 @@ const privacyDeleteAccountButton = document.querySelector(
   "#privacy-delete-account-button",
 );
 const privacyAccountStatus = document.querySelector("#privacy-account-status");
+const billingPlanBadge = document.querySelector("#billing-plan-badge");
+const billingCreditTotal = document.querySelector("#billing-credit-total");
+const billingCreditMonthly = document.querySelector("#billing-credit-monthly");
+const billingCreditPurchased = document.querySelector(
+  "#billing-credit-purchased",
+);
+const billingRenewalDate = document.querySelector("#billing-renewal-date");
+const billingRefreshButton = document.querySelector("#billing-refresh-button");
+const billingPortalButton = document.querySelector("#billing-portal-button");
+const billingPlusMonthlyButton = document.querySelector("#billing-plus-monthly-button");
+const billingPlusYearlyButton = document.querySelector("#billing-plus-yearly-button");
+const billingMaxMonthlyButton = document.querySelector("#billing-max-monthly-button");
+const billingMaxYearlyButton = document.querySelector("#billing-max-yearly-button");
+const billingCredits50Button = document.querySelector("#billing-credits-50-button");
+const billingFinalsPackButton = document.querySelector("#billing-finals-pack-button");
+const billingModalBackdrop = document.querySelector("#billing-modal-backdrop");
+const billingModalTitle = document.querySelector("#billing-modal-title");
+const billingModalCopy = document.querySelector("#billing-modal-copy");
+const billingModalClose = document.querySelector("#billing-modal-close");
+const billingModalDismiss = document.querySelector("#billing-modal-dismiss");
+const billingModalSettings = document.querySelector("#billing-modal-settings");
 const settingsUpdateStatus = document.querySelector("#settings-update-status");
 const settingsCheckUpdateButton = document.querySelector("#settings-check-update-button");
 const settingsActionUpdateButton = document.querySelector("#settings-action-update-button");
@@ -397,7 +419,30 @@ let currentModalAssessmentProfiles = [];
 let currentModalActiveAssessmentProfileId = "";
 let privacySettings = null;
 let authSession = null;
+let billingSummary = null;
 let postAuthHomeView = "dashboard";
+
+const STUDY_CREDIT_ACTIONS = {
+  basic_quiz: {
+    cost: 2,
+    label: "Generate Quiz",
+  },
+  cram_plan: {
+    cost: 5,
+    label: "Generate Plan",
+  },
+  graded_work_analysis: {
+    cost: 8,
+    label: "Save & Process",
+  },
+};
+
+function formatStudyCreditActionLabel(actionType, fallbackLabel) {
+  const action = STUDY_CREDIT_ACTIONS[actionType];
+  const label = action?.label || fallbackLabel;
+  const cost = action?.cost;
+  return cost ? `${label} - ${cost} Study Credits` : label;
+}
 
 function formatErrorMessage(message) {
   if (!message) return "";
@@ -406,6 +451,244 @@ function formatErrorMessage(message) {
   cleanMessage = cleanMessage.replace(/^Error:\s+/i, "");
   cleanMessage = cleanMessage.replace(/already exists\b/g, "already exist");
   return cleanMessage.trim();
+}
+
+function formatBillingDate(value) {
+  if (!value) {
+    return "--";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "--";
+  }
+
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function getBillingPlanName(summary) {
+  const plan = summary?.planName || summary?.effectivePlan || summary?.plan;
+  return plan ? String(plan).replace(/^\w/, (letter) => letter.toUpperCase()) : "Free";
+}
+
+function renderBillingSummary(summary = billingSummary) {
+  billingSummary = summary && typeof summary === "object" ? summary : null;
+  const credits = billingSummary?.credits;
+  const planName = getBillingPlanName(billingSummary);
+  const monthlyRemaining = credits?.monthly?.remaining;
+  const monthlyAllowance = credits?.monthly?.allowance;
+  const purchasedRemaining = credits?.purchased?.remaining;
+  const totalRemaining = credits?.totalRemaining;
+
+  if (studyCreditBalance) {
+    studyCreditBalance.hidden = !authSession?.user;
+    studyCreditBalance.textContent =
+      typeof totalRemaining === "number"
+        ? `Study Credits: ${totalRemaining.toLocaleString()}`
+        : "Study Credits: --";
+  }
+
+  if (billingPlanBadge) {
+    billingPlanBadge.textContent = planName;
+  }
+  if (billingCreditTotal) {
+    billingCreditTotal.textContent =
+      typeof totalRemaining === "number"
+        ? `${totalRemaining.toLocaleString()} Study Credits`
+        : "-- Study Credits";
+  }
+  if (billingCreditMonthly) {
+    billingCreditMonthly.textContent =
+      typeof monthlyRemaining === "number" && typeof monthlyAllowance === "number"
+        ? `${monthlyRemaining.toLocaleString()} / ${monthlyAllowance.toLocaleString()}`
+        : "-- / --";
+  }
+  if (billingCreditPurchased) {
+    billingCreditPurchased.textContent =
+      typeof purchasedRemaining === "number"
+        ? purchasedRemaining.toLocaleString()
+        : "--";
+  }
+  if (billingRenewalDate) {
+    billingRenewalDate.textContent = formatBillingDate(
+      credits?.monthly?.refreshesAt || billingSummary?.renewalDate,
+    );
+  }
+}
+
+async function refreshBillingSummary() {
+  if (!authSession?.user || typeof window.overlayApi?.getBillingSummary !== "function") {
+    renderBillingSummary(null);
+    return null;
+  }
+
+  try {
+    const summary = await window.overlayApi.getBillingSummary();
+    renderBillingSummary(summary);
+    return summary;
+  } catch (error) {
+    renderBillingSummary(null);
+    return null;
+  }
+}
+
+function getBillingActionButtons() {
+  return [
+    billingPortalButton,
+    billingPlusMonthlyButton,
+    billingPlusYearlyButton,
+    billingMaxMonthlyButton,
+    billingMaxYearlyButton,
+    billingCredits50Button,
+    billingFinalsPackButton,
+  ].filter(Boolean);
+}
+
+function setBillingActionButtonsDisabled(disabled) {
+  for (const button of getBillingActionButtons()) {
+    button.disabled = disabled;
+  }
+}
+
+async function openBillingUrl(url) {
+  if (!url) {
+    throw new Error("Billing link was not returned.");
+  }
+
+  if (typeof window.overlayApi?.openExternalUrl === "function") {
+    await window.overlayApi.openExternalUrl(url);
+    return;
+  }
+
+  await window.overlayApi.openExternalUpdateUrl(url);
+}
+
+async function startBillingCheckout(item) {
+  if (!requireSignedIn("open checkout")) {
+    return;
+  }
+
+  if (typeof window.overlayApi?.createBillingCheckout !== "function") {
+    showBillingModal(
+      "Checkout unavailable",
+      "Billing checkout is not available in this build.",
+    );
+    return;
+  }
+
+  setBillingActionButtonsDisabled(true);
+  try {
+    const checkout = await window.overlayApi.createBillingCheckout({ item });
+    await openBillingUrl(checkout.checkoutUrl);
+    await refreshBillingSummary();
+  } catch (error) {
+    showBillingModal(
+      "Checkout failed",
+      error instanceof Error ? formatErrorMessage(error.message) : "Checkout failed.",
+    );
+  } finally {
+    setBillingActionButtonsDisabled(false);
+  }
+}
+
+async function openBillingPortal() {
+  if (!requireSignedIn("manage billing")) {
+    return;
+  }
+
+  if (typeof window.overlayApi?.createBillingPortal !== "function") {
+    showBillingModal(
+      "Billing portal unavailable",
+      "The billing portal is not available in this build.",
+    );
+    return;
+  }
+
+  setBillingActionButtonsDisabled(true);
+  try {
+    const portal = await window.overlayApi.createBillingPortal({});
+    await openBillingUrl(portal.portalUrl);
+  } catch (error) {
+    showBillingModal(
+      "Billing portal failed",
+      error instanceof Error
+        ? formatErrorMessage(error.message)
+        : "Billing portal failed.",
+    );
+  } finally {
+    setBillingActionButtonsDisabled(false);
+  }
+}
+
+function hideBillingModal() {
+  if (billingModalBackdrop) {
+    billingModalBackdrop.hidden = true;
+  }
+}
+
+function showBillingModal(title, copy) {
+  if (billingModalTitle) {
+    billingModalTitle.textContent = title;
+  }
+  if (billingModalCopy) {
+    billingModalCopy.textContent = copy;
+  }
+  if (billingModalBackdrop) {
+    billingModalBackdrop.hidden = false;
+  }
+}
+
+function showCreditProblemFromMessage(message) {
+  const cleanMessage = formatErrorMessage(message);
+  if (/higher SideKlick plan|requires a higher/i.test(cleanMessage)) {
+    showBillingModal(
+      "Upgrade to Max",
+      "This action needs Max access. Max includes 300 Study Credits each month plus advanced point-leak and graded-work analysis.",
+    );
+    return true;
+  }
+
+  if (/not enough Study Credits/i.test(cleanMessage)) {
+    showBillingModal(
+      "Add more Study Credits",
+      "You do not have enough Study Credits for this action. Plans include monthly credits, and extra credit packs help during heavy test weeks.",
+    );
+    return true;
+  }
+
+  return false;
+}
+
+async function ensureCanRunCreditAction(actionType) {
+  if (typeof window.overlayApi?.quoteStudyCredits !== "function") {
+    return true;
+  }
+
+  try {
+    const quote = await window.overlayApi.quoteStudyCredits({ actionType });
+    if (!quote?.hasRequiredEntitlement) {
+      showBillingModal(
+        "Upgrade to Max",
+        `${quote.label || "This action"} requires Max access. Max-only features are gated by plan, not just by Study Credit balance.`,
+      );
+      return false;
+    }
+
+    if (!quote?.canAfford) {
+      showBillingModal(
+        "Add more Study Credits",
+        `${quote.label || "This action"} costs ${quote.cost} Study Credits. You have ${quote.totalCreditsRemaining ?? 0} available.`,
+      );
+      return false;
+    }
+
+    return true;
+  } catch {
+    return true;
+  }
 }
 
 async function getAiBackendStatus() {
@@ -995,6 +1278,9 @@ function applyAuthSession(nextSession) {
   privacyDeleteAccountButton.disabled = !currentUser;
   if (!currentUser) {
     setAuthGateStatus("Create an account or sign in to continue.", "neutral");
+    renderBillingSummary(null);
+  } else {
+    void refreshBillingSummary();
   }
 }
 
@@ -2051,14 +2337,20 @@ function renderAssessmentSummary() {
     assessmentSaveButton.disabled = isAnalyzingAssessmentProfile;
     assessmentSaveButton.textContent = isAnalyzingAssessmentProfile
       ? "Processing..."
-      : "Save & Process";
+      : formatStudyCreditActionLabel(
+          "graded_work_analysis",
+          "Save & Process",
+        );
   }
 
   if (assessmentAnalyzeButton) {
     assessmentAnalyzeButton.disabled = isAnalyzingAssessmentProfile;
     assessmentAnalyzeButton.textContent = isAnalyzingAssessmentProfile
       ? "Processing..."
-      : "Process Template";
+      : formatStudyCreditActionLabel(
+          "graded_work_analysis",
+          "Process Template",
+        );
   }
 
   if (assessmentAnalysisInsights) {
@@ -2285,6 +2577,13 @@ async function analyzeActiveAssessmentProfile() {
     return;
   }
 
+  const canAffordAnalysis = await ensureCanRunCreditAction(
+    "graded_work_analysis",
+  );
+  if (!canAffordAnalysis) {
+    return;
+  }
+
   isAnalyzingAssessmentProfile = true;
   assessmentUploadError = "";
   renderAssessmentSummary();
@@ -2309,7 +2608,14 @@ async function analyzeActiveAssessmentProfile() {
       ...draft,
       analysis: normalizeAssessmentAnalysis(analysis),
     });
+    void refreshBillingSummary();
   } catch (error) {
+    if (error instanceof Error && showCreditProblemFromMessage(error.message)) {
+      assessmentUploadError = "";
+      renderAssessmentSummary();
+      return;
+    }
+
     assessmentUploadError =
       error instanceof Error
         ? formatErrorMessage(error.message)
@@ -3076,7 +3382,6 @@ function updateCramMaterialCount() {
   ).length;
   const combinedLength =
     pastedLength + uploadedLength + selectedClassMaterialLength;
-  const approxTokens = Math.ceil(combinedLength / 4);
   const hasUploadedMaterial = uploadedCramMaterials.length > 0;
   const hasSelectedClassMaterial = selectedClassMaterialCount > 0;
   const hasUploadError = Boolean(cramMaterialUploadError);
@@ -3084,7 +3389,7 @@ function updateCramMaterialCount() {
     combinedLength > cramConstraintsConfig.maxMaterialCharacters;
 
   if (cramMaterialCount) {
-    cramMaterialCount.textContent = `Approx ${approxTokens.toLocaleString()} tokens loaded`;
+    cramMaterialCount.textContent = `Approx ${combinedLength.toLocaleString()} characters loaded`;
   }
   if (cramMaterialStatus) {
     cramMaterialStatus.textContent = hasUploadError
@@ -3103,9 +3408,15 @@ function updateCramMaterialCount() {
   }
   if (generateCramButton) {
     generateCramButton.disabled = isGeneratingCramPlan;
+    if (!isGeneratingCramPlan) {
+      generateCramButton.textContent = formatStudyCreditActionLabel(
+        "cram_plan",
+        "Generate Plan",
+      );
+    }
   }
 
-  return { approxTokens };
+  return { materialCharacters: combinedLength };
 }
 
 function renderAssessmentClassMaterialPicker() {
@@ -4297,6 +4608,11 @@ async function generateCramPlanForCurrentClass() {
     sessionIds,
   };
 
+  const canAffordCramPlan = await ensureCanRunCreditAction("cram_plan");
+  if (!canAffordCramPlan) {
+    return;
+  }
+
   if (generateCramButton) {
     generateCramButton.disabled = true;
     generateCramButton.textContent = "Generating...";
@@ -4329,13 +4645,22 @@ async function generateCramPlanForCurrentClass() {
     activeCramPath = [...activeCramPath, plan.id];
     activeCramPlan = plan;
     renderCramPlan(plan);
+    void refreshBillingSummary();
   } catch (error) {
+    if (error instanceof Error && showCreditProblemFromMessage(error.message)) {
+      cramStatus.textContent = "";
+      return;
+    }
+
     cramStatus.textContent =
       error instanceof Error ? formatErrorMessage(error.message) : "Cram plan failed.";
   } finally {
     if (generateCramButton) {
       generateCramButton.disabled = false;
-      generateCramButton.textContent = "Generate Plan";
+      generateCramButton.textContent = formatStudyCreditActionLabel(
+        "cram_plan",
+        "Generate Plan",
+      );
     }
   }
 }
@@ -4923,6 +5248,11 @@ async function generateQuizForActiveSession() {
   const targetPath = [...currentPath];
   const processingEntry = buildProcessingQuizEntry();
 
+  const canAffordQuiz = await ensureCanRunCreditAction("basic_quiz");
+  if (!canAffordQuiz) {
+    return;
+  }
+
   generateQuizButton.disabled = true;
   generateQuizButton.textContent = "Generating...";
 
@@ -4946,7 +5276,11 @@ async function generateQuizForActiveSession() {
       readOnly: false,
       hideSave: true,
     });
+    void refreshBillingSummary();
   } catch (error) {
+    if (error instanceof Error) {
+      showCreditProblemFromMessage(error.message);
+    }
     await updateQuizEntryInExplorer(
       processingEntry.id,
       (item) => ({
@@ -4965,7 +5299,10 @@ async function generateQuizForActiveSession() {
       error instanceof Error ? formatErrorMessage(error.message) : "Quiz generation failed.";
   } finally {
     generateQuizButton.disabled = false;
-    generateQuizButton.textContent = "Generate Quiz";
+    generateQuizButton.textContent = formatStudyCreditActionLabel(
+      "basic_quiz",
+      "Generate Quiz",
+    );
   }
 }
 
@@ -5848,6 +6185,49 @@ sessionSummaryBackdrop.addEventListener("click", (event) => {
 });
 closeQuizModalButton.addEventListener("click", closeQuizModal);
 
+studyCreditBalance?.addEventListener("click", () => {
+  setHomeView("settings");
+});
+
+billingRefreshButton?.addEventListener("click", async () => {
+  billingRefreshButton.disabled = true;
+  await refreshBillingSummary();
+  billingRefreshButton.disabled = false;
+});
+billingPortalButton?.addEventListener("click", () => {
+  void openBillingPortal();
+});
+billingPlusMonthlyButton?.addEventListener("click", () => {
+  void startBillingCheckout("plus_monthly");
+});
+billingPlusYearlyButton?.addEventListener("click", () => {
+  void startBillingCheckout("plus_yearly");
+});
+billingMaxMonthlyButton?.addEventListener("click", () => {
+  void startBillingCheckout("max_monthly");
+});
+billingMaxYearlyButton?.addEventListener("click", () => {
+  void startBillingCheckout("max_yearly");
+});
+billingCredits50Button?.addEventListener("click", () => {
+  void startBillingCheckout("credits_50");
+});
+billingFinalsPackButton?.addEventListener("click", () => {
+  void startBillingCheckout("finals_pack");
+});
+
+billingModalClose?.addEventListener("click", hideBillingModal);
+billingModalDismiss?.addEventListener("click", hideBillingModal);
+billingModalBackdrop?.addEventListener("click", (event) => {
+  if (event.target === billingModalBackdrop) {
+    hideBillingModal();
+  }
+});
+billingModalSettings?.addEventListener("click", () => {
+  hideBillingModal();
+  setHomeView("settings");
+});
+
 closeClassMaterialModalButton?.addEventListener(
   "click",
   closeClassMaterialModal,
@@ -6233,18 +6613,13 @@ cramMaterialFile?.addEventListener("change", async () => {
       (total, file) => total + file.compressedCharacters,
       0,
     );
-    const totalTokenSavings = successfulFiles.reduce(
-      (total, file) => total + file.estimatedTokenSavings,
-      0,
-    );
-
     uploadedCramMaterials = successfulFiles;
     cramMaterialUploadError = failedCount
       ? `Loaded ${successfulFiles.length} file${successfulFiles.length === 1 ? "" : "s"}, but ${failedCount} file${failedCount === 1 ? "" : "s"} couldn't be read cleanly.`
       : "";
     cramMaterialUploadSummary =
       successfulFiles.length > 0
-        ? `Condensed ${successfulFiles.length} upload${successfulFiles.length === 1 ? "" : "s"} from ${totalOriginalCharacters.toLocaleString()} to ${totalCompressedCharacters.toLocaleString()} characters, saving about ${totalTokenSavings.toLocaleString()} tokens.`
+        ? `Condensed ${successfulFiles.length} upload${successfulFiles.length === 1 ? "" : "s"} from ${totalOriginalCharacters.toLocaleString()} to ${totalCompressedCharacters.toLocaleString()} characters.`
         : "";
     if (cramFileName) {
       cramFileName.textContent = getCramUploadSummaryText();

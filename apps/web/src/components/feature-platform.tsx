@@ -4,10 +4,12 @@ import { motion } from "motion/react";
 import assistPanel from "../../assets/assist-panel.png";
 import weakSpots from "../../assets/weak-spots.png";
 import CompareSection from "@/components/compare-section";
+import siteCopy from "@/content/site-copy.json";
 import { TimelineAnimation } from "@/components/ui/timeline-animation";
 
 export const FeaturePlatform = () => {
   const sectionRef = useRef<HTMLElement | null>(null);
+  const copy = siteCopy.home.features;
 
   return (
     <section
@@ -18,7 +20,7 @@ export const FeaturePlatform = () => {
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 md:mb-10">
           <h2 className="max-w-4xl text-4xl font-medium tracking-tight text-foreground md:text-6xl">
-            How SideKlick helps while you study
+            {copy.heading}
           </h2>
         </div>
 
@@ -31,7 +33,7 @@ export const FeaturePlatform = () => {
             <div className="flex h-full flex-col justify-between gap-8">
               <div>
                 <h3 className="max-w-md text-3xl font-medium leading-tight md:text-4xl">
-                  SideKlick{" "}
+                  {copy.weakSpots.headingPrefix}{" "}
                   <motion.span
                     animate={{
                       opacity: [0.75, 1, 0.75],
@@ -48,19 +50,18 @@ export const FeaturePlatform = () => {
                       repeat: Number.POSITIVE_INFINITY,
                     }}
                   >
-                    remembers
+                    {copy.weakSpots.headingHighlight}
                   </motion.span>{" "}
-                  what you miss
+                  {copy.weakSpots.headingSuffix}
                 </h3>
                 <p className="mt-4 max-w-md text-base leading-7 text-white/78">
-                  It keeps track of weak spots from your study sessions, so the
-                  next quiz and plan are built around what still needs work.
+                  {copy.weakSpots.body}
                 </p>
               </div>
 
               <div className="overflow-hidden rounded-[1.75rem] border border-black/10 bg-black/18 shadow-[0_18px_50px_rgba(16,24,40,0.22)] backdrop-blur-md">
                 <img
-                  alt="SideKlick quiz screen showing strengths, gaps, and a targeted review question."
+                  alt={copy.weakSpots.imageAlt}
                   className="block w-full"
                   src={weakSpots}
                 />
@@ -76,7 +77,7 @@ export const FeaturePlatform = () => {
             <div className="flex h-full flex-col justify-between gap-8">
               <div>
                 <h3 className="max-w-lg text-3xl font-medium leading-tight md:text-4xl">
-                  When you need help, SideKlick{" "}
+                  {copy.assist.headingPrefix}{" "}
                   <motion.span
                     animate={{
                       backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
@@ -88,20 +89,18 @@ export const FeaturePlatform = () => {
                       repeat: Number.POSITIVE_INFINITY,
                     }}
                   >
-                    assists
+                    {copy.assist.headingHighlight}
                   </motion.span>{" "}
-                  in the moment
+                  {copy.assist.headingSuffix}
                 </h3>
                 <p className="mt-4 max-w-md text-base leading-7 text-slate-600">
-                  Ask for help while reading notes, reviewing slides, or
-                  browsing course material and get support without breaking your
-                  flow.
+                  {copy.assist.body}
                 </p>
               </div>
 
               <div className="overflow-hidden rounded-[1.75rem] border border-slate-300/90 bg-[#4b4d57] shadow-[0_16px_40px_rgba(15,23,42,0.18)]">
                 <img
-                  alt="SideKlick assist panel answering a biology question and suggesting the next review step."
+                  alt={copy.assist.imageAlt}
                   className="block w-full"
                   src={assistPanel}
                 />

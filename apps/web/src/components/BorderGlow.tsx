@@ -18,7 +18,11 @@ interface BorderGlowProps {
 function parseHSL(hslStr: string): { h: number; s: number; l: number } {
   const match = hslStr.match(/([\d.]+)\s*([\d.]+)%?\s*([\d.]+)%?/);
   if (!match) return { h: 40, s: 80, l: 80 };
-  return { h: parseFloat(match[1]), s: parseFloat(match[2]), l: parseFloat(match[3]) };
+  return {
+    h: parseFloat(match[1] ?? "40"),
+    s: parseFloat(match[2] ?? "80"),
+    l: parseFloat(match[3] ?? "80"),
+  };
 }
 
 function buildBoxShadow(glowColor: string, intensity: number): string {
@@ -62,11 +66,13 @@ const COLOR_MAP = [0, 1, 2, 0, 1, 2, 1];
 
 function buildMeshGradients(colors: string[]): string[] {
   const gradients: string[] = [];
+  const palette = colors.length > 0 ? colors : ['#c084fc'];
   for (let i = 0; i < 7; i++) {
-    const c = colors[Math.min(COLOR_MAP[i], colors.length - 1)];
+    const colorIndex = COLOR_MAP[i] ?? 0;
+    const c = palette[Math.min(colorIndex, palette.length - 1)] ?? palette[0] ?? '#c084fc';
     gradients.push(`radial-gradient(at ${GRADIENT_POSITIONS[i]}, ${c} 0px, transparent 50%)`);
   }
-  gradients.push(`linear-gradient(${colors[0]} 0 100%)`);
+  gradients.push(`linear-gradient(${palette[0] ?? '#c084fc'} 0 100%)`);
   return gradients;
 }
 
@@ -90,7 +96,7 @@ const BorderGlow: React.FC<BorderGlowProps> = ({
   const [edgeProximity, setEdgeProximity] = useState(0);
   const [sweepActive, setSweepActive] = useState(false);
 
-  const getCenterOfElement = useCallback((el: HTMLElement) => {
+  const getCenterOfElement = useCallback((el: HTMLElement): [number, number] => {
     const { width, height } = el.getBoundingClientRect();
     return [width / 2, height / 2];
   }, []);

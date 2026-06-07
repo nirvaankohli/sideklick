@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
 import { GITHUB_RELEASES_PAGE_URL } from "@/components/download-target";
+import siteCopy from "@/content/site-copy.json";
 
 import demoVideo from "../../../../../assets/cover.mp4";
 
 function HeroSection() {
+  const copy = siteCopy.home.hero;
+
   return (
     <section>
       <div className="relative h-full w-full">
@@ -21,9 +24,9 @@ function HeroSection() {
                   transition={{ duration: 1, ease: "easeInOut" }}
                   className="text-5xl font-medium leading-14 md:text-7xl md:leading-20 lg:text-8xl lg:leading-24"
                 >
-                  Turn class notes into{" "}
+                  {copy.headingPrefix}{" "}
                   <span className="font-instrument-serif italic tracking-tight">
-                    quizzes, summaries, and help
+                    {copy.headingEmphasis}
                   </span>
                 </motion.h1>
                 <motion.p
@@ -32,9 +35,7 @@ function HeroSection() {
                   transition={{ duration: 1, delay: 0.1, ease: "easeInOut" }}
                   className="max-w-2xl text-base font-normal text-muted-foreground"
                 >
-                  SideKlick helps students turn class material into something
-                  useful right away, without copying everything into five
-                  different apps.
+                  {copy.body}
                 </motion.p>
               </div>
               <motion.div
@@ -53,7 +54,7 @@ function HeroSection() {
                     target="_blank"
                   >
                     <span className="relative z-10 transition-all duration-500">
-                      Other releases
+                      {copy.secondaryCtaLabel}
                     </span>
                     <span className="absolute right-1 flex h-10 w-10 items-center justify-center rounded-full bg-background text-foreground transition-all duration-500 group-hover:right-[calc(100%-44px)] group-hover:rotate-45">
                       <ArrowUpRight size={16} />

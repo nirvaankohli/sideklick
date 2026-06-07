@@ -110,6 +110,184 @@ body {
   background: rgba(15, 23, 42, 0.08);
 }
 
+.founding-beta-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  align-items: end;
+  justify-items: center;
+  padding: 1rem;
+}
+
+.founding-beta-popup__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(3, 4, 6, 0.58);
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+}
+
+.founding-beta-popup__panel {
+  position: relative;
+  width: min(100%, 34rem);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.035)),
+    #0b0b0d;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.54);
+  color: #f5f5f7;
+  padding: 1.35rem;
+}
+
+.founding-beta-popup__panel::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  content: "";
+  background: linear-gradient(90deg, #f8d879, #ff8f70 44%, #8fa5ff);
+}
+
+.founding-beta-popup__close {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  display: inline-flex;
+  width: 2.15rem;
+  height: 2.15rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.74);
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.founding-beta-popup__close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.founding-beta-popup__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 2.8rem 1rem 0;
+  color: rgba(255, 224, 159, 0.94);
+  font-size: 0.76rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.founding-beta-popup h2 {
+  max-width: 27rem;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.55rem, 5vw, 2.3rem);
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+
+.founding-beta-popup p:not(.founding-beta-popup__eyebrow) {
+  max-width: 30rem;
+  margin: 0.85rem 0 0;
+  color: rgba(245, 245, 247, 0.7);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.founding-beta-popup__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 1.2rem;
+}
+
+.founding-beta-popup__primary,
+.founding-beta-popup__secondary {
+  width: 100%;
+  border-radius: 999px;
+}
+
+.founding-beta-popup__secondary {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: #ffffff;
+}
+
+.founding-beta-popup__secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 640px) {
+  .founding-beta-popup {
+    align-items: end;
+    justify-items: end;
+    padding: 1.5rem;
+  }
+
+  .founding-beta-popup__actions {
+    flex-direction: row;
+  }
+
+  .founding-beta-popup__primary,
+  .founding-beta-popup__secondary {
+    width: auto;
+  }
+}
+
+.theme-light .founding-beta-popup__backdrop {
+  background: rgba(15, 23, 42, 0.32);
+}
+
+.theme-light .founding-beta-popup__panel {
+  border-color: rgba(15, 23, 42, 0.12);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(246, 247, 248, 0.82)),
+    #ffffff;
+  box-shadow: 0 28px 90px rgba(15, 23, 42, 0.2);
+  color: #111827;
+}
+
+.theme-light .founding-beta-popup__close {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(15, 23, 42, 0.04);
+  color: rgba(15, 23, 42, 0.64);
+}
+
+.theme-light .founding-beta-popup__close:hover {
+  background: rgba(15, 23, 42, 0.08);
+  color: #111827;
+}
+
+.theme-light .founding-beta-popup__eyebrow {
+  color: rgba(138, 76, 24, 0.9);
+}
+
+.theme-light .founding-beta-popup h2 {
+  color: #111827;
+}
+
+.theme-light .founding-beta-popup p:not(.founding-beta-popup__eyebrow) {
+  color: rgba(15, 23, 42, 0.68);
+}
+
+.theme-light .founding-beta-popup__secondary {
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #111827;
+}
+
+.theme-light .founding-beta-popup__secondary:hover {
+  background: rgba(15, 23, 42, 0.07);
+}
+
 .theme-light .site-header-logo {
   color: #070707;
 }
@@ -172,4 +350,536 @@ body {
 .theme-light .site-footer .footer-wordmark {
   color: #000000;
   opacity: 0.18;
+}
+
+.pricing-page,
+.login-page {
+  isolation: isolate;
+}
+
+.pricing-page::before,
+.login-page::before {
+  position: absolute;
+  inset: 6.5rem -14% auto -14%;
+  height: 18rem;
+  content: "";
+  background:
+    linear-gradient(
+      92deg,
+      transparent,
+      rgba(117, 137, 255, 0.16),
+      rgba(255, 255, 255, 0.08),
+      transparent
+    );
+  opacity: 0.92;
+  transform: rotate(-4deg);
+}
+
+.pricing-page__grid,
+.login-page__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.052) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.052) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.72), transparent 74%);
+  opacity: 0.26;
+}
+
+.pricing-plan-card,
+.login-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 1.75rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.028) 46%, rgba(126, 143, 255, 0.11)),
+    rgba(6, 6, 7, 0.7);
+  box-shadow: 0 34px 120px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(20px);
+}
+
+.pricing-plan-card::before,
+.login-card::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent 36%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 0,
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 1px,
+      transparent 18px
+    );
+  opacity: 0.32;
+  pointer-events: none;
+}
+
+.pricing-plan-card {
+  display: grid;
+  min-height: 35rem;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 2rem;
+  padding: 1.35rem;
+}
+
+.pricing-plan-card[data-accent="focused"] {
+  border-color: rgba(187, 199, 255, 0.26);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.035) 42%, rgba(118, 137, 255, 0.2)),
+    rgba(10, 10, 13, 0.76);
+}
+
+.pricing-plan-card__top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pricing-plan-card__icon,
+.login-card__success-icon {
+  display: inline-flex;
+  width: 2.35rem;
+  height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(196, 205, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(128, 145, 255, 0.13);
+  color: rgba(233, 236, 255, 0.94);
+}
+
+.pricing-plan-card__note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+  color: rgba(245, 245, 247, 0.62);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.pricing-plan-card__audience,
+.login-card__eyebrow {
+  margin: 0;
+  color: rgba(245, 245, 247, 0.46);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.pricing-plan-card h2,
+.login-card h2 {
+  margin: 0.7rem 0 0;
+  color: var(--foreground);
+  font-size: clamp(2.25rem, 4vw, 3.35rem);
+  font-weight: 500;
+  line-height: 1.02;
+}
+
+.pricing-plan-card__price {
+  margin: 1.2rem 0 0;
+  color: rgba(233, 236, 255, 0.88);
+  font-size: 1.2rem;
+  font-weight: 650;
+}
+
+.pricing-plan-card__description,
+.login-card__signed-in p {
+  margin: 1rem 0 0;
+  color: rgba(245, 245, 247, 0.66);
+  font-size: 0.96rem;
+  line-height: 1.7;
+}
+
+.pricing-plan-card__features {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pricing-plan-card__features li {
+  display: flex;
+  align-items: start;
+  gap: 0.75rem;
+  color: rgba(245, 245, 247, 0.74);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.pricing-plan-card__features svg {
+  margin-top: 0.15rem;
+  flex: 0 0 auto;
+  color: rgba(188, 199, 255, 0.92);
+}
+
+.pricing-plan-card__cta,
+.login-card__button {
+  position: relative;
+  width: 100%;
+  height: 2.85rem;
+  border-radius: 999px;
+}
+
+.pricing-plan-card__actions {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.pricing-plan-card__mini-cta,
+.pricing-mini-card__button {
+  border-radius: 999px;
+}
+
+.pricing-page__account-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.pricing-page__account-actions button {
+  border-radius: 999px;
+}
+
+.pricing-page__message {
+  margin: 1rem auto 0;
+  max-width: 36rem;
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.pricing-page__message--error {
+  border: 1px solid rgba(255, 122, 122, 0.28);
+  background: rgba(110, 26, 26, 0.22);
+  color: rgba(255, 219, 219, 0.94);
+}
+
+.pricing-beta-cta {
+  border-radius: 999px;
+}
+
+.pricing-page__disclaimer {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1rem 1.15rem;
+  text-align: center;
+}
+
+.pricing-page__disclaimer p {
+  margin: 0;
+  color: rgba(245, 245, 247, 0.58);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.pricing-mini-card {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 1rem;
+}
+
+.pricing-mini-card__kicker {
+  margin: 0 0 0.25rem;
+  color: rgba(245, 245, 247, 0.48);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pricing-mini-card h2 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+.pricing-mini-card__price {
+  color: rgba(233, 236, 255, 0.9);
+  font-size: 1.35rem;
+  font-weight: 750;
+}
+
+.pricing-mini-card__button {
+  width: fit-content;
+}
+
+.pricing-cost-grid {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.pricing-cost-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.55rem;
+  color: rgba(245, 245, 247, 0.66);
+  font-size: 0.84rem;
+}
+
+.pricing-cost-row strong {
+  flex: 0 0 auto;
+  color: rgba(233, 236, 255, 0.92);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.login-page__meta {
+  display: inline-flex;
+  max-width: min(100%, 38rem);
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.55rem 0.8rem;
+  color: rgba(245, 245, 247, 0.62);
+  font-size: 0.82rem;
+}
+
+.login-page__meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.login-card {
+  padding: 1.25rem;
+}
+
+.login-card__tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 0.3rem;
+}
+
+.login-card__tabs button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(245, 245, 247, 0.62);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.65rem 0.75rem;
+}
+
+.login-card__tabs button[aria-selected="true"] {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--foreground);
+}
+
+.login-card__form {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.login-card__form label {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.login-card__form label span {
+  color: rgba(245, 245, 247, 0.6);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.login-card__form input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--foreground);
+  font: inherit;
+  outline: none;
+  padding: 0.9rem 1rem;
+}
+
+.login-card__form input:focus {
+  border-color: rgba(187, 199, 255, 0.42);
+  box-shadow: 0 0 0 3px rgba(128, 145, 255, 0.16);
+}
+
+.login-card__message {
+  margin: 0;
+  border-radius: 1rem;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.login-card__message--error {
+  border: 1px solid rgba(248, 113, 113, 0.26);
+  background: rgba(248, 113, 113, 0.1);
+  color: #fecaca;
+}
+
+.login-card__message--success {
+  border: 1px solid rgba(134, 239, 172, 0.22);
+  background: rgba(134, 239, 172, 0.09);
+  color: #bbf7d0;
+}
+
+.login-card__signed-in {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+}
+
+.login-card__signed-in h2 {
+  margin-top: 0.2rem;
+}
+
+.theme-light .pricing-page::before,
+.theme-light .login-page::before {
+  background:
+    linear-gradient(
+      92deg,
+      transparent,
+      rgba(90, 112, 220, 0.15),
+      rgba(255, 255, 255, 0.72),
+      transparent
+    );
+}
+
+.theme-light .pricing-page__grid,
+.theme-light .login-page__grid {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+  opacity: 0.34;
+}
+
+.theme-light .pricing-plan-card,
+.theme-light .login-card {
+  border-color: rgba(15, 23, 42, 0.14);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(244, 247, 252, 0.82) 46%, rgba(214, 222, 255, 0.66)),
+    rgba(255, 255, 255, 0.9);
+  box-shadow: 0 34px 110px rgba(15, 23, 42, 0.12);
+}
+
+.theme-light .pricing-plan-card::before,
+.theme-light .login-card::before {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), transparent 36%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(15, 23, 42, 0.045) 0,
+      rgba(15, 23, 42, 0.045) 1px,
+      transparent 1px,
+      transparent 18px
+    );
+}
+
+.theme-light .pricing-plan-card__icon,
+.theme-light .login-card__success-icon {
+  border-color: rgba(76, 94, 188, 0.22);
+  background: rgba(111, 130, 230, 0.12);
+  color: #243068;
+}
+
+.theme-light .pricing-plan-card__note,
+.theme-light .login-page__meta,
+.theme-light .login-card__tabs {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.62);
+  color: rgba(15, 23, 42, 0.58);
+}
+
+.theme-light .pricing-plan-card__audience,
+.theme-light .login-card__eyebrow,
+.theme-light .login-card__form label span {
+  color: rgba(15, 23, 42, 0.48);
+}
+
+.theme-light .pricing-plan-card__price {
+  color: rgba(36, 48, 104, 0.9);
+}
+
+.theme-light .pricing-plan-card__description,
+.theme-light .pricing-plan-card__features li,
+.theme-light .login-card__signed-in p {
+  color: rgba(15, 23, 42, 0.66);
+}
+
+.theme-light .pricing-page__disclaimer {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.theme-light .pricing-page__disclaimer p {
+  color: rgba(15, 23, 42, 0.62);
+}
+
+.theme-light .pricing-mini-card {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.theme-light .pricing-mini-card__kicker,
+.theme-light .pricing-cost-row {
+  color: rgba(15, 23, 42, 0.58);
+}
+
+.theme-light .pricing-mini-card__price,
+.theme-light .pricing-cost-row strong {
+  color: rgba(36, 48, 104, 0.94);
+}
+
+.theme-light .pricing-cost-row {
+  border-top-color: rgba(15, 23, 42, 0.1);
+}
+
+.theme-light .login-card__tabs button {
+  color: rgba(15, 23, 42, 0.58);
+}
+
+.theme-light .login-card__tabs button[aria-selected="true"] {
+  background: rgba(15, 23, 42, 0.08);
+  color: #0f172a;
+}
+
+.theme-light .login-card__form input {
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  color: #0f172a;
+}
+
+.theme-light .login-card__message--error {
+  color: #991b1b;
+}
+
+.theme-light .login-card__message--success {
+  color: #166534;
 }
