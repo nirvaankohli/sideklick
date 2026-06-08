@@ -13,6 +13,11 @@ const nullableScreenshotDataUrl = z
   .regex(/^data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/)
   .nullable()
   .optional();
+const tracingConsentSchema = z.object({
+  requestSyncConsent: z.enum(["unknown", "granted", "denied"]),
+  serverSyncConsent: z.enum(["unknown", "granted", "denied"]),
+  langfuseEnabled: z.boolean(),
+}).strict();
 
 const timestampString = z.union([
   z.string().datetime({ offset: true }),
@@ -72,6 +77,11 @@ export const modelAssistOutputSchema = z.object({
   student_response: z.string().trim().min(1),
   possible_gaps: z.array(modelGapCandidateSchema),
   next_step: z.string().trim().min(1),
+}).strict();
+
+export const modelScreenDecisionSchema = z.object({
+  wants_screen: z.boolean(),
+  reason: z.string().trim().min(1),
 }).strict();
 
 export const builtContextSchema = z.object({
@@ -163,7 +173,7 @@ export const builtContextSchema = z.object({
   summary: z.string().trim().min(1),
 });
 
-export const assistRequestSchema = z.object({
+const baseAssistRequestSchema = z.object({
   classId: z.number().int().positive(),
   sessionId: z.number().int().positive().optional(),
   actionType: z.string().trim().min(1),
@@ -173,7 +183,20 @@ export const assistRequestSchema = z.object({
   pageUrl: z.string().trim().url().nullable().optional(),
   userNote: nullableTrimmedString,
   screenshotDataUrl: nullableScreenshotDataUrl,
+  tracingConsent: tracingConsentSchema.optional(),
+});
+
+export const legacyAssistRequestSchema = baseAssistRequestSchema.strict();
+
+export const smartAssistRequestSchema = baseAssistRequestSchema.extend({
+  requestMode: z.literal("smart"),
+  screenshotPolicy: z.enum(["automatic", "manual", "disabled"]),
 }).strict();
+
+export const assistRequestSchema = z.union([
+  smartAssistRequestSchema,
+  legacyAssistRequestSchema,
+]);
 
 export const assistResponseSchema = z.object({
   interactionId: z.number().int().positive(),
@@ -183,7 +206,19 @@ export const assistResponseSchema = z.object({
   // Model output is the least trustworthy input in the system, so validate it
   // as strictly as client requests.
   gapCandidates: z.array(modelGapCandidateSchema),
+  screenViewed: z.boolean().optional(),
 }).strict();
+
+export const smartAssistNeedsScreenshotResponseSchema = z.object({
+  requestMode: z.literal("smart"),
+  needsScreenshot: z.literal(true),
+  reason: z.string().trim().min(1),
+}).strict();
+
+export const assistRouteResponseSchema = z.union([
+  assistResponseSchema,
+  smartAssistNeedsScreenshotResponseSchema,
+]);
 
 export const feedbackRequestSchema = z.object({
   interactionId: z.number().int().positive(),

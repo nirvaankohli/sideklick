@@ -5,6 +5,7 @@ import { ensureBillingTables } from "./billing.ts";
 import type { DatabaseCounts } from "../type/database";
 
 const DATABASE_FILE_NAME = "sideklick.sqlite";
+const PRIVACY_RESET_MIGRATION_MARKER = "privacy_reset_opt_in_v2";
 
 type DatabaseLike = BetterSqlite3.Database;
 
@@ -135,7 +136,7 @@ function createTables(db: DatabaseLike): void {
 
     CREATE TABLE IF NOT EXISTS privacy_settings (
       user_id TEXT PRIMARY KEY,
-      screenshot_policy TEXT NOT NULL DEFAULT 'disabled',
+      screenshot_policy TEXT NOT NULL DEFAULT 'manual',
       local_only_mode INTEGER NOT NULL DEFAULT 1,
       sync_consent TEXT NOT NULL DEFAULT 'unknown',
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -396,6 +397,51 @@ function ensureUserConstraints(db: DatabaseLike): void {
   `);
 }
 
+function ensurePrivacyResetMigration(db: DatabaseLike): void {
+  const marker = db.prepare(
+    `
+      SELECT state_value
+      FROM app_state
+      WHERE state_key = ?
+      LIMIT 1
+    `,
+  ).get(PRIVACY_RESET_MIGRATION_MARKER) as { state_value: string } | undefined;
+
+  if (marker?.state_value === "applied") {
+    return;
+  }
+
+  db.prepare(
+    `
+      UPDATE privacy_settings
+      SET
+        screenshot_policy = 'manual',
+        sync_consent = 'unknown',
+        updated_at = CURRENT_TIMESTAMP
+    `,
+  ).run();
+
+  db.prepare(
+    `
+      INSERT INTO app_state (
+        state_key,
+        state_value,
+        updated_at
+      ) VALUES (
+        @stateKey,
+        @stateValue,
+        CURRENT_TIMESTAMP
+      )
+      ON CONFLICT(state_key) DO UPDATE SET
+        state_value = excluded.state_value,
+        updated_at = CURRENT_TIMESTAMP
+    `,
+  ).run({
+    stateKey: PRIVACY_RESET_MIGRATION_MARKER,
+    stateValue: "applied",
+  });
+}
+
 export function getLegacyDatabase(): DatabaseLike {
   if (database) {
     return database;
@@ -413,6 +459,7 @@ export function getLegacyDatabase(): DatabaseLike {
   ensureUserColumns(database);
   ensureUserConstraints(database);
   ensureBillingTables(database);
+  ensurePrivacyResetMigration(database);
 
   return database;
 }
