@@ -1,15 +1,20 @@
 import {
   assistRequestSchema,
+  assistRouteResponseSchema,
   assistResponseSchema,
 } from "../schema";
 import type {
+  AssistRouteResponse,
   AssistResponse,
   BuiltContext,
   ModelAssistOutput,
 } from "../type";
 import { buildContext } from "./context";
 import { persistAssistMemory } from "./memory";
-import { requestAssistFromOpenAI } from "./openai";
+import {
+  requestAssistFromOpenAI,
+  requestScreenDecisionFromOpenAI,
+} from "./openai";
 
 type NormalizedAssistPayload = Omit<AssistResponse, "interactionId">;
 
@@ -28,7 +33,7 @@ function normalizeModelAssistOutput(
 
 export async function handleAssistRequest(
   input: unknown,
-): Promise<AssistResponse> {
+): Promise<AssistRouteResponse> {
   // Route flow:
   // 1. validate request
   // 2. build local context
@@ -38,6 +43,24 @@ export async function handleAssistRequest(
   // 6. validate the final response shape
   const requestInput = assistRequestSchema.parse(input);
   const builtContext = buildContext(requestInput.classId, requestInput);
+  if (
+    requestInput.requestMode === "smart" &&
+    requestInput.screenshotPolicy === "automatic" &&
+    !requestInput.screenshotDataUrl
+  ) {
+    const screenDecision = await requestScreenDecisionFromOpenAI(
+      builtContext,
+      requestInput,
+    );
+    if (screenDecision.wants_screen) {
+      return assistRouteResponseSchema.parse({
+        requestMode: "smart",
+        needsScreenshot: true,
+        reason: screenDecision.reason,
+      });
+    }
+  }
+
   const modelOutput = await requestAssistFromOpenAI(
     builtContext,
     requestInput,
@@ -53,12 +76,19 @@ export async function handleAssistRequest(
     normalizedPayload,
     builtContext,
   );
-  const validatedResponse = assistResponseSchema.parse({
+  const responsePayload = {
     interactionId,
     ...normalizedPayload,
-  });
+  };
+  if (
+    requestInput.requestMode === "smart" &&
+    Boolean(requestInput.screenshotDataUrl)
+  ) {
+    Object.assign(responsePayload, { screenViewed: true });
+  }
+  const validatedResponse = assistResponseSchema.parse(responsePayload);
 
   // Final response validation ensures the route only returns the backend's
   // canonical shape, regardless of how the model responded internally.
-  return validatedResponse;
+  return assistRouteResponseSchema.parse(validatedResponse);
 }

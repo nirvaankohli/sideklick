@@ -23,9 +23,10 @@ type PrivacySettingsRow = {
 };
 
 const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
-  screenshotPolicy: "automatic",
-  syncConsent: "granted",
+  screenshotPolicy: "manual",
+  syncConsent: "unknown",
 };
+const PRIVACY_RESET_MIGRATION_MARKER = "privacy_reset_opt_in_v2";
 
 function mapPrivacySettings(row: PrivacySettingsRow | undefined): PrivacySettings {
   if (!row) {
@@ -418,4 +419,49 @@ export function getPrivacyWorkerHandlers() {
       });
     },
   } as const;
+}
+
+export function resetAllPrivacySettingsOnce(db = getDatabase()): void {
+  const marker = db.prepare(
+    `
+      SELECT state_value
+      FROM app_state
+      WHERE state_key = ?
+      LIMIT 1
+    `,
+  ).get(PRIVACY_RESET_MIGRATION_MARKER) as { state_value: string } | undefined;
+
+  if (marker?.state_value === "applied") {
+    return;
+  }
+
+  db.prepare(
+    `
+      UPDATE privacy_settings
+      SET
+        screenshot_policy = 'manual',
+        sync_consent = 'unknown',
+        updated_at = CURRENT_TIMESTAMP
+    `,
+  ).run();
+
+  db.prepare(
+    `
+      INSERT INTO app_state (
+        state_key,
+        state_value,
+        updated_at
+      ) VALUES (
+        @stateKey,
+        @stateValue,
+        CURRENT_TIMESTAMP
+      )
+      ON CONFLICT(state_key) DO UPDATE SET
+        state_value = excluded.state_value,
+        updated_at = CURRENT_TIMESTAMP
+    `,
+  ).run({
+    stateKey: PRIVACY_RESET_MIGRATION_MARKER,
+    stateValue: "applied",
+  });
 }

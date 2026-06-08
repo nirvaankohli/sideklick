@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS privacy_settings (
   user_id TEXT PRIMARY KEY REFERENCES users(id),
-  screenshot_policy TEXT NOT NULL DEFAULT 'disabled',
+  screenshot_policy TEXT NOT NULL DEFAULT 'manual',
   local_only_mode BOOLEAN NOT NULL DEFAULT TRUE,
   sync_consent TEXT NOT NULL DEFAULT 'unknown',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP

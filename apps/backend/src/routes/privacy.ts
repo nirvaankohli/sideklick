@@ -23,6 +23,18 @@ export const privacyRouter = Router();
 
 privacyRouter.use(requireJwtAuth);
 
+privacyRouter.get("/privacy-settings", (request, response) => {
+  try {
+    const userId = getAuthenticatedUserId(request);
+    const settings = getUserPrivacySettings(userId);
+    response.status(200).json({ settings });
+  } catch (error) {
+    response.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to read privacy settings.",
+    });
+  }
+});
+
 privacyRouter.put("/privacy-settings", (request, response) => {
   try {
     const userId = getAuthenticatedUserId(request);

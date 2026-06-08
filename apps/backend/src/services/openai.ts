@@ -6,11 +6,15 @@ import dotenv from "dotenv";
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 
-import { modelAssistOutputSchema } from "../schema";
+import {
+  modelAssistOutputSchema,
+  modelScreenDecisionSchema,
+} from "../schema";
 import type {
   AssistRequest,
   BuiltContext,
   ModelAssistOutput,
+  ModelScreenDecision,
 } from "../type";
 import {
   getObservedOpenAIClient,
@@ -165,10 +169,144 @@ function buildUserTextPayload(
   );
 }
 
+function buildScreenDecisionPrompt(requestInput: AssistRequest): string {
+  return [
+    "You are deciding whether a study assistant needs to view the student's screen before answering.",
+    "Return wants_screen=true only when the visible screen is likely needed to answer well.",
+    "Use the screen for diagrams, equations, tables, charts, visual layout, code shown on screen, UI state, or when the student's wording clearly references 'this', 'here', 'on my screen', or an attached visual.",
+    "Return wants_screen=false when selected text, pasted context, and the question are enough.",
+    "Do not ask for the screen just because it might be mildly helpful.",
+    `Action type: ${requestInput.actionType}`,
+    `Selected text: ${requestInput.selectedText}`,
+    `User note: ${requestInput.userNote ?? ""}`,
+    `Page title: ${requestInput.pageTitle ?? ""}`,
+    `Surrounding text: ${requestInput.surroundingText ?? ""}`,
+  ].join("\n");
+}
+
+export async function requestScreenDecisionFromOpenAI(
+  builtContext: BuiltContext,
+  requestInput: AssistRequest,
+): Promise<ModelScreenDecision> {
+  const client = getOpenAIClient();
+  const response = await client.responses.parse({
+    model: getOpenAIModel(),
+    input: [
+      {
+        role: "system",
+        content:
+          "Decide whether screen context is required before answering. Return strict JSON only.",
+      },
+      {
+        role: "user",
+        content: JSON.stringify(
+          {
+            request: buildScreenDecisionPrompt(requestInput),
+            context_packet: builtContext.contextPacket,
+            context_tiers: builtContext.contextTiers,
+          },
+          null,
+          2,
+        ),
+      },
+    ],
+    text: {
+      format: zodTextFormat(modelScreenDecisionSchema, "screen_decision"),
+    },
+  });
+
+  if (!response.output_parsed) {
+    throw new Error(
+      "OpenAI returned no structured result for the screen decision.",
+    );
+  }
+
+  return modelScreenDecisionSchema.parse(response.output_parsed);
+}
+
 export async function requestAssistFromOpenAI(
   builtContext: BuiltContext,
   requestInput: AssistRequest,
 ): Promise<ModelAssistOutput> {
+  const tracingConsent = requestInput.tracingConsent;
+  const allowLangfuseTracing = Boolean(
+    tracingConsent &&
+      tracingConsent.langfuseEnabled === true &&
+      tracingConsent.requestSyncConsent === "granted" &&
+      tracingConsent.serverSyncConsent === "granted",
+  );
+
+  const executeModelRequest = async () => {
+    const client = getOpenAIClient();
+    const observedClient = allowLangfuseTracing
+      ? getObservedOpenAIClient(client, {
+          generationName: "assist-openai-response",
+          generationMetadata: {
+            feature: "assist",
+            actionType: requestInput.actionType,
+            classId: requestInput.classId ?? null,
+          },
+        })
+      : client;
+    const userContent: Array<
+      | {
+          type: "input_text";
+          text: string;
+        }
+      | {
+          type: "input_image";
+          image_url: string;
+          detail: "auto";
+        }
+    > = [
+      {
+        type: "input_text" as const,
+        text: buildUserTextPayload(builtContext, requestInput),
+      },
+    ];
+
+    if (requestInput.screenshotDataUrl) {
+      userContent.push({
+        type: "input_image",
+        image_url: requestInput.screenshotDataUrl,
+        detail: "auto",
+      });
+    }
+
+    // The SDK parses and validates the response against the Zod schema so the
+    // rest of the app receives predictable JSON, not free-form text.
+    const response = await observedClient.responses.parse({
+      model: getOpenAIModel(),
+      input: [
+        {
+          role: "system",
+          content: buildSystemPrompt(requestInput),
+        },
+        {
+          role: "user",
+          content: userContent,
+        },
+      ],
+      text: {
+        format: zodTextFormat(modelAssistOutputSchema, "assist_response"),
+      },
+    });
+
+    if (!response.output_parsed) {
+      throw new Error(
+        "OpenAI returned no structured result for the assist request.",
+      );
+    }
+
+    // Validate again locally before normalizing, even though the SDK already
+    // parsed against the schema. The backend should not trust model text.
+    return modelAssistOutputSchema.parse(response.output_parsed);
+  };
+
+  if (!allowLangfuseTracing) {
+    return executeModelRequest();
+  }
+
   return withLangfuseObservation(
     "assist.generate-response",
     {
@@ -185,6 +323,7 @@ export async function requestAssistFromOpenAI(
         ),
         userNotePreview: summarizeTextForTrace(requestInput.userNote),
         hasScreenshot: Boolean(requestInput.screenshotDataUrl),
+        tracingConsent,
       },
       metadata: {
         feature: "assist",
@@ -205,69 +344,6 @@ export async function requestAssistFromOpenAI(
         };
       },
     },
-    async () => {
-      const client = getOpenAIClient();
-      const observedClient = getObservedOpenAIClient(client, {
-        generationName: "assist-openai-response",
-        generationMetadata: {
-          feature: "assist",
-          actionType: requestInput.actionType,
-          classId: requestInput.classId ?? null,
-        },
-      });
-      const userContent: Array<
-        | {
-            type: "input_text";
-            text: string;
-          }
-        | {
-            type: "input_image";
-            image_url: string;
-            detail: "auto";
-          }
-      > = [
-        {
-          type: "input_text" as const,
-          text: buildUserTextPayload(builtContext, requestInput),
-        },
-      ];
-
-      if (requestInput.screenshotDataUrl) {
-        userContent.push({
-          type: "input_image",
-          image_url: requestInput.screenshotDataUrl,
-          detail: "auto",
-        });
-      }
-
-      // The SDK parses and validates the response against the Zod schema so the
-      // rest of the app receives predictable JSON, not free-form text.
-      const response = await observedClient.responses.parse({
-        model: getOpenAIModel(),
-        input: [
-          {
-            role: "system",
-            content: buildSystemPrompt(requestInput),
-          },
-          {
-            role: "user",
-            content: userContent,
-          },
-        ],
-        text: {
-          format: zodTextFormat(modelAssistOutputSchema, "assist_response"),
-        },
-      });
-
-      if (!response.output_parsed) {
-        throw new Error(
-          "OpenAI returned no structured result for the assist request.",
-        );
-      }
-
-      // Validate again locally before normalizing, even though the SDK already
-      // parsed against the schema. The backend should not trust model text.
-      return modelAssistOutputSchema.parse(response.output_parsed);
-    },
+    executeModelRequest,
   );
 }
