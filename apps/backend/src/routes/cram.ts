@@ -5,6 +5,7 @@ import {
   enforceClassOwnershipFromBody,
   requireJwtAuth,
 } from "../middleware/auth";
+import { runChargedAction, sendCreditError } from "./credit-charge";
 import { generateCramPlan } from "../services/cram";
 
 export const cramRouter = Router();
@@ -14,9 +15,25 @@ cramRouter.use(enforceClassOwnershipFromBody("classId"));
 
 cramRouter.post("/", async (request, response) => {
   try {
-    const cramResponse = await generateCramPlan(request.body);
+    const cramResponse = await runChargedAction(
+      request,
+      {
+        actionType: "cram_plan",
+        relatedEntityType:
+          typeof request.body?.classId === "number" ? "class" : null,
+        relatedEntityId:
+          typeof request.body?.classId === "number"
+            ? request.body.classId
+            : null,
+      },
+      () => generateCramPlan(request.body),
+    );
     response.status(200).json(cramResponse);
   } catch (error) {
+    if (sendCreditError(response, error)) {
+      return;
+    }
+
     if (
       error instanceof ZodError ||
       (error instanceof Error &&

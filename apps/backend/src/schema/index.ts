@@ -431,6 +431,77 @@ export const exportRequestQuerySchema = z.object({
     .transform((value) => value !== "false"),
 }).strict();
 
+export const creditActionTypeSchema = z.enum([
+  "basic_quiz",
+  "cram_plan",
+  "graded_work_analysis",
+  "prep_pack_create",
+  "deep_cram_report",
+]);
+
+export const creditQuoteRequestSchema = z.object({
+  actionType: creditActionTypeSchema,
+}).strict();
+
+export const billingCheckoutItemSchema = z.enum([
+  "plus_monthly",
+  "plus_yearly",
+  "max_monthly",
+  "max_yearly",
+  "credits_50",
+  "finals_pack",
+  "founding_beta_max_lifetime",
+]);
+
+export const billingCheckoutRequestSchema = z.object({
+  item: billingCheckoutItemSchema,
+  successUrl: z.string().trim().url().optional(),
+  cancelUrl: z.string().trim().url().optional(),
+}).strict();
+
+export const billingPortalRequestSchema = z.object({
+  returnUrl: z.string().trim().url().optional(),
+}).strict();
+
+export const discountCodeCreateRequestSchema = z.object({
+  code: z.string().trim().min(1).max(80).optional(),
+  codeType: z
+    .enum(["founding_beta_plus", "founding_beta_max"])
+    .default("founding_beta_plus"),
+  label: z.string().trim().min(1).max(160).optional(),
+  maxRedemptions: z.number().int().positive().max(10_000).default(1),
+  expiresAt: z.string().datetime({ offset: true }).optional(),
+}).strict();
+
+export const discountCodeRedeemRequestSchema = z.object({
+  code: z.string().trim().min(1).max(80),
+}).strict();
+
+export const webVisitRequestSchema = z.object({
+  visitorId: z.string().trim().min(1).max(120).optional(),
+  sessionId: z.string().trim().min(1).max(120).optional(),
+  path: z.string().trim().min(1).max(2048),
+  url: z.string().trim().min(1).max(4096).optional(),
+  title: z.string().trim().min(1).max(240).optional(),
+  referrer: z.string().trim().min(1).max(4096).optional(),
+  utmSource: z.string().trim().min(1).max(120).optional(),
+  utmMedium: z.string().trim().min(1).max(120).optional(),
+  utmCampaign: z.string().trim().min(1).max(160).optional(),
+  utmContent: z.string().trim().min(1).max(160).optional(),
+  utmTerm: z.string().trim().min(1).max(160).optional(),
+}).strict();
+
+export const webAnalyticsAdminQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(90).default(14),
+  limit: z.coerce.number().int().min(1).max(250).default(50),
+  source: z.string().trim().min(1).max(120).optional(),
+}).strict();
+
+export const foundingBetaGrantRequestSchema = z.object({
+  userId: z.string().trim().min(1),
+  status: z.enum(["founding_beta_plus", "founding_beta_max"]),
+}).strict();
+
 export const authCredentialsSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(8).max(200),
@@ -475,3 +546,19 @@ export type PrivacySettingsInput = z.infer<typeof privacySettingsSchema>;
 export type PrivacySettingsPatchInput = z.infer<typeof privacySettingsPatchSchema>;
 export type DeleteAccountRequestInput = z.infer<typeof deleteAccountRequestSchema>;
 export type ExportRequestQueryInput = z.infer<typeof exportRequestQuerySchema>;
+export type CreditActionTypeInput = z.infer<typeof creditActionTypeSchema>;
+export type CreditQuoteRequestInput = z.infer<typeof creditQuoteRequestSchema>;
+export type BillingCheckoutItemInput = z.infer<typeof billingCheckoutItemSchema>;
+export type BillingCheckoutRequestInput = z.infer<
+  typeof billingCheckoutRequestSchema
+>;
+export type BillingPortalRequestInput = z.infer<
+  typeof billingPortalRequestSchema
+>;
+export type FoundingBetaGrantRequestInput = z.infer<
+  typeof foundingBetaGrantRequestSchema
+>;
+export type WebVisitRequestInput = z.infer<typeof webVisitRequestSchema>;
+export type WebAnalyticsAdminQueryInput = z.infer<
+  typeof webAnalyticsAdminQuerySchema
+>;

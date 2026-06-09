@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron .",
+    "start": "pnpm --dir ../.. run rebuild:native:electron && electron .",
+    "dev": "pnpm --dir ../.. run rebuild:native:electron && electron .",
     "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/home.js"
   }
 }

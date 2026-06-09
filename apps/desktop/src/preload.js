@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("overlayApi", {
   expandWindow: () => ipcRenderer.invoke("window:expand"),
   minimizeNative: () => ipcRenderer.invoke("window:minimizeNative"),
   closeWindow: () => ipcRenderer.invoke("window:close"),
+  openExternalUrl: (url) => ipcRenderer.invoke("shell:openExternal", url),
   setThemeSource: (source) => ipcRenderer.invoke("theme:setSource", source),
   getPreferences: () => ipcRenderer.invoke("preferences:get"),
   updatePreferences: (patch) => ipcRenderer.invoke("preferences:update", patch),
@@ -34,6 +35,15 @@ contextBridge.exposeInMainWorld("overlayApi", {
   generateCramPlanFromSessions: (payload) =>
     ipcRenderer.invoke("backend:cramPlan", payload),
   generateQuiz: (payload) => ipcRenderer.invoke("backend:quiz", payload),
+  getBillingSummary: () => ipcRenderer.invoke("backend:billingMe"),
+  createBillingCheckout: (payload) =>
+    ipcRenderer.invoke("backend:billingCheckout", payload),
+  createBillingPortal: (payload) =>
+    ipcRenderer.invoke("backend:billingPortal", payload),
+  redeemDiscountCode: (payload) =>
+    ipcRenderer.invoke("backend:billingRedeemDiscountCode", payload),
+  quoteStudyCredits: (payload) =>
+    ipcRenderer.invoke("backend:creditsQuote", payload),
   registerAccount: (payload) =>
     ipcRenderer.invoke("backend:authRegister", payload),
   loginAccount: (payload) => ipcRenderer.invoke("backend:authLogin", payload),

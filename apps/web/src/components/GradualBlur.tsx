@@ -153,7 +153,11 @@ const useIntersectionObserver = (ref: React.RefObject<HTMLDivElement>, shouldObs
   useEffect(() => {
     if (!shouldObserve || !ref.current) return;
 
-    const observer = new IntersectionObserver(([entry]) => setIsVisible(entry.isIntersecting), { threshold: 0.1 });
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry) {
+        setIsVisible(entry.isIntersecting);
+      }
+    }, { threshold: 0.1 });
 
     observer.observe(ref.current);
     return () => observer.disconnect();
@@ -167,7 +171,7 @@ const GradualBlur: React.FC<GradualBlurProps> = props => {
   const [isHovered, setIsHovered] = useState(false);
 
   const config = useMemo(() => {
-    const presetConfig = props.preset && PRESETS[props.preset] ? PRESETS[props.preset] : {};
+    const presetConfig = props.preset ? PRESETS[props.preset] ?? {} : {};
     return mergeConfigs(DEFAULT_CONFIG, presetConfig, props) as Required<GradualBlurProps>;
   }, [props]);
 
@@ -182,7 +186,7 @@ const GradualBlur: React.FC<GradualBlurProps> = props => {
     const currentStrength =
       isHovered && config.hoverIntensity ? config.strength * config.hoverIntensity : config.strength;
 
-    const curveFunc = CURVE_FUNCTIONS[config.curve] || CURVE_FUNCTIONS.linear;
+    const curveFunc = CURVE_FUNCTIONS[config.curve] ?? CURVE_FUNCTIONS.linear ?? ((p: number) => p);
 
     for (let i = 1; i <= config.divCount; i++) {
       let progress = i / config.divCount;

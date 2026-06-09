@@ -29,6 +29,14 @@
               </div>
             </div>
           </div>
+          <button
+            id="study-credit-balance"
+            class="study-credit-pill no-drag"
+            type="button"
+            hidden
+          >
+            Study Credits: --
+          </button>
           <div class="window-actions no-drag">
             <button
               id="shrink-window"
@@ -305,7 +313,7 @@
                         class="continue-button"
                         type="button"
                       >
-                        Save &amp; Process
+                        Save &amp; Process - 8 Study Credits
                       </button>
                     </div>
                   </div>
@@ -317,7 +325,7 @@
                 <div id="assessment-summary-points" hidden></div>
                 <div id="assessment-analysis-insights" hidden></div>
                 <div id="assessment-preset-grid" hidden></div>
-                <button id="assessment-analyze-button" type="button" hidden></button>
+                <button id="assessment-analyze-button" type="button" hidden>Process Template - 8 Study Credits</button>
                 <button id="assessment-cancel-button" class="assessment-hidden-cancel" type="button" hidden>Back</button>
               </section>
             </div>
@@ -429,8 +437,8 @@
                     Ready to build from uploaded and pasted material.
                   </p>
 
-                  <p id="cram-material-count" class="cram-token-hint" hidden>
-                    Approx 0 tokens loaded
+                  <p id="cram-material-count" class="cram-material-hint" hidden>
+                    Approx 0 characters loaded
                   </p>
 
                   <label class="modal-field">
@@ -450,7 +458,7 @@
                       class="continue-button"
                       type="button"
                     >
-                      Generate Plan
+                      Generate Plan - 5 Study Credits
                     </button>
                   </div>
                 </div>
@@ -615,7 +623,7 @@
                       class="continue-button"
                       type="button"
                     >
-                      Generate Quiz
+                      Generate Quiz - 2 Study Credits
                     </button>
                   </div>
                 </div>
@@ -969,6 +977,138 @@
                         </div>
                       </div>
                     </div>
+
+                    <section id="settings-billing-section" class="settings-pricing-section">
+                      <div class="settings-pricing-header">
+                        <div>
+                          <p class="panel-label">Billing</p>
+                          <p class="settings-pricing-title">
+                            Study Credits and plan access
+                          </p>
+                        </div>
+                        <span id="billing-plan-badge" class="settings-pricing-badge">Free</span>
+                      </div>
+                      <p class="panel-help settings-pricing-copy">
+                        Study Credits power AI-heavy actions like quizzes, Cram
+                        Plans, point-leak reports, graded-work analysis, and
+                        deep cram reports.
+                      </p>
+                      <div class="settings-credit-summary">
+                        <div>
+                          <span>Available</span>
+                          <strong id="billing-credit-total">-- Study Credits</strong>
+                        </div>
+                        <div>
+                          <span>Monthly</span>
+                          <strong id="billing-credit-monthly">-- / --</strong>
+                        </div>
+                        <div>
+                          <span>Purchased</span>
+                          <strong id="billing-credit-purchased">--</strong>
+                        </div>
+                        <div>
+                          <span>Refresh</span>
+                          <strong id="billing-renewal-date">--</strong>
+                        </div>
+                      </div>
+                      <div class="settings-pricing-grid">
+                        <article class="settings-pricing-card">
+                          <p class="settings-pricing-card-kicker">Free</p>
+                          <h3>$0/month</h3>
+                          <p>For trying SideKlick with lighter study output.</p>
+                          <ul>
+                            <li>10 Study Credits/month</li>
+                            <li>Limited classes and uploads</li>
+                            <li>Limited quizzes and cram outputs</li>
+                          </ul>
+                        </article>
+                        <article class="settings-pricing-card settings-pricing-card-featured">
+                          <p class="settings-pricing-card-kicker">Plus</p>
+                          <h3>$7.99/mo</h3>
+                          <p>For full Cram Mode, weak-spot memory, and regular study weeks.</p>
+                          <ul>
+                            <li>100 Study Credits/month</li>
+                            <li>$49/year option</li>
+                            <li>Higher upload limits</li>
+                          </ul>
+                          <div class="settings-pricing-actions">
+                            <button
+                              id="billing-plus-monthly-button"
+                              class="settings-chip-button"
+                              type="button"
+                            >
+                              Monthly
+                            </button>
+                            <button
+                              id="billing-plus-yearly-button"
+                              class="settings-chip-button"
+                              type="button"
+                            >
+                              Yearly
+                            </button>
+                          </div>
+                        </article>
+                        <article class="settings-pricing-card">
+                          <p class="settings-pricing-card-kicker">Max</p>
+                          <h3>$14.99/mo</h3>
+                          <p>For graded-work analysis, point-leak diagnosis, and higher limits.</p>
+                          <ul>
+                            <li>300 Study Credits/month</li>
+                            <li>$99/year option</li>
+                            <li>Priority advanced beta access</li>
+                          </ul>
+                          <div class="settings-pricing-actions">
+                            <button
+                              id="billing-max-monthly-button"
+                              class="settings-chip-button"
+                              type="button"
+                            >
+                              Monthly
+                            </button>
+                            <button
+                              id="billing-max-yearly-button"
+                              class="settings-chip-button"
+                              type="button"
+                            >
+                              Yearly
+                            </button>
+                          </div>
+                        </article>
+                      </div>
+                      <div class="settings-credit-pack-row">
+                        <span>Extra credits: +50 for $4.99 or Finals Pack +125 for $9.99.</span>
+                        <div class="settings-credit-pack-actions">
+                          <button
+                            id="billing-credits-50-button"
+                            class="settings-chip-button"
+                            type="button"
+                          >
+                            +50
+                          </button>
+                          <button
+                            id="billing-finals-pack-button"
+                            class="settings-chip-button"
+                            type="button"
+                          >
+                            Finals Pack
+                          </button>
+                          <button
+                            id="billing-portal-button"
+                            class="settings-chip-button"
+                            type="button"
+                          >
+                            Manage
+                          </button>
+                          <button
+                            id="billing-refresh-button"
+                            class="settings-chip-button"
+                            type="button"
+                          >
+                            Refresh
+                          </button>
+                        </div>
+                      </div>
+                    </section>
 
                     <div class="settings-row settings-row-action">
                       <div class="settings-row-copy">
@@ -1512,6 +1652,42 @@
         </div>
 
       </section>
+
+      <div id="billing-modal-backdrop" class="modal-backdrop billing-modal-backdrop" hidden>
+        <section class="modal-card billing-modal" role="dialog" aria-modal="true" aria-labelledby="billing-modal-title">
+          <div class="modal-header">
+            <div>
+              <p class="panel-label">Study Credits</p>
+              <h2 id="billing-modal-title" class="modal-title">
+                Add more Study Credits
+              </h2>
+            </div>
+            <button
+              id="billing-modal-close"
+              class="icon-button"
+              type="button"
+              aria-label="Close billing modal"
+            >
+              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
+                ></path>
+              </svg>
+            </button>
+          </div>
+          <p id="billing-modal-copy" class="panel-help billing-modal-copy">
+            Study Credits power AI-heavy study actions.
+          </p>
+          <div class="billing-modal-actions">
+            <button id="billing-modal-settings" class="continue-button" type="button">
+              View Billing
+            </button>
+            <button id="billing-modal-dismiss" class="ghost-button" type="button">
+              Not Now
+            </button>
+          </div>
+        </section>
+      </div>
     </main>
 
     <script src="./shared/cram-constraints.js"></script>

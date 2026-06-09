@@ -15,11 +15,11 @@
     "packages/*"
   ],
   "scripts": {
-    "start": "electron .",
+    "start": "pnpm run rebuild:native:electron && electron .",
     "dev": "pnpm run desktop:dev",
     "env:split": "node scripts/split-env.mjs",
     "dev:desktop:local-backend": "node scripts/dev-desktop-local-backend.mjs",
-    "desktop:start": "electron .",
+    "desktop:start": "pnpm run rebuild:native:electron && electron .",
     "desktop:dev": "pnpm --filter @sideklick/desktop dev",
     "desktop:dev:rebuild": "pnpm run rebuild:native:electron && pnpm run desktop:dev",
     "backend:start": "pnpm run rebuild:native:node && node --import tsx --eval \"import('./apps/backend/src/server.ts').then((mod) => { const api = mod.startServer ? mod : mod.default; return api.startServer(); })\"",

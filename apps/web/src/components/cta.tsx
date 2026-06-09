@@ -4,12 +4,14 @@ import {
   downloadAssetToDevice,
   useDownloadTarget,
 } from "@/components/download-target";
+import siteCopy from "@/content/site-copy.json";
 import { Button } from "@/components/ui/button";
 
 const CTA = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const { canDownload, downloadFileName, downloadLabel, downloadUrl, isMobile } =
     useDownloadTarget();
+  const copy = siteCopy.home.download;
 
   return (
     <section
@@ -20,11 +22,10 @@ const CTA = () => {
         <div className="relative isolate overflow-hidden px-6 py-10 md:px-10 md:py-14">
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/30 to-transparent" />
           <h2 className="max-w-3xl text-3xl font-medium tracking-tight text-white md:text-5xl">
-            Ready to study from what actually happened in class?
+            {copy.heading}
           </h2>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-white/72 md:text-base">
-            Download SideKlick, connect it to your notes and materials, and let
-            it help with the parts you are most likely to miss.
+            {copy.body}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             {isMobile ? (
@@ -32,7 +33,7 @@ const CTA = () => {
                 className="bg-white text-black hover:bg-white/90"
                 disabled
                 size="lg"
-                title="Desktop app downloads are only available on desktop devices."
+                title={copy.mobileDownloadTitle}
               >
                 {downloadLabel} <ArrowUpRight />
               </Button>
@@ -55,7 +56,8 @@ const CTA = () => {
                 }}
                 size="lg"
               >
-                {isDownloading ? "Downloading..." : downloadLabel} <ArrowUpRight />
+                {isDownloading ? copy.downloadingLabel : downloadLabel}{" "}
+                <ArrowUpRight />
               </Button>
             )}
             <Button
@@ -63,7 +65,7 @@ const CTA = () => {
               size="lg"
               variant="outline"
             >
-              Get the extension
+              {copy.extensionCtaLabel}
             </Button>
           </div>
         </div>

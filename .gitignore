@@ -218,6 +218,7 @@ cython_debug/
 # .vscode/
 
 device-specific-scripts/
+cmo.md
 package-lock.json
 
 # Ruff stuff:

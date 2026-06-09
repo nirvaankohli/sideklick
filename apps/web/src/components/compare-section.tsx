@@ -1,5 +1,7 @@
 import { Check, Minus } from "lucide-react";
 
+import siteCopy from "@/content/site-copy.json";
+
 type ComparisonRow = {
   label: string;
   sideklick: string;
@@ -7,44 +9,6 @@ type ComparisonRow = {
   sideklickPositive?: boolean;
   quizletPositive?: boolean;
 };
-
-const comparisonRows: ComparisonRow[] = [
-  {
-    label: "Remembers what you miss",
-    sideklick: "Yes",
-    quizlet: "No",
-    sideklickPositive: true,
-    quizletPositive: false,
-  },
-  {
-    label: "Builds a plan to ace your test",
-    sideklick: "Yes",
-    quizlet: "Limited",
-    sideklickPositive: true,
-    quizletPositive: false,
-  },
-  {
-    label: "Makes quizzes from what you know and do not know",
-    sideklick: "Yes",
-    quizlet: "Limited",
-    sideklickPositive: true,
-    quizletPositive: false,
-  },
-  {
-    label: "Fits into your study workflow",
-    sideklick: "Yes",
-    quizlet: "Limited",
-    sideklickPositive: true,
-    quizletPositive: false,
-  },
-  {
-    label: "Works from your real class material",
-    sideklick: "Yes",
-    quizlet: "Yes",
-    sideklickPositive: true,
-    quizletPositive: true,
-  },
-];
 
 function ComparisonCell({
   text,
@@ -124,6 +88,9 @@ function MobileComparisonCard({
 }
 
 export default function CompareSection() {
+  const copy = siteCopy.home.compare;
+  const comparisonRows = copy.rows as ComparisonRow[];
+
   return (
     <section className="compare-section px-0 py-0" id="compare">
       <div className="mx-auto max-w-5xl">
@@ -131,25 +98,26 @@ export default function CompareSection() {
           <div className="compare-top-row grid gap-3 border-b border-white/10 px-4 py-5 md:grid-cols-[1.1fr_1fr_1fr] md:items-stretch md:px-5">
             <div>
               <h2 className="text-2xl font-medium tracking-tight text-foreground md:text-3xl">
-                SideKlick vs Quizlet
+                {copy.heading}
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-foreground/72">
-                SideKlick adapts to how you study, what you miss, and what you
-                need to be ready for next.
+                {copy.body}
               </p>
             </div>
             <div className="compare-sideklick-card border border-violet-200/20 bg-violet-300/10 px-4 py-4 md:h-full">
               <div className="text-sm font-medium text-foreground">
-                SideKlick
+                {copy.sideklick.name}
               </div>
               <p className="mt-1 text-sm leading-6 text-foreground/72">
-                Learns from your class material and study habits
+                {copy.sideklick.description}
               </p>
             </div>
             <div className="compare-quizlet-card border border-white/10 bg-black/18 px-4 py-4 md:h-full">
-              <div className="text-sm font-medium text-foreground">Quizlet</div>
+              <div className="text-sm font-medium text-foreground">
+                {copy.quizlet.name}
+              </div>
               <p className="mt-1 text-sm leading-6 text-foreground/72">
-                Better for flashcards and simple review
+                {copy.quizlet.description}
               </p>
             </div>
           </div>
@@ -184,13 +152,13 @@ export default function CompareSection() {
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <MobileComparisonCard
-                    brand="SideKlick"
+                    brand={copy.sideklick.name}
                     emphasize
                     positive={row.sideklickPositive}
                     text={row.sideklick}
                   />
                   <MobileComparisonCard
-                    brand="Quizlet"
+                    brand={copy.quizlet.name}
                     positive={row.quizletPositive}
                     text={row.quizlet}
                   />

@@ -30,7 +30,11 @@ interface GrainientProps {
 const hexToRgb = (hex: string): [number, number, number] => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!result) return [1, 1, 1];
-  return [parseInt(result[1], 16) / 255, parseInt(result[2], 16) / 255, parseInt(result[3], 16) / 255];
+  return [
+    parseInt(result[1] ?? "ff", 16) / 255,
+    parseInt(result[2] ?? "ff", 16) / 255,
+    parseInt(result[3] ?? "ff", 16) / 255,
+  ];
 };
 
 const vertex = `#version 300 es
@@ -248,7 +252,11 @@ const Grainient: React.FC<GrainientProps> = ({
     };
 
     const io = new IntersectionObserver(
-      ([entry]) => { isVisible = entry.isIntersecting; isVisible ? tryStart() : tryStop(); },
+      ([entry]) => {
+        if (!entry) return;
+        isVisible = entry.isIntersecting;
+        isVisible ? tryStart() : tryStop();
+      },
       { threshold: 0 }
     );
     io.observe(container);
@@ -278,29 +286,35 @@ const Grainient: React.FC<GrainientProps> = ({
     const ctx = ctxMap.get(container);
     if (!ctx) return;
     const { program } = ctx;
-    const u = program.uniforms as Record<string, { value: any }>;
+    const u = program.uniforms as Record<string, { value: any } | undefined>;
+    const setUniform = (key: string, value: any) => {
+      const uniform = u[key];
+      if (uniform) {
+        uniform.value = value;
+      }
+    };
 
-    u.uTimeSpeed.value      = timeSpeed;
-    u.uColorBalance.value   = colorBalance;
-    u.uWarpStrength.value   = warpStrength;
-    u.uWarpFrequency.value  = warpFrequency;
-    u.uWarpSpeed.value      = warpSpeed;
-    u.uWarpAmplitude.value  = warpAmplitude;
-    u.uBlendAngle.value     = blendAngle;
-    u.uBlendSoftness.value  = blendSoftness;
-    u.uRotationAmount.value = rotationAmount;
-    u.uNoiseScale.value     = noiseScale;
-    u.uGrainAmount.value    = grainAmount;
-    u.uGrainScale.value     = grainScale;
-    u.uGrainAnimated.value  = grainAnimated ? 1.0 : 0.0;
-    u.uContrast.value       = contrast;
-    u.uGamma.value          = gamma;
-    u.uSaturation.value     = saturation;
-    u.uCenterOffset.value   = new Float32Array([centerX, centerY]);
-    u.uZoom.value           = zoom;
-    u.uColor1.value         = new Float32Array(hexToRgb(color1));
-    u.uColor2.value         = new Float32Array(hexToRgb(color2));
-    u.uColor3.value         = new Float32Array(hexToRgb(color3));
+    setUniform('uTimeSpeed', timeSpeed);
+    setUniform('uColorBalance', colorBalance);
+    setUniform('uWarpStrength', warpStrength);
+    setUniform('uWarpFrequency', warpFrequency);
+    setUniform('uWarpSpeed', warpSpeed);
+    setUniform('uWarpAmplitude', warpAmplitude);
+    setUniform('uBlendAngle', blendAngle);
+    setUniform('uBlendSoftness', blendSoftness);
+    setUniform('uRotationAmount', rotationAmount);
+    setUniform('uNoiseScale', noiseScale);
+    setUniform('uGrainAmount', grainAmount);
+    setUniform('uGrainScale', grainScale);
+    setUniform('uGrainAnimated', grainAnimated ? 1.0 : 0.0);
+    setUniform('uContrast', contrast);
+    setUniform('uGamma', gamma);
+    setUniform('uSaturation', saturation);
+    setUniform('uCenterOffset', new Float32Array([centerX, centerY]));
+    setUniform('uZoom', zoom);
+    setUniform('uColor1', new Float32Array(hexToRgb(color1)));
+    setUniform('uColor2', new Float32Array(hexToRgb(color2)));
+    setUniform('uColor3', new Float32Array(hexToRgb(color3)));
   }, [
     timeSpeed, colorBalance, warpStrength, warpFrequency, warpSpeed,
     warpAmplitude, blendAngle, blendSoftness, rotationAmount, noiseScale,
