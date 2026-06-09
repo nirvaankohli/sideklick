@@ -4,9 +4,14 @@ import { ZodError } from "zod";
 import {
   discountCodeCreateRequestSchema,
   foundingBetaGrantRequestSchema,
+  webAnalyticsAdminQuerySchema,
 } from "../schema";
 import { grantFoundingBetaStatus } from "../services/creditService";
 import { createDiscountCode } from "../services/discountCodeService";
+import {
+  getWebAnalyticsSummary,
+  listRecentWebVisits,
+} from "../services/webAnalyticsService";
 
 export const adminRouter = Router();
 
@@ -87,6 +92,33 @@ adminRouter.post("/discount-codes", (request, response) => {
     response.status(500).json({
       error:
         error instanceof Error ? error.message : "Discount code creation failed.",
+    });
+  }
+});
+
+adminRouter.get("/web-visits", (request, response) => {
+  if (!requireAdminSecret(request, response)) {
+    return;
+  }
+
+  try {
+    const input = webAnalyticsAdminQuerySchema.parse(request.query ?? {});
+    response.status(200).json({
+      summary: getWebAnalyticsSummary(input),
+      recentVisits: listRecentWebVisits(input),
+    });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      response.status(400).json({
+        error: "Invalid web analytics query.",
+        details: error.flatten(),
+      });
+      return;
+    }
+
+    response.status(500).json({
+      error:
+        error instanceof Error ? error.message : "Web analytics query failed.",
     });
   }
 });

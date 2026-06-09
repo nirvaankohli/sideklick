@@ -22,6 +22,7 @@ test("backend CORS defaults allow web auth origins and authorization headers", a
   assert.ok(defaults.includes("http://127.0.0.1:5173"));
   assert.ok(defaults.includes("https://sideklick.app"));
   assert.ok(defaults.includes("https://www.sideklick.app"));
+  assert.ok(defaults.includes("https://sideklick.nirvaankohli.com"));
   assert.match(CORS_ALLOW_HEADERS, /Authorization/);
   assert.equal(
     resolveCorsOrigin("http://localhost:5173", defaults),

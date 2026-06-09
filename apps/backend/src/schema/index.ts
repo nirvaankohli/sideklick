@@ -477,6 +477,26 @@ export const discountCodeRedeemRequestSchema = z.object({
   code: z.string().trim().min(1).max(80),
 }).strict();
 
+export const webVisitRequestSchema = z.object({
+  visitorId: z.string().trim().min(1).max(120).optional(),
+  sessionId: z.string().trim().min(1).max(120).optional(),
+  path: z.string().trim().min(1).max(2048),
+  url: z.string().trim().min(1).max(4096).optional(),
+  title: z.string().trim().min(1).max(240).optional(),
+  referrer: z.string().trim().min(1).max(4096).optional(),
+  utmSource: z.string().trim().min(1).max(120).optional(),
+  utmMedium: z.string().trim().min(1).max(120).optional(),
+  utmCampaign: z.string().trim().min(1).max(160).optional(),
+  utmContent: z.string().trim().min(1).max(160).optional(),
+  utmTerm: z.string().trim().min(1).max(160).optional(),
+}).strict();
+
+export const webAnalyticsAdminQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(90).default(14),
+  limit: z.coerce.number().int().min(1).max(250).default(50),
+  source: z.string().trim().min(1).max(120).optional(),
+}).strict();
+
 export const foundingBetaGrantRequestSchema = z.object({
   userId: z.string().trim().min(1),
   status: z.enum(["founding_beta_plus", "founding_beta_max"]),
@@ -537,4 +557,8 @@ export type BillingPortalRequestInput = z.infer<
 >;
 export type FoundingBetaGrantRequestInput = z.infer<
   typeof foundingBetaGrantRequestSchema
+>;
+export type WebVisitRequestInput = z.infer<typeof webVisitRequestSchema>;
+export type WebAnalyticsAdminQueryInput = z.infer<
+  typeof webAnalyticsAdminQuerySchema
 >;

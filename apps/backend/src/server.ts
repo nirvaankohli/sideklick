@@ -30,8 +30,10 @@ import { cramRouter } from "./routes/cram";
 import { cramPlanRouter } from "./routes/cram-plan";
 import { creditsRouter } from "./routes/credits";
 import { feedbackRouter } from "./routes/feedback";
+import { personalRouter } from "./routes/personal";
 import { privacyRouter } from "./routes/privacy";
 import { quizRouter } from "./routes/quiz";
+import { webAnalyticsRouter } from "./routes/web-analytics";
 import { assertJwtConfiguration } from "./services/auth.ts";
 import { getPrivacyWorkerHandlers } from "./services/privacy";
 import { startBackgroundWorkers, stopBackgroundWorkers } from "./workers";
@@ -45,6 +47,7 @@ export const DEFAULT_ALLOWED_CORS_ORIGINS = [
   "http://127.0.0.1:5173",
   "https://sideklick.app",
   "https://www.sideklick.app",
+  "https://sideklick.nirvaankohli.com",
 ];
 export const CORS_ALLOW_HEADERS = "Content-Type, Authorization";
 export const CORS_ALLOW_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
@@ -210,6 +213,8 @@ export function createServer(): Express {
   app.use("/api/cram-plan", cramPlanRouter);
   app.use("/api/credits", creditsRouter);
   app.use("/api/feedback", feedbackRouter);
+  app.use("/api/personal", personalRouter);
+  app.use("/api/web-analytics", webAnalyticsRouter);
   app.use("/api", privacyRouter);
   app.use("/api/quiz", quizRouter);
 
