@@ -8,10 +8,7 @@ import {
 } from "../schema";
 import type { CramPlanRequest, CramPlanResponse } from "../type";
 import { getClassProfileById } from "./classes";
-import {
-  getObservedOpenAIClient,
-  withLangfuseObservation,
-} from "../../../desktop/src/shared/langfuse.ts";
+import { withLangfuseObservation } from "../../../desktop/src/shared/langfuse.ts";
 
 type SessionRow = {
   id: number;
@@ -215,15 +212,7 @@ export async function generateCramPlan(
     },
     async () => {
       const client = getOpenAIClient();
-      const observedClient = getObservedOpenAIClient(client, {
-        generationName: "cram-plan-openai-response",
-        generationMetadata: {
-          feature: "cram-plan",
-          classId: parsedInput.classId,
-          availableMinutes: parsedInput.availableMinutes,
-        },
-      });
-      const response = await observedClient.responses.parse({
+      const response = await client.responses.parse({
         model: getOpenAIModel(),
         input: [
           {
