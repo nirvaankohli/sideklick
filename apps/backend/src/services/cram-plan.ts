@@ -8,10 +8,6 @@ import {
 } from "../schema";
 import type { CramPlanRequest, CramPlanResponse } from "../type";
 import { getClassProfileById } from "./classes";
-import {
-  getObservedOpenAIClient,
-  withLangfuseObservation,
-} from "../../../desktop/src/shared/langfuse.ts";
 
 type SessionRow = {
   id: number;
@@ -185,71 +181,32 @@ export async function generateCramPlan(
   input: unknown,
 ): Promise<CramPlanResponse> {
   const parsedInput = cramPlanRequestSchema.parse(input);
-  return withLangfuseObservation(
-    "cram-plan.generate",
-    {
-      input: {
-        classId: parsedInput.classId,
-        examName: parsedInput.examName,
-        currentUnit: parsedInput.currentUnit ?? null,
-        availableMinutes: parsedInput.availableMinutes,
-        gapFocus: parsedInput.gapFocus,
-        sessionIds: parsedInput.sessionIds,
-        hasUploadedMaterial: Boolean(parsedInput.uploadedMaterial),
-        uploadedMaterialLength: parsedInput.uploadedMaterial?.length ?? 0,
-        hasTeacherAssessmentProfile: Boolean(parsedInput.teacherAssessmentProfile),
+  const client = getOpenAIClient();
+  const response = await client.responses.parse({
+    model: getOpenAIModel(),
+    input: [
+      {
+        role: "system",
+        content: buildCramPlanSystemPrompt(),
       },
-      metadata: {
-        feature: "cram-plan",
-        classId: parsedInput.classId,
-        sessionCount: parsedInput.sessionIds.length,
-      },
-      tags: ["cram-plan", "backend"],
-      output: (result) => {
-        const plan = result as CramPlanResponse;
-        return {
-          title: plan.title,
-          taskCount: plan.tasks.length,
-        };
-      },
-    },
-    async () => {
-      const client = getOpenAIClient();
-      const observedClient = getObservedOpenAIClient(client, {
-        generationName: "cram-plan-openai-response",
-        generationMetadata: {
-          feature: "cram-plan",
-          classId: parsedInput.classId,
-          availableMinutes: parsedInput.availableMinutes,
-        },
-      });
-      const response = await observedClient.responses.parse({
-        model: getOpenAIModel(),
-        input: [
+      {
+        role: "user",
+        content: [
           {
-            role: "system",
-            content: buildCramPlanSystemPrompt(),
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "input_text",
-                text: buildCramPlanPrompt(parsedInput),
-              },
-            ],
+            type: "input_text",
+            text: buildCramPlanPrompt(parsedInput),
           },
         ],
-        text: {
-          format: zodTextFormat(cramPlanResponseSchema, "cram_plan_response"),
-        },
-      });
-
-      if (!response.output_parsed) {
-        throw new Error("OpenAI returned no structured cram plan.");
-      }
-
-      return cramPlanResponseSchema.parse(response.output_parsed);
+      },
+    ],
+    text: {
+      format: zodTextFormat(cramPlanResponseSchema, "cram_plan_response"),
     },
-  );
+  });
+
+  if (!response.output_parsed) {
+    throw new Error("OpenAI returned no structured cram plan.");
+  }
+
+  return cramPlanResponseSchema.parse(response.output_parsed);
 }
