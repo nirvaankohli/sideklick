@@ -3,8 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+    />
     <title>SideKlick Home</title>
     <link rel="stylesheet" href="./styles.css" />
+    <script src="./lucide.min.js"></script>
   </head>
   <body>
     <main
@@ -44,9 +49,7 @@
               type="button"
               aria-label="Pin home window"
             >
-              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 6h10v2H7zM7 11h10v2H7zM7 16h10v2H7z"></path>
-              </svg>
+              <i class="icon-svg" data-lucide="pin"></i>
             </button>
             <button
               id="open-settings"
@@ -54,11 +57,7 @@
               type="button"
               aria-label="Open settings"
             >
-              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.28 7.28 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.13.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.41 1.05.72 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.22 1.13-.53 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"
-                ></path>
-              </svg>
+              <i class="icon-svg" data-lucide="settings"></i>
             </button>
             <button
               id="minimize-native"
@@ -66,9 +65,7 @@
               type="button"
               aria-label="Minimize window"
             >
-              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 19h12v-2H6z"></path>
-              </svg>
+              <i class="icon-svg" data-lucide="minus"></i>
             </button>
             <button
               id="close-window"
@@ -76,11 +73,7 @@
               type="button"
               aria-label="Close window"
             >
-              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
-                ></path>
-              </svg>
+              <i class="icon-svg" data-lucide="x"></i>
             </button>
           </div>
         </header>
@@ -112,23 +105,11 @@
                     aria-label="Go back"
                     hidden
                   >
-                    <svg
-                      class="icon-svg"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M15.4 5.4 8.8 12l6.6 6.6-1.4 1.4L6 12l8-8z"
-                      ></path>
-                    </svg>
+                    <i class="icon-svg" data-lucide="chevron-left"></i>
                   </button>
                   <label class="search-input-shell" for="folder-name-input">
                     <span class="search-input-icon" aria-hidden="true">
-                      <svg class="icon-svg" viewBox="0 0 24 24">
-                        <path
-                          d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79L19 20.49 20.49 19 15.5 14Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"
-                        ></path>
-                      </svg>
+                      <i class="icon-svg" data-lucide="search"></i>
                     </span>
                     <input
                       id="folder-name-input"
@@ -146,13 +127,7 @@
                       aria-haspopup="menu"
                       aria-expanded="false"
                     >
-                      <svg
-                        class="icon-svg folder-plus-icon"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path>
-                      </svg>
+                      <svg class="icon-svg folder-plus-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </button>
                     <div
                       id="folder-action-menu"
@@ -198,11 +173,7 @@
                   <div class="folder-create-row">
                     <label class="search-input-shell" for="assessment-search-input">
                       <span class="search-input-icon" aria-hidden="true">
-                        <svg class="icon-svg" viewBox="0 0 24 24">
-                          <path
-                            d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79L19 20.49 20.49 19 15.5 14Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"
-                          ></path>
-                        </svg>
+                        <i class="icon-svg" data-lucide="search"></i>
                       </span>
                       <input
                         id="assessment-search-input"
@@ -218,13 +189,7 @@
                         type="button"
                         aria-label="Create new assessment format"
                       >
-                        <svg
-                          class="icon-svg folder-plus-icon"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                        >
-                          <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path>
-                        </svg>
+                        <svg class="icon-svg folder-plus-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                       </button>
                     </div>
                   </div>
@@ -275,9 +240,7 @@
                       />
                       <label for="assessment-material-file" class="assessment-upload-drop-label">
                         <span class="assessment-upload-icon" aria-hidden="true">
-                          <svg viewBox="0 0 24 24" class="icon-svg">
-                            <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
-                          </svg>
+                          <i class="icon-svg" data-lucide="upload"></i>
                         </span>
                         <span class="assessment-upload-title">Upload material</span>
                       </label>
@@ -340,128 +303,309 @@
                   </div>
                   <button
                     id="cram-back-button"
-                    class="ghost-button quiz-page-back-button"
+                    class="ghost-button quiz-page-back-button cram-icon-back-button"
                     type="button"
                     aria-label="Back to home"
                   >
-                    <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"></path>
-                    </svg>
-                    <span>Back</span>
+                    <i class="icon-svg" data-lucide="arrow-left"></i>
                   </button>
                 </div>
 
-                <div id="cram-setup-panel" class="quiz-setup-form quiz-page-section">
-                  <p id="cram-session-meta" class="panel-help"></p>
-
-                  <label class="modal-field">
-                    <span>Exam name</span>
-                    <input
-                      id="cram-exam-name"
-                      type="text"
-                      placeholder="AP Biology Unit 4 Test"
-                    />
-                  </label>
-
-                  <div class="cram-setup-row">
-                    <label class="modal-field">
-                      <span>Time available</span>
-                      <select id="cram-time-available" class="cram-select">
-                        <option value="30 minutes">30 min</option>
-                        <option value="1 hour" selected>1 hour</option>
-                        <option value="2 hours">2 hours</option>
-                        <option value="All night">All night</option>
-                      </select>
-                    </label>
-                    <label class="modal-field">
-                      <span>Assessment format</span>
-                      <select id="cram-assessment-profile-select" class="cram-select">
-                        <option value="">Generic cram plan</option>
-                      </select>
-                    </label>
-                  </div>
-                  <p id="cram-assessment-profile-meta" class="panel-help">
-                    Generic cram plan.
-                  </p>
-
-                  <div class="cram-source-stack">
-                    <div class="material-reference-section">
-                      <span class="material-reference-label">Class material</span>
-                      <span id="cram-class-material-status" class="material-reference-status"></span>
-                      <div id="cram-class-material-picker" class="material-reference-picker"></div>
-                    </div>
-
-                    <label class="modal-field">
-                      <span>Material</span>
-                      <div class="assessment-upload-drop">
-                        <input
-                          id="cram-material-file"
-                          class="assessment-file-input"
-                          type="file"
-                          multiple
-                          accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                        />
-                        <label for="cram-material-file" class="assessment-upload-drop-label quiz-upload-drop-compact">
-                          <span class="assessment-upload-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" class="icon-svg">
-                              <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
-                            </svg>
-                          </span>
-                          <span class="assessment-upload-title">Upload or drop files</span>
-                        </label>
-                        <span id="cram-file-name" class="panel-help">No files selected</span>
-                      </div>
-                    </label>
-                    <div class="cram-upload-meta">
-                      <div
-                        id="cram-upload-rollup"
-                        class="cram-upload-rollup"
-                        hidden
-                      ></div>
-                    </div>
-
-                    <label class="modal-field">
-                      <span>Or paste notes</span>
-                      <textarea
-                        id="cram-material-text"
-                        rows="4"
-                        placeholder="Paste study material here"
-                      ></textarea>
-                    </label>
-                  </div>
-
-                  <p
-                    id="cram-material-status"
-                    class="panel-help cram-material-status"
+                <div id="cram-setup-stepper" class="cram-stepper-header" hidden>
+                  <button
+                    id="cram-step-back-button"
+                    class="ghost-button quiz-page-back-button cram-icon-back-button"
+                    type="button"
+                    aria-label="Back"
                   >
-                    Ready to build from uploaded and pasted material.
-                  </p>
-
-                  <p id="cram-material-count" class="cram-material-hint" hidden>
-                    Approx 0 characters loaded
-                  </p>
-
-                  <label class="modal-field">
-                    <span>Additional notes</span>
-                    <textarea
-                      id="cram-additional-notes"
-                      rows="3"
-                      placeholder="Teacher emphasis, format, weak spots"
-                    ></textarea>
-                  </label>
-
-                  <p id="cram-status" class="panel-help"></p>
-
-                  <div class="modal-actions">
-                    <button
-                      id="generate-cram-button"
-                      class="continue-button"
-                      type="button"
-                    >
-                      Generate Plan - 5 Study Credits
-                    </button>
+                    <i class="icon-svg" data-lucide="arrow-left"></i>
+                  </button>
+                  <div class="cram-stepper">
+                    <div class="cram-stepper-step is-active" data-step="1">
+                      <div class="cram-stepper-circle">1</div>
+                      <span class="cram-stepper-text">Exam Details</span>
+                    </div>
+                    <div class="cram-stepper-line"></div>
+                    <div class="cram-stepper-step" data-step="2">
+                      <div class="cram-stepper-circle">2</div>
+                      <span class="cram-stepper-text">Materials</span>
+                    </div>
+                    <div class="cram-stepper-line"></div>
+                    <div class="cram-stepper-step" data-step="3">
+                      <div class="cram-stepper-circle">3</div>
+                      <span class="cram-stepper-text">Review & Generate</span>
+                    </div>
                   </div>
                 </div>
+
+                <div id="cram-setup-panel" class="quiz-setup-form quiz-page-section">
+                  <!-- Step 1: Exam Details -->
+                  <div id="cram-setup-step-1" class="cram-setup-step-pane">
+                    <p id="cram-session-meta" class="panel-help"></p>
+                    <h3 class="cram-step-heading">Let's set up your study plan</h3>
+                    <p class="cram-step-subheading">Tell us about your exam so we can personalize your plan.</p>
+
+                    <div class="cram-step-1-fields">
+                      <div class="cram-field-col">
+                        <label class="modal-field">
+                          <span>Exam name <span class="required-asterisk">*</span></span>
+                          <input
+                            id="cram-exam-name"
+                            type="text"
+                            placeholder="Biology Final Exam"
+                            required
+                          />
+                          <span class="cram-field-help">Give your exam a clear, recognizable name.</span>
+                        </label>
+                      </div>
+
+                      <div class="cram-field-col">
+                        <label class="modal-field">
+                          <span>Assessment format <span class="required-asterisk">*</span></span>
+                          <div class="select-wrapper">
+                            <select id="cram-assessment-profile-select" class="cram-select">
+                              <option value="">Generic cram plan</option>
+                            </select>
+                          </div>
+                          <span class="cram-field-help">Choose the format that matches your exam.</span>
+                        </label>
+                        <p id="cram-assessment-profile-meta" class="panel-help" hidden>
+                          Generic cram plan.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="cram-step-1-fields-row-2">
+                      <label class="modal-field">
+                        <span>Time available <span class="required-asterisk">*</span></span>
+                        <div class="select-wrapper">
+                          <select id="cram-time-available" class="cram-select">
+                            <option value="30 minutes">30 min</option>
+                            <option value="1 hour" selected>1 hour</option>
+                            <option value="2 hours">2 hours</option>
+                            <option value="All night">All night</option>
+                          </select>
+                        </div>
+                        <span class="cram-field-help">How much time do you have to study?</span>
+                      </label>
+                    </div>
+
+                    <div class="cram-saved-format-banner" id="cram-saved-format-banner">
+                      <div class="cram-banner-left">
+                        <div class="cram-banner-icon-bg">
+                          <i data-lucide="bookmark" class="cram-banner-icon"></i>
+                        </div>
+                        <div class="cram-banner-text">
+                          <strong class="cram-banner-title">Use saved teacher format</strong>
+                          <span class="cram-banner-description">Save your current selections as a teacher format for future use.</span>
+                        </div>
+                      </div>
+                      <div class="cram-banner-right">
+                        <label class="cram-switch">
+                          <input type="checkbox" id="cram-use-teacher-toggle" />
+                          <span class="cram-switch-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="cram-step-actions flex-end">
+                      <button id="cram-step-1-continue" class="continue-button" type="button">
+                        <span>Continue to Materials</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Step 2: Materials -->
+                  <div id="cram-setup-step-2" class="cram-setup-step-pane" hidden>
+                    <h3 class="cram-step-heading">Add your study materials</h3>
+                    <p class="cram-step-subheading">Upload files or paste notes to help us build the best plan.</p>
+
+                    <div class="cram-step-2-content">
+                      <div class="cram-step-2-left-col">
+                        <div class="material-reference-section">
+                          <span class="material-reference-label">Class material</span>
+                          <span id="cram-class-material-status" class="material-reference-status"></span>
+                          <div id="cram-class-material-picker" class="material-reference-picker"></div>
+                        </div>
+
+                        <label class="modal-field">
+                          <span>Study materials</span>
+                          <div class="assessment-upload-drop" id="cram-upload-dropzone">
+                            <input
+                              id="cram-material-file"
+                              class="assessment-file-input"
+                              type="file"
+                              multiple
+                              accept=".txt,.md,.csv,.json,.pdf,.pptx,image/*,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                            />
+                            <label for="cram-material-file" class="assessment-upload-drop-label quiz-upload-drop-compact">
+                              <span class="assessment-upload-icon" aria-hidden="true">
+                                <i class="icon-svg" data-lucide="upload-cloud"></i>
+                              </span>
+                              <span class="assessment-upload-title">Drag & drop files here</span>
+                              <span class="assessment-upload-subtitle">or <span class="browse-link">click to browse</span></span>
+                            </label>
+                          </div>
+                          <span class="cram-upload-limits">Supported: PDF, DOCX, PPTX, TXT, PNG, JPG • Max 50MB per file</span>
+                          <span id="cram-file-name" class="panel-help" hidden>No files selected</span>
+                        </label>
+
+                        <div class="cram-upload-meta" hidden>
+                          <div id="cram-upload-rollup" class="cram-upload-rollup"></div>
+                        </div>
+
+                        <div class="cram-uploaded-files-section">
+                          <h4 class="cram-uploaded-files-heading" id="cram-uploaded-files-heading">Uploaded files (0)</h4>
+                          <div id="cram-uploaded-files-list" class="cram-uploaded-files-list">
+                            <!-- Dynamically populated files -->
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="cram-step-2-right-col">
+                        <!-- Tab structure for notes/material -->
+                        <div class="cram-materials-tabs">
+                          <button type="button" class="cram-tab-btn active" id="cram-tab-notes">Additional notes</button>
+                          <button type="button" class="cram-tab-btn" id="cram-tab-paste">Or paste notes</button>
+                        </div>
+
+                        <div id="cram-notes-tab-pane">
+                          <label class="modal-field notes-field">
+                            <span>Additional notes <span class="notes-optional">(optional)</span></span>
+                            <span class="notes-field-help">Add any context, focus areas, or topics to prioritize.</span>
+                            <textarea
+                              id="cram-additional-notes"
+                              class="cram-material-text-textarea"
+                              rows="8"
+                              placeholder="Focus on cell structure, photosynthesis, cellular respiration, and genetics.&#10;Teacher emphasized diagrams and data interpretation."
+                              maxLength="1000"
+                            ></textarea>
+                            <div class="char-counter-row">
+                              <span id="cram-notes-char-counter" class="char-counter">0 / 1000</span>
+                            </div>
+                          </label>
+                        </div>
+
+                        <div id="cram-paste-tab-pane" hidden>
+                          <label class="modal-field notes-field">
+                            <span>Paste study notes</span>
+                            <span class="notes-field-help">Paste raw text or paragraphs from notes/sources directly.</span>
+                            <textarea
+                              id="cram-material-text"
+                              class="cram-material-text-textarea"
+                              rows="8"
+                              placeholder="Paste study material here..."
+                            ></textarea>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p id="cram-material-status" class="panel-help cram-material-status"></p>
+                    <p id="cram-material-count" class="cram-token-hint" hidden></p>
+
+                    <div class="cram-step-actions flex-between">
+                      <button id="cram-step-2-save-exit" class="ghost-button" type="button">
+                        <i data-lucide="save" class="button-icon"></i>
+                        <span>Save & Exit</span>
+                      </button>
+                      <button id="cram-step-2-continue" class="continue-button" type="button">
+                        <span>Continue to Review</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Step 3: Review & Generate -->
+                  <div id="cram-setup-step-3" class="cram-setup-step-pane" hidden>
+                    <div class="cram-step-3-header">
+                      <div>
+                        <h3 class="cram-step-heading">Review your plan</h3>
+                        <p class="cram-step-subheading">Check your inputs before we generate your personalized study plan.</p>
+                      </div>
+                      <button id="cram-step-3-edit" class="ghost-button edit-details-btn" type="button">
+                        <i data-lucide="pencil" class="button-icon"></i>
+                        <span>Edit Details</span>
+                      </button>
+                    </div>
+
+                    <div class="cram-step-3-cards">
+                      <!-- Column 1: Exam details -->
+                      <div class="cram-review-card">
+                        <div class="cram-review-card-header">
+                          <div class="cram-review-card-icon-bg col-blue">
+                            <i data-lucide="calendar" class="cram-review-card-icon"></i>
+                          </div>
+                          <h4 class="cram-review-card-title">Exam details</h4>
+                        </div>
+                        <div class="cram-review-card-content">
+                          <div class="review-detail-item">
+                            <span class="detail-label">Exam name</span>
+                            <span class="detail-value" id="review-exam-name">-</span>
+                          </div>
+                          <div class="review-detail-item">
+                            <span class="detail-label">Time available</span>
+                            <span class="detail-value" id="review-time-available">-</span>
+                          </div>
+                          <div class="review-detail-item">
+                            <span class="detail-label">Assessment format</span>
+                            <span class="detail-value" id="review-assessment-format">-</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Column 2: Materials -->
+                      <div class="cram-review-card">
+                        <div class="cram-review-card-header">
+                          <div class="cram-review-card-icon-bg col-green">
+                            <i data-lucide="folder" class="cram-review-card-icon"></i>
+                          </div>
+                          <h4 class="cram-review-card-title">Materials</h4>
+                        </div>
+                        <div class="cram-review-card-content">
+                          <span class="detail-label" id="review-materials-count">0 files uploaded</span>
+                          <ul class="review-materials-list" id="review-materials-list">
+                            <!-- Bullet list of files -->
+                          </ul>
+                          <div class="view-all-materials-dropdown" id="view-all-materials-dropdown-container" hidden>
+                            <button type="button" class="view-all-materials-btn" id="view-all-materials-btn">
+                              <span>View all files</span>
+                              <i data-lucide="chevron-down" class="button-icon-right"></i>
+                            </button>
+                            <div class="view-all-materials-popover" id="view-all-materials-popover" hidden>
+                              <!-- Popover listing of all materials -->
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Column 3: Additional notes -->
+                      <div class="cram-review-card">
+                        <div class="cram-review-card-header">
+                          <div class="cram-review-card-icon-bg col-orange">
+                            <i data-lucide="file-text" class="cram-review-card-icon"></i>
+                          </div>
+                          <h4 class="cram-review-card-title">Additional notes</h4>
+                        </div>
+                        <div class="cram-review-card-content">
+                          <div class="review-notes-content" id="review-additional-notes">-</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="cram-review-info-banner">
+                      <i data-lucide="info" class="banner-info-icon"></i>
+                      <span class="banner-info-text">We'll analyze your materials and create a focused plan that fits your time.</span>
+                    </div>
+
+                    <p id="cram-status" class="panel-help"></p>
+
+                    <div class="cram-step-actions flex-end">
+                      <button id="generate-cram-button" class="continue-button generate-plan-btn" type="button">
+                        <i data-lucide="sparkles" class="button-icon"></i>
+                        <span>Generate Plan - 5 Study Credits</span>
+                      </button>
+                    </div>
+                  </div>
 
                 <div id="cram-active-panel" class="quiz-page-section" hidden>
                   <div class="cram-progress-panel">
@@ -526,9 +670,7 @@
                     type="button"
                     aria-label="Back to home"
                   >
-                    <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z"></path>
-                    </svg>
+                    <i class="icon-svg" data-lucide="arrow-left"></i>
                     <span>Back</span>
                   </button>
                 </div>
@@ -589,9 +731,7 @@
                         />
                         <label for="quiz-material-file" class="assessment-upload-drop-label quiz-upload-drop-compact">
                           <span class="assessment-upload-icon" aria-hidden="true">
-                            <svg viewBox="0 0 24 24" class="icon-svg">
-                              <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
-                            </svg>
+                            <i class="icon-svg" data-lucide="upload"></i>
                           </span>
                           <span class="assessment-upload-title">Upload or drop a file</span>
                         </label>
@@ -758,11 +898,7 @@
                             class="settings-select-chevron"
                             aria-hidden="true"
                           >
-                            <svg viewBox="0 0 24 24">
-                              <path
-                                d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"
-                              ></path>
-                            </svg>
+                            <i data-lucide="chevron-down"></i>
                           </span>
                         </div>
                       </div>
@@ -790,11 +926,7 @@
                             class="settings-select-chevron"
                             aria-hidden="true"
                           >
-                            <svg viewBox="0 0 24 24">
-                              <path
-                                d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"
-                              ></path>
-                            </svg>
+                            <i data-lucide="chevron-down"></i>
                           </span>
                         </div>
                       </div>
@@ -828,11 +960,7 @@
                             class="settings-select-chevron"
                             aria-hidden="true"
                           >
-                            <svg viewBox="0 0 24 24">
-                              <path
-                                d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"
-                              ></path>
-                            </svg>
+                            <i data-lucide="chevron-down"></i>
                           </span>
                         </div>
                       </div>
@@ -861,11 +989,7 @@
                             class="settings-select-chevron"
                             aria-hidden="true"
                           >
-                            <svg viewBox="0 0 24 24">
-                              <path
-                                d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"
-                              ></path>
-                            </svg>
+                            <i data-lucide="chevron-down"></i>
                           </span>
                         </div>
                       </div>
@@ -893,11 +1017,7 @@
                             class="settings-select-chevron"
                             aria-hidden="true"
                           >
-                            <svg viewBox="0 0 24 24">
-                              <path
-                                d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"
-                              ></path>
-                            </svg>
+                            <i data-lucide="chevron-down"></i>
                           </span>
                         </div>
                       </div>
@@ -925,11 +1045,7 @@
                             class="settings-select-chevron"
                             aria-hidden="true"
                           >
-                            <svg viewBox="0 0 24 24">
-                              <path
-                                d="m6.7 9.3 5.3 5.4 5.3-5.4 1.4 1.4-6.7 6.7-6.7-6.7z"
-                              ></path>
-                            </svg>
+                            <i data-lucide="chevron-down"></i>
                           </span>
                         </div>
                       </div>
@@ -1242,7 +1358,7 @@
                         </p>
                         <img
                           class="settings-update-guide-image"
-                          src="https://github.com/user-attachments/assets/62f6037a-8ee2-49d8-a0e0-002af3ed8b1b"
+                          src="../assets/images/update-guide/macos-warning-dialog.png"
                           alt="macOS warning dialog for SideKlick app"
                         />
                         <p class="panel-help">
@@ -1251,7 +1367,7 @@
                         <pre><code id="settings-update-quarantine-command"></code></pre>
                         <img
                           class="settings-update-guide-image settings-update-guide-image-wide"
-                          src="https://github.com/user-attachments/assets/bda44b6e-80fe-44d0-a0ce-4b96de2a6371"
+                          src="../assets/images/update-guide/macos-terminal-fix.png"
                           alt="Terminal showing xattr quarantine fix command"
                         />
                       </section>
@@ -1356,11 +1472,7 @@
               <span class="compact-ask-copy">
                 <span class="compact-ask-word">Ask</span>
                 <span class="compact-ask-ai" aria-hidden="true">
-                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M12 2 14.2 9.8 22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2L12 2z"
-                    ></path>
-                  </svg>
+                  <i class="icon-svg" data-lucide="sparkles"></i>
                 </span>
               </span>
             </button>
@@ -1370,11 +1482,7 @@
               type="button"
               aria-label="Close window"
             >
-              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
-                ></path>
-              </svg>
+              <i class="icon-svg" data-lucide="x"></i>
             </button>
           </div>
         </section>
@@ -1403,11 +1511,7 @@
                 type="button"
                 aria-label="Close modal"
               >
-                <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
-                  ></path>
-                </svg>
+                <i class="icon-svg" data-lucide="x"></i>
               </button>
             </div>
 
@@ -1551,11 +1655,7 @@
                 type="button"
                 aria-label="Close session summary"
               >
-                <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
-                  ></path>
-                </svg>
+                <i class="icon-svg" data-lucide="x"></i>
               </button>
             </div>
 
@@ -1591,11 +1691,7 @@
                 type="button"
                 aria-label="Close class material modal"
               >
-                <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
-                  ></path>
-                </svg>
+                <i class="icon-svg" data-lucide="x"></i>
               </button>
             </div>
 
@@ -1617,9 +1713,7 @@
                     />
                     <label for="class-material-file" class="assessment-upload-drop-label quiz-upload-drop-compact">
                       <span class="assessment-upload-icon" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" class="icon-svg">
-                          <path d="M19 20H5a2 2 0 0 1-2-2v-1h2v1h14v-1h2v1a2 2 0 0 1-2 2ZM13 5.83V16h-2V5.83l-3.59 3.58L6 8l6-6 6 6-1.41 1.41L13 5.83Z"></path>
-                        </svg>
+                        <i class="icon-svg" data-lucide="upload"></i>
                       </span>
                       <span class="assessment-upload-title">Upload or drop files</span>
                     </label>

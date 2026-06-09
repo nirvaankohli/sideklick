@@ -1,6 +1,7 @@
 import { getDatabase } from "../server/db/index.ts";
 
 const PRIVACY_SETTINGS_KEY = "privacySettings";
+const PRIVACY_MIGRATION_MARKER_KEY = "privacyResetMigration.v2";
 
 const ALLOWED_SCREENSHOT_POLICIES = new Set([
   "automatic",
@@ -23,9 +24,9 @@ export type PrivacySettings = {
 };
 
 export const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
-  screenshotPolicy: "automatic",
+  screenshotPolicy: "manual",
   localOnly: true,
-  syncConsent: "granted",
+  syncConsent: "unknown",
 };
 
 type PrivacySettingsPatch = Partial<PrivacySettings> | null | undefined;
@@ -81,6 +82,43 @@ function writeStoredPrivacySettings(
   });
 
   return value;
+}
+
+function readMigrationMarkerValue(): string | null {
+  const db = getDatabase();
+  const row = db.prepare(
+    `
+      SELECT state_value
+      FROM app_state
+      WHERE state_key = ?
+      LIMIT 1
+    `,
+  ).get(PRIVACY_MIGRATION_MARKER_KEY) as { state_value: string } | undefined;
+
+  return row?.state_value ?? null;
+}
+
+function writeMigrationMarkerValue(value: string): void {
+  const db = getDatabase();
+  db.prepare(
+    `
+      INSERT INTO app_state (
+        state_key,
+        state_value,
+        updated_at
+      ) VALUES (
+        @stateKey,
+        @stateValue,
+        CURRENT_TIMESTAMP
+      )
+      ON CONFLICT(state_key) DO UPDATE SET
+        state_value = excluded.state_value,
+        updated_at = CURRENT_TIMESTAMP
+    `,
+  ).run({
+    stateKey: PRIVACY_MIGRATION_MARKER_KEY,
+    stateValue: value,
+  });
 }
 
 export function normalizePrivacySettings(value: unknown): PrivacySettings {
@@ -153,4 +191,14 @@ export function updatePrivacySettings(
 
 export function resetPrivacySettings(): PrivacySettings {
   return privacySettingsStore.resetSettings();
+}
+
+export function migrateDesktopPrivacyDefaultsOnce(): PrivacySettings {
+  if (readMigrationMarkerValue() === "applied") {
+    return getPrivacySettings();
+  }
+
+  const resetSettings = resetPrivacySettings();
+  writeMigrationMarkerValue("applied");
+  return resetSettings;
 }

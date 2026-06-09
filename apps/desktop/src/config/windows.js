@@ -29,8 +29,8 @@ const sharedWindowTemplate = {
       minHeight: 180,
     },
     compact: {
-      width: 272,
-      height: 82,
+      width: 138,
+      height: 38,
     },
     anchor: {
       horizontal: "right",
@@ -62,8 +62,8 @@ const windowTemplates = {
         viewportHeightRatio: 0.82,
       },
       compact: {
-        width: 280,
-        height: 80,
+        width: 138,
+        height: 38,
       },
       anchor: {
         horizontal: "center",
@@ -86,8 +86,8 @@ const windowTemplates = {
         minHeight: 520,
       },
       compact: {
-        width: 252,
-        height: 80,
+        width: 138,
+        height: 38,
       },
     },
   },
@@ -97,14 +97,14 @@ const windowTemplates = {
     description: "Chat window.",
     layout: {
       expanded: {
-        width: 760,
-        height: 560,
-        minWidth: 560,
-        minHeight: 420,
+        width: 640,
+        height: 360,
+        minWidth: 240,
+        minHeight: 150,
       },
       compact: {
-        width: 272,
-        height: 82,
+        width: 138,
+        height: 38,
       },
     },
   },

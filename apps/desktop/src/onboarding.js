@@ -3,9 +3,6 @@ const closeWindow = document.querySelector("#close-window");
 const onboardingIntroView = document.querySelector("#onboarding-intro-view");
 const onboardingSetupView = document.querySelector("#onboarding-setup-view");
 const getStartedButton = document.querySelector("#onboarding-get-started");
-const themeStatus = document.querySelector("#theme-status");
-const sourceStatus = document.querySelector("#source-status");
-const profileStatus = document.querySelector("#profile-status");
 const stepCaption = document.querySelector("#step-caption");
 const backButton = document.querySelector("#back-button");
 const continueButton = document.querySelector("#continue-button");
@@ -21,7 +18,6 @@ const profileSelect = document.querySelector("#customer-profile-select");
 const privacyPolicySelect = document.querySelector("#privacy-screenshot-policy-select");
 const syncConsentSelect = document.querySelector("#privacy-sync-consent-select");
 const stepPanels = Array.from(document.querySelectorAll("[data-step-panel]"));
-const privacyStatus = document.querySelector("#privacy-onboarding-status");
 const authStatus = document.querySelector("#auth-status");
 const authEmailInput = document.querySelector("#auth-email-input");
 const authPasswordInput = document.querySelector("#auth-password-input");
@@ -33,47 +29,12 @@ let activeStep = 1;
 let onboardingStarted = false;
 let authSession = null;
 
-const sourceLabels = {
-  teacher: "Teacher or class recommendation",
-  friend: "Friend recommendation",
-  hackathon: "Big Red Hacks or demo",
-  search: "Online search",
-};
-
-const profileLabels = {
-  advanced: "AP / Honors",
-  "catch-up": "Catch-Up",
-  exam: "Exam Focused",
-};
-
-const screenshotPolicyLabels = {
-  automatic: "Auto",
-  manual: "Manual",
-  disabled: "Never",
-};
-
-const syncConsentLabels = {
-  unknown: "Later",
-  granted: "On",
-  denied: "Off",
-};
-
-function humanLabel(themeSource, shouldUseDarkColors) {
-  if (themeSource === "system") {
-    return `System (${shouldUseDarkColors ? "Dark" : "Light"})`;
-  }
-
-  return `${themeSource.charAt(0).toUpperCase()}${themeSource.slice(1)}`;
-}
-
 function applyThemeState({ themeSource, shouldUseDarkColors }) {
   root.dataset.tone = shouldUseDarkColors ? "dark" : "light";
 
   for (const [source, button] of Object.entries(choiceButtons)) {
     button.dataset.selected = source === themeSource ? "true" : "false";
   }
-
-  themeStatus.textContent = `Current preference: ${humanLabel(themeSource, shouldUseDarkColors)}`;
 }
 
 function applyTransparencyPreference(preferences) {
@@ -97,14 +58,6 @@ function applyPreferenceSelections(preferences) {
   profileSelect.value = customerProfile || "";
   sourceSelect.parentElement.dataset.hasValue = discoverySource ? "true" : "false";
   profileSelect.parentElement.dataset.hasValue = customerProfile ? "true" : "false";
-
-  sourceStatus.textContent = discoverySource
-    ? `Current: ${sourceLabels[discoverySource]}`
-    : "No source selected yet.";
-
-  profileStatus.textContent = customerProfile
-    ? `Current: ${profileLabels[customerProfile]}`
-    : "Pick the closest fit.";
 }
 
 function applyPrivacySelections(settings) {
@@ -114,8 +67,6 @@ function applyPrivacySelections(settings) {
   syncConsentSelect.value = syncConsent;
   privacyPolicySelect.parentElement.dataset.hasValue = "true";
   syncConsentSelect.parentElement.dataset.hasValue = "true";
-
-  privacyStatus.textContent = `Screenshots: ${screenshotPolicyLabels[screenshotPolicy]}. Telemetry: ${syncConsentLabels[syncConsent]}.`;
 }
 
 function applyAuthSession(nextSession) {
@@ -292,4 +243,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   onboardingIntroView.hidden = false;
   onboardingSetupView.hidden = true;
   setActiveStep(1);
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
 });

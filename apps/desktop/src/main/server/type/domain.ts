@@ -20,6 +20,13 @@ export type AssistRequest = {
   pageUrl?: string | null;
   userNote?: string | null;
   screenshotDataUrl?: string | null;
+  requestMode?: "smart";
+  screenshotPolicy?: "automatic" | "manual" | "disabled";
+  tracingConsent?: {
+    requestSyncConsent: "unknown" | "granted" | "denied";
+    serverSyncConsent: "unknown" | "granted" | "denied";
+    langfuseEnabled: boolean;
+  };
 };
 
 export type Gap = {
@@ -146,6 +153,22 @@ export type AssistResponse = {
   nextStep: string;
   context: BuiltContext;
   gapCandidates: ModelGapCandidate[];
+  screenViewed?: boolean;
+};
+
+export type SmartAssistNeedsScreenshotResponse = {
+  requestMode: "smart";
+  needsScreenshot: true;
+  reason: string;
+};
+
+export type AssistRouteResponse =
+  | AssistResponse
+  | SmartAssistNeedsScreenshotResponse;
+
+export type ModelScreenDecision = {
+  wants_screen: boolean;
+  reason: string;
 };
 
 export type FeedbackRequest = {

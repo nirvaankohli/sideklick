@@ -102,7 +102,7 @@ test("privacy settings store sanitizes invalid writes", async () => {
   });
 
   assert.deepEqual(result, {
-    screenshotPolicy: "automatic",
+    screenshotPolicy: "manual",
     localOnly: false,
     syncConsent: "granted",
   });

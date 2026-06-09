@@ -3,8 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+    />
     <title>Big Red Hacks Overlay</title>
     <link rel="stylesheet" href="./styles.css" />
+    <script src="./lucide.min.js"></script>
   </head>
   <body>
     <main class="window-shell" data-mode="expanded" data-tone="light">
@@ -25,20 +30,13 @@
           </div>
           <div class="window-actions no-drag">
             <button id="shrink-window" class="icon-button" type="button" aria-label="Pin overlay">
-              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 6h10v2H7zM7 11h10v2H7zM7 16h10v2H7z"></path>
-              </svg>
+              <i class="icon-svg" data-lucide="pin"></i>
             </button>
-            <button id="theme-icon-toggle" class="icon-button" type="button" aria-label="Toggle light or dark theme">
-              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12.2 3.2c.5 0 .8.4.8.8 0 .2 0 .4-.1.5-1 1.8-1.3 4-.7 6.1 1 3.2 4 5.4 7.4 5.4.4 0 .8.3.8.8 0 .2-.1.4-.2.5-1.7 2.3-4.4 3.7-7.3 3.7-5 0-9-4-9-9 0-4 2.7-7.4 6.5-8.6.1-.1.3-.2.5-.2Z"></path>
-              </svg>
+            <button id="stop-session" class="icon-button danger stop-session-button" type="button" aria-label="Stop Session">
+              <i class="icon-svg" data-lucide="square"></i>
             </button>
-            <button id="stop-session" class="ghost-button stop-session-button" type="button">Stop Session</button>
             <button id="close-window" class="icon-button danger" type="button" aria-label="Close window">
-              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
-              </svg>
+              <i class="icon-svg" data-lucide="x"></i>
             </button>
           </div>
         </header>
@@ -47,12 +45,10 @@
           <section class="session-layout no-drag">
             <section class="chat-shell session-chat-shell">
               <div id="chat-thread" class="chat-thread">
-                <article class="chat-message assistant">
-                  <p class="chat-message-copy">Session started. Ask a question or paste in the concept you want help with.</p>
-                </article>
               </div>
               <form id="chat-form" class="chat-compose">
-                <div class="chat-compose-input-shell">
+                <textarea id="chat-input" rows="1" placeholder="Ask about this class, unit, or session..."></textarea>
+                <div class="chat-compose-footer">
                   <div class="chat-attach-shell">
                     <button
                       id="chat-attach-trigger"
@@ -62,18 +58,22 @@
                       aria-haspopup="menu"
                       aria-expanded="false"
                     >
-                      <svg class="icon-svg chat-attach-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"></path>
-                      </svg>
+                      <i class="icon-svg chat-attach-icon" data-lucide="plus"></i>
                     </button>
                     <div id="chat-attach-menu" class="chat-attach-menu" hidden>
                       <button id="attach-screenshot-button" class="chat-attach-menu-item" type="button">Attach Screenshot</button>
                       <button id="attach-clipboard-button" class="chat-attach-menu-item" type="button">Attach Clipboard</button>
                     </div>
                   </div>
-                  <textarea id="chat-input" rows="1" placeholder="Ask about this class, unit, or session..."></textarea>
+                  <button
+                    id="send-message"
+                    class="continue-button send-message-button"
+                    type="submit"
+                    aria-label="Send message"
+                  >
+                    <i class="icon-svg send-message-icon" data-lucide="arrow-up"></i>
+                  </button>
                 </div>
-                <button id="send-message" class="continue-button send-message-button" type="submit">Send</button>
               </form>
             </section>
           </section>
@@ -88,16 +88,12 @@
               <span class="compact-ask-copy">
                 <span class="compact-ask-word">Ask</span>
                 <span class="compact-ask-ai" aria-hidden="true">
-                  <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 2 14.2 9.8 22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2L12 2z"></path>
-                  </svg>
+                  <i class="icon-svg" data-lucide="sparkles"></i>
                 </span>
               </span>
             </button>
             <button id="compact-close-window" class="icon-button danger compact-close-button" type="button" aria-label="Close window">
-              <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"></path>
-              </svg>
+              <i class="icon-svg" data-lucide="x"></i>
             </button>
           </div>
         </section>

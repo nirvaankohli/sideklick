@@ -18,7 +18,7 @@ async function bundleMainProcess() {
     bundle: true,
     format: "cjs",
     platform: "node",
-    target: "node20",
+    target: "node24",
     external: ["electron", "better-sqlite3", "pdf-parse"],
     define: {
       "process.env.SIDEKLICK_DISABLE_TSX_LOADER": "\"true\"",
@@ -37,6 +37,7 @@ async function copyRuntimeFiles() {
     [path.join(desktopSrcDir, "renderer.js"), path.join(distDesktopDir, "renderer.js")],
     [path.join(desktopSrcDir, "home.js"), path.join(distDesktopDir, "home.js")],
     [path.join(desktopSrcDir, "onboarding.js"), path.join(distDesktopDir, "onboarding.js")],
+    [path.join(desktopSrcDir, "lucide.min.js"), path.join(distDesktopDir, "lucide.min.js")],
     [path.join(desktopSrcDir, "styles.css"), path.join(distDesktopDir, "styles.css")],
     [path.join(desktopSrcDir, "index.html"), path.join(distDesktopDir, "index.html")],
     [path.join(desktopSrcDir, "home.html"), path.join(distDesktopDir, "home.html")],

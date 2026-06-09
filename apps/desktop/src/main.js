@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
 const https = require("https");
+const { pathToFileURL } = require("url");
 const dotenv = require("dotenv");
 if (process.env.SIDEKLICK_DISABLE_TSX_LOADER !== "true") {
   require("tsx/cjs");
@@ -12,8 +13,12 @@ const {
   clipboard,
   desktopCapturer,
   ipcMain,
+  net,
   nativeTheme,
+  protocol,
   screen,
+  session,
+  safeStorage,
   shell,
 } = require("electron");
 const {
@@ -35,17 +40,33 @@ const {
   isManagedBackendAuthFailure,
 } = require("./main/auth-session.js");
 const {
+  DEFAULT_PRIVACY_SETTINGS,
   getPrivacySettings,
+  migrateDesktopPrivacyDefaultsOnce,
+  normalizePrivacySettings,
   resetPrivacySettings,
   setPrivacySettings,
   updatePrivacySettings,
 } = require("./main/privacy/settings.ts");
+const {
+  createManagedAuthStore,
+} = require("./main/managed-auth-store.ts");
+const {
+  ensureBridgeSecret,
+  resolveBridgeSecretPath,
+} = require("./main/bridge-auth.cjs");
 const {
   enqueueOfflineRequest,
 } = require("./main/cache/local.ts");
 const {
   extractStudyMaterialFiles,
 } = require("./main/study-material.js");
+const {
+  performManagedAssistWithCompatibility,
+} = require("./main/managed-assist.js");
+const {
+  performManagedCramPlanWithCompatibility,
+} = require("./main/managed-cram-plan.js");
 
 const windowsByKey = new Map();
 const windowState = new Map();
@@ -57,11 +78,18 @@ const USER_EDITABLE_PREFERENCE_KEYS = new Set([
 ]);
 const LOCAL_API_BASE_URL =
   process.env.LOCAL_API_BASE_URL || "http://127.0.0.1:3001";
-const DEFAULT_MANAGED_BACKEND_JWT = "";
 const MANAGED_AUTH_FILENAME = "managed-auth.json";
 const AUTH_REFRESH_TIMEOUT_MS = 2500;
 const LOCAL_DB_FILENAME = "sideklick.sqlite";
+const APP_PROTOCOL_SCHEME = "sideklick";
+const APP_PROTOCOL_HOST = "app";
+const PRIVACY_SYNC_COOLDOWN_MS = 15 * 1000;
+const TRUSTED_APP_ORIGIN = `${APP_PROTOCOL_SCHEME}://${APP_PROTOCOL_HOST}`;
 const OFFLINE_QUEUE_ELIGIBLE_ENDPOINTS = new Set([]);
+const TRUSTED_IPC_ORIGINS = new Set([
+  TRUSTED_APP_ORIGIN,
+  "file://",
+]);
 let serverApi = null;
 let sessionServiceApi = null;
 let appStateApi = null;
@@ -69,6 +97,22 @@ let classServiceApi = null;
 let createSessionLifecycle = null;
 let nativeMessagingIpcServer = null;
 let sessionManager = null;
+let managedAuthStore = null;
+let managedPrivacySyncPromise = null;
+let lastManagedPrivacySyncAt = 0;
+let managedServerPrivacySettings = null;
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: APP_PROTOCOL_SCHEME,
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: false,
+    },
+  },
+]);
 
 function getServerApi() {
   if (!serverApi) {
@@ -183,12 +227,122 @@ function getAppLogoPath() {
   return path.join(__dirname, "../assets/images/logo/logo.png");
 }
 
+function getProtocolRuntimeRoots() {
+  return [__dirname, path.resolve(__dirname, "../assets")];
+}
+
+function resolveProtocolFilePath(requestUrl) {
+  const parsed = new URL(requestUrl);
+  if (parsed.protocol !== `${APP_PROTOCOL_SCHEME}:`) {
+    throw new Error("Invalid app protocol scheme.");
+  }
+
+  if (parsed.hostname !== APP_PROTOCOL_HOST) {
+    throw new Error("Invalid app protocol host.");
+  }
+
+  const requestedPath = decodeURIComponent(parsed.pathname || "/");
+  const relativePath = requestedPath.replace(/^\/+/, "") || "index.html";
+
+  if (relativePath.startsWith("assets/")) {
+    const assetsRoot = path.resolve(__dirname, "../assets");
+    const subPath = relativePath.slice(7);
+    const resolvedPath = path.resolve(assetsRoot, subPath);
+    if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
+      return resolvedPath;
+    }
+  }
+
+  for (const root of getProtocolRuntimeRoots()) {
+    const resolvedPath = path.resolve(root, relativePath);
+    const normalizedRoot = path.resolve(root);
+    const isWithinRoot =
+      resolvedPath === normalizedRoot ||
+      resolvedPath.startsWith(`${normalizedRoot}${path.sep}`);
+    if (!isWithinRoot) {
+      continue;
+    }
+
+    if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
+      return resolvedPath;
+    }
+  }
+
+  throw new Error("App asset not found.");
+}
+
+function registerAppProtocol() {
+  protocol.handle(APP_PROTOCOL_SCHEME, (request) => {
+    try {
+      const resolvedPath = resolveProtocolFilePath(request.url);
+      return net.fetch(pathToFileURL(resolvedPath).toString());
+    } catch {
+      return new Response("Not found", { status: 404 });
+    }
+  });
+}
+
+function toAppUrl(relativePath) {
+  const safePath = String(relativePath || "index.html").replace(/^\/+/, "");
+  return `${TRUSTED_APP_ORIGIN}/${safePath}`;
+}
+
+function isTrustedRendererUrl(rawUrl) {
+  if (typeof rawUrl !== "string" || !rawUrl.trim()) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(rawUrl);
+    const origin = `${parsed.protocol}//${parsed.host}`;
+    return TRUSTED_IPC_ORIGINS.has(origin);
+  } catch {
+    return false;
+  }
+}
+
+function assertTrustedIpcSender(event, channel) {
+  const senderUrl =
+    typeof event?.senderFrame?.url === "string" && event.senderFrame.url
+      ? event.senderFrame.url
+      : typeof event?.sender?.getURL === "function"
+        ? event.sender.getURL()
+        : "";
+  if (!isTrustedRendererUrl(senderUrl)) {
+    throw new Error(`Blocked untrusted IPC sender for ${channel}.`);
+  }
+}
+
+const rawIpcHandle = ipcMain.handle.bind(ipcMain);
+ipcMain.handle = (channel, listener) => {
+  return rawIpcHandle(channel, (event, ...args) => {
+    assertTrustedIpcSender(event, channel);
+    return listener(event, ...args);
+  });
+};
+
 function getThemePreferencePath() {
   return path.join(app.getPath("userData"), "preferences.json");
 }
 
 function getManagedAuthPath() {
   return path.join(app.getPath("userData"), MANAGED_AUTH_FILENAME);
+}
+
+function getManagedAuthStore() {
+  if (managedAuthStore) {
+    return managedAuthStore;
+  }
+
+  managedAuthStore = createManagedAuthStore({
+    authPath: getManagedAuthPath(),
+    safeStorage,
+  });
+  return managedAuthStore;
+}
+
+function getBridgeSecretPath() {
+  return resolveBridgeSecretPath(app.getPath("home"));
 }
 
 function getLocalBackendJwtSecretPath() {
@@ -242,20 +396,6 @@ function readPreferences() {
   }
 }
 
-function readManagedAuthFile() {
-  try {
-    const authPath = getManagedAuthPath();
-    if (!fs.existsSync(authPath)) {
-      return null;
-    }
-
-    const raw = fs.readFileSync(authPath, "utf8");
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
 function normalizeTransparencyMode(value, fallback = "normal") {
   return ALLOWED_TRANSPARENCY_MODES.has(value) ? value : fallback;
 }
@@ -291,41 +431,15 @@ function getPreferenceSnapshot() {
 }
 
 function getStoredManagedAuth() {
-  const candidate = readManagedAuthFile();
-  if (!candidate || typeof candidate !== "object") {
-    return null;
-  }
-
-  const token =
-    typeof candidate.token === "string" && candidate.token.trim()
-      ? candidate.token.trim()
-      : "";
-  const user =
-    candidate.user && typeof candidate.user === "object" ? candidate.user : null;
-
-  if (!token || !user) {
-    return null;
-  }
-
-  return {
-    token,
-    user,
-  };
+  return getManagedAuthStore().getSession();
 }
 
 function setStoredManagedAuth(authSession) {
-  const authPath = getManagedAuthPath();
-  fs.mkdirSync(path.dirname(authPath), { recursive: true });
-  fs.writeFileSync(authPath, JSON.stringify(authSession, null, 2), "utf8");
-  return authSession;
+  return getManagedAuthStore().setSession(authSession);
 }
 
 function clearStoredManagedAuth() {
-  const authPath = getManagedAuthPath();
-  if (fs.existsSync(authPath)) {
-    fs.unlinkSync(authPath);
-  }
-  return null;
+  return getManagedAuthStore().clearSession();
 }
 
 function toRendererAuthSession(authSession) {
@@ -694,8 +808,10 @@ function createManagedWindow(
     backgroundColor: browserWindow.backgroundColor || "#00000000",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
+      sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: true,
     },
   });
 
@@ -704,7 +820,14 @@ function createManagedWindow(
     initialMode,
   });
 
-  win.loadFile(path.join(__dirname, config.htmlFile));
+  win.loadURL(toAppUrl(config.htmlFile));
+
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("will-navigate", (event, url) => {
+    if (!isTrustedRendererUrl(url)) {
+      event.preventDefault();
+    }
+  });
 
   win.once("ready-to-show", () => {
     win.show();
@@ -887,6 +1010,64 @@ function canQueueOfflineRequest(endpoint) {
   return OFFLINE_QUEUE_ELIGIBLE_ENDPOINTS.has(endpoint);
 }
 
+function isMissingManagedPrivacyEndpointError(error) {
+  const message =
+    error instanceof Error ? error.message : String(error || "");
+  return (
+    Number(error?.status) === 404 &&
+    /privacy-settings/i.test(message)
+  );
+}
+
+function summarizeAssistPayload(body) {
+  if (!body || typeof body !== "object") {
+    return { hasBody: false };
+  }
+
+  const selectedText =
+    typeof body.selectedText === "string" ? body.selectedText : "";
+  const userNote = typeof body.userNote === "string" ? body.userNote : "";
+
+  return {
+    hasBody: true,
+    actionType:
+      typeof body.actionType === "string" ? body.actionType : null,
+    classId:
+      typeof body.classId === "number" ? body.classId : null,
+    sessionId:
+      typeof body.sessionId === "number" ? body.sessionId : null,
+    pageTitle:
+      typeof body.pageTitle === "string" ? body.pageTitle : null,
+    pageUrl:
+      typeof body.pageUrl === "string" ? body.pageUrl : null,
+    hasScreenshot: Boolean(body.screenshotDataUrl),
+    selectedTextLength: selectedText.length,
+    selectedTextPreview: selectedText.slice(0, 160),
+    userNoteLength: userNote.length,
+    hasTracingConsent:
+      Boolean(body.tracingConsent) &&
+      typeof body.tracingConsent === "object",
+  };
+}
+
+function logAssistAttempt(stage, body) {
+  console.log("[assist] attempt", {
+    stage,
+    payload: summarizeAssistPayload(body),
+  });
+}
+
+function logAssistFailure(stage, error, body) {
+  console.error("[assist] failed", {
+    stage,
+    status:
+      typeof error?.status === "number" ? error.status : null,
+    message:
+      error instanceof Error ? error.message : String(error || ""),
+    payload: summarizeAssistPayload(body),
+  });
+}
+
 function enqueueManagedOfflineRequest(endpoint, options = {}, retryAfter = null) {
   if ((options.method || "GET") === "GET" || !canQueueOfflineRequest(endpoint)) {
     return;
@@ -899,6 +1080,60 @@ function enqueueManagedOfflineRequest(endpoint, options = {}, retryAfter = null)
     payload: options.body ?? null,
     retryAfter,
   });
+}
+
+async function ensureLocalBackendAvailable() {
+  ensureLocalBackendJwtSecret();
+  await getServerApi().startServer({
+    host: "127.0.0.1",
+    port: 3001,
+  });
+}
+
+async function callLocalDesktopBackend(endpoint, options = {}) {
+  await ensureLocalBackendAvailable();
+  const baseUrl = LOCAL_API_BASE_URL.replace(/\/+$/, "");
+  const requestUrl = buildManagedBackendRequestUrl(baseUrl, endpoint);
+  const response = await fetch(requestUrl, {
+    method: options.method || "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body:
+      options.body === undefined ? undefined : JSON.stringify(options.body),
+  });
+
+  const rawText = await response.text();
+  let payload = null;
+  try {
+    payload = rawText ? JSON.parse(rawText) : null;
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const error = new Error(
+      payload && typeof payload.error === "string"
+        ? payload.error
+        : rawText || `Local desktop backend request failed for ${endpoint}`,
+    );
+    error.status = response.status;
+    throw error;
+  }
+
+  return payload;
+}
+
+async function attemptAssistRequest(stage, requestFn, body) {
+  logAssistAttempt(stage, body);
+  try {
+    const result = await requestFn();
+    console.log("[assist] success", { stage });
+    return result;
+  } catch (error) {
+    logAssistFailure(stage, error, body);
+    throw error;
+  }
 }
 
 async function callManagedBackend(endpoint, options = {}) {
@@ -974,6 +1209,155 @@ async function callManagedBackend(endpoint, options = {}) {
   return payload;
 }
 
+function isPrivacyOptIn(settings) {
+  if (!settings || typeof settings !== "object") {
+    return false;
+  }
+
+  return (
+    settings.screenshotPolicy !== "disabled" ||
+    settings.syncConsent === "granted"
+  );
+}
+
+function buildPrivacySyncPayload(settings) {
+  const normalized = normalizePrivacySettings(settings);
+  return {
+    screenshotPolicy: normalized.screenshotPolicy,
+    syncConsent: normalized.syncConsent,
+  };
+}
+
+async function fetchManagedServerPrivacySettings() {
+  if (!shouldUseManagedBackend()) {
+    return null;
+  }
+
+  if (!getStoredManagedAuth()?.token) {
+    return null;
+  }
+
+  let result = null;
+  try {
+    result = await callManagedBackend("/api/privacy-settings", {
+      method: "GET",
+    });
+  } catch (error) {
+    if (isMissingManagedPrivacyEndpointError(error)) {
+      managedServerPrivacySettings = null;
+      return null;
+    }
+    throw error;
+  }
+  managedServerPrivacySettings =
+    result && typeof result === "object" ? result.settings || null : null;
+  return managedServerPrivacySettings;
+}
+
+async function persistManagedServerPrivacySettings(settings) {
+  if (!shouldUseManagedBackend() || !getStoredManagedAuth()?.token) {
+    return null;
+  }
+
+  let result = null;
+  try {
+    result = await callManagedBackend("/api/privacy-settings", {
+      method: "PUT",
+      body: buildPrivacySyncPayload(settings),
+    });
+  } catch (error) {
+    if (isMissingManagedPrivacyEndpointError(error)) {
+      managedServerPrivacySettings = null;
+      return null;
+    }
+    throw error;
+  }
+  managedServerPrivacySettings =
+    result && typeof result === "object" ? result.settings || null : null;
+  return managedServerPrivacySettings;
+}
+
+function queueManagedPrivacyRefresh(force = false) {
+  if (!shouldUseManagedBackend() || !getStoredManagedAuth()?.token) {
+    return Promise.resolve(null);
+  }
+
+  const now = Date.now();
+  if (
+    !force &&
+    managedPrivacySyncPromise &&
+    now - lastManagedPrivacySyncAt < PRIVACY_SYNC_COOLDOWN_MS
+  ) {
+    return managedPrivacySyncPromise;
+  }
+
+  lastManagedPrivacySyncAt = now;
+  managedPrivacySyncPromise = fetchManagedServerPrivacySettings()
+    .catch((error) => {
+      console.error("[privacy] failed to fetch server privacy settings", error);
+      return null;
+    })
+    .finally(() => {
+      managedPrivacySyncPromise = null;
+    });
+
+  return managedPrivacySyncPromise;
+}
+
+function getManagedTracingConsent(localPrivacySettings) {
+  const localConsent =
+    localPrivacySettings && typeof localPrivacySettings === "object"
+      ? localPrivacySettings.syncConsent
+      : "unknown";
+  const serverConsent =
+    managedServerPrivacySettings &&
+    typeof managedServerPrivacySettings === "object"
+      ? managedServerPrivacySettings.syncConsent
+      : "unknown";
+
+  return {
+    requestSyncConsent: localConsent,
+    serverSyncConsent: serverConsent,
+    langfuseEnabled: localConsent === "granted" && serverConsent === "granted",
+  };
+}
+
+async function setPrivacySettingsWithManagedSync(nextSettings, mode = "set") {
+  const current = getPrivacySettings();
+  const candidate =
+    mode === "update"
+      ? normalizePrivacySettings({
+          ...current,
+          ...(nextSettings && typeof nextSettings === "object" ? nextSettings : {}),
+        })
+      : mode === "reset"
+        ? { ...DEFAULT_PRIVACY_SETTINGS }
+        : normalizePrivacySettings(nextSettings);
+
+  if (!shouldUseManagedBackend() || !getStoredManagedAuth()?.token) {
+    if (mode === "update") {
+      return updatePrivacySettings(nextSettings);
+    }
+    if (mode === "reset") {
+      return resetPrivacySettings();
+    }
+    return setPrivacySettings(candidate);
+  }
+
+  const candidatePatch = buildPrivacySyncPayload(candidate);
+  const isOptIn = isPrivacyOptIn(candidatePatch);
+  if (isOptIn) {
+    await persistManagedServerPrivacySettings(candidatePatch);
+    return setPrivacySettings(candidate);
+  }
+
+  const localAppliedSettings = setPrivacySettings(candidate);
+  void persistManagedServerPrivacySettings(candidatePatch).catch((error) => {
+    console.error("[privacy] failed to persist local opt-out to managed backend", error);
+  });
+  return localAppliedSettings;
+}
+
 function focusOrCreateChatWindow() {
   let chatWindow = windowsByKey.get("chat");
   if (chatWindow && !chatWindow.isDestroyed()) {
@@ -1033,10 +1417,12 @@ function refreshAuthSessionInBackground(storedAuth) {
         user: result.user,
       });
       broadcastAuthSessionChanged(nextSession);
+      void queueManagedPrivacyRefresh(true);
     })
     .catch((error) => {
       if (isManagedBackendAuthFailure(error)) {
         clearStoredManagedAuth();
+        managedServerPrivacySettings = null;
         broadcastAuthSessionChanged(null);
       }
     });
@@ -1046,7 +1432,7 @@ function migrateLegacyStoredState() {
   const preferences = readPreferences();
   let shouldRewritePreferences = false;
   if (preferences.managedAuth && !getStoredManagedAuth()) {
-    setStoredManagedAuth(preferences.managedAuth);
+    getManagedAuthStore().migrateSession(preferences.managedAuth);
     shouldRewritePreferences = true;
   }
 
@@ -1082,10 +1468,33 @@ function shouldShowOnboardingGate() {
 }
 
 function dispatchIncomingPayload(payload) {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    ((typeof payload.screenshot_data_url === "string" &&
+      payload.screenshot_data_url.trim()) ||
+      (typeof payload.screenshotDataUrl === "string" &&
+        payload.screenshotDataUrl.trim()))
+  ) {
+    throw new Error("Bridge payloads may not include screenshot data.");
+  }
+
+  const safePayload =
+    payload && typeof payload === "object"
+      ? {
+          ...payload,
+          screenshot_data_url: null,
+          screenshotDataUrl: null,
+          click_function:
+            payload.click_function === "restore-window"
+              ? "restore-window"
+              : "",
+        }
+      : payload;
   const chatWindow = focusOrCreateChatWindow();
   const deliverPayload = () => {
     if (!chatWindow.isDestroyed()) {
-      chatWindow.webContents.send("incoming:payload", payload);
+      chatWindow.webContents.send("incoming:payload", safePayload);
     }
   };
 
@@ -1122,10 +1531,24 @@ function ensureSessionManager() {
 
 app.whenReady().then(async () => {
   migrateLegacyLocalDbToUserData();
+  registerAppProtocol();
+  migrateDesktopPrivacyDefaultsOnce();
+
+  const bridgeSecret = ensureBridgeSecret({
+    secretPath: getBridgeSecretPath(),
+  });
   const { createNativeMessagingIpcServer } = require("./main/native-bridge.ts");
   nativeMessagingIpcServer = createNativeMessagingIpcServer({
     dispatchIncomingPayload,
+    authSecret: bridgeSecret,
   });
+
+  session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => {
+    callback(false);
+  });
+  if (typeof session.defaultSession.setPermissionCheckHandler === "function") {
+    session.defaultSession.setPermissionCheckHandler(() => false);
+  }
 
   if (process.platform === "darwin" && app.dock) {
     app.dock.setIcon(getAppLogoPath());
@@ -1133,6 +1556,7 @@ app.whenReady().then(async () => {
 
   await startLocalBackend();
   migrateLegacyStoredState();
+  await queueManagedPrivacyRefresh(true);
   const shouldOpenOnboarding = shouldShowOnboardingGate();
   applyThemeSource(readStoredThemeSource());
   createStartupWindows(shouldOpenOnboarding);
@@ -1311,16 +1735,16 @@ ipcMain.handle("privacy-settings:get", () => {
   return getPrivacySettings();
 });
 
-ipcMain.handle("privacy-settings:set", (_event, nextSettings) => {
-  return setPrivacySettings(nextSettings);
+ipcMain.handle("privacy-settings:set", async (_event, nextSettings) => {
+  return setPrivacySettingsWithManagedSync(nextSettings, "set");
 });
 
-ipcMain.handle("privacy-settings:update", (_event, patch) => {
-  return updatePrivacySettings(patch);
+ipcMain.handle("privacy-settings:update", async (_event, patch) => {
+  return setPrivacySettingsWithManagedSync(patch, "update");
 });
 
-ipcMain.handle("privacy-settings:reset", () => {
-  return resetPrivacySettings();
+ipcMain.handle("privacy-settings:reset", async () => {
+  return setPrivacySettingsWithManagedSync(DEFAULT_PRIVACY_SETTINGS, "reset");
 });
 
 ipcMain.handle("capture:screenshot", async () => {
@@ -1389,9 +1813,17 @@ ipcMain.handle("backend:assessmentProfileAnalyze", async (_event, payload) => {
 });
 
 ipcMain.handle("backend:assist", async (_event, payload) => {
+  const safePayload =
+    payload && typeof payload === "object" ? { ...payload } : {};
+  const suppressAutomaticCapture =
+    safePayload.__internalSuppressAutomaticCapture === true;
+  delete safePayload.__internalSuppressAutomaticCapture;
   const privacySettings = getPrivacySettings();
-  let screenshotDataUrl = enforceScreenshotPolicy(payload, privacySettings);
-  if (shouldCaptureAutomaticScreenshot(payload, privacySettings)) {
+  let screenshotDataUrl = enforceScreenshotPolicy(safePayload, privacySettings);
+  if (
+    !suppressAutomaticCapture &&
+    shouldCaptureAutomaticScreenshot(safePayload, privacySettings)
+  ) {
     screenshotDataUrl = await capturePrimaryDisplayScreenshot({
       desktopCapturer,
       screen,
@@ -1401,12 +1833,36 @@ ipcMain.handle("backend:assist", async (_event, payload) => {
     });
   }
 
-  return callManagedBackend("/api/assist", {
-    method: "POST",
-    body: {
-      ...payload,
-      screenshotDataUrl,
-    },
+  const tracingConsent = getManagedTracingConsent(privacySettings);
+  const isManagedMode = shouldUseManagedBackend();
+  const requestBody = isManagedMode
+    ? {
+        ...safePayload,
+        screenshotDataUrl,
+        tracingConsent,
+      }
+    : {
+        ...safePayload,
+        screenshotDataUrl,
+      };
+
+  if (!isManagedMode) {
+    return attemptAssistRequest(
+      "local-direct",
+      () =>
+        callLocalDesktopBackend("/api/assist", {
+          method: "POST",
+          body: requestBody,
+        }),
+      requestBody,
+    );
+  }
+
+  return performManagedAssistWithCompatibility({
+    requestBody,
+    callManagedBackend,
+    callLocalDesktopBackend,
+    attemptAssistRequest,
   });
 });
 
@@ -1434,10 +1890,9 @@ ipcMain.handle("backend:quiz", async (_event, payload) => {
 });
 
 ipcMain.handle("backend:cramPlan", async (_event, payload) => {
-  return callManagedBackend("/api/cram-plan", {
-    method: "POST",
-    body: payload,
-    idempotencyKey: crypto.randomUUID(),
+  return performManagedCramPlanWithCompatibility({
+    requestBody: payload,
+    callManagedBackend,
   });
 });
 
@@ -1476,13 +1931,51 @@ ipcMain.handle("backend:creditsQuote", async (_event, payload) => {
 });
 
 ipcMain.handle("backend:authRegister", async (_event, payload) => {
-  const session = await callManagedBackend("/api/auth/register", {
-    method: "POST",
-    body: payload,
-    skipAuth: true,
-  });
+  const registerPayload =
+    payload && typeof payload === "object" ? { ...payload } : {};
+  if (typeof registerPayload.displayName === "string") {
+    const trimmedDisplayName = registerPayload.displayName.trim();
+    if (trimmedDisplayName) {
+      registerPayload.displayName = trimmedDisplayName;
+    } else {
+      delete registerPayload.displayName;
+    }
+  }
+
+  const minimalRegisterPayload = {
+    email:
+      typeof registerPayload.email === "string"
+        ? registerPayload.email.trim()
+        : registerPayload.email,
+    password: registerPayload.password,
+  };
+
+  let session;
+  try {
+    session = await callManagedBackend("/api/auth/register", {
+      method: "POST",
+      body: registerPayload,
+      skipAuth: true,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+    if (!message.includes("invalid registration payload")) {
+      throw error;
+    }
+
+    // Backward compatibility path for older managed backends that reject
+    // additional registration fields such as displayName.
+    session = await callManagedBackend("/api/auth/register", {
+      method: "POST",
+      body: minimalRegisterPayload,
+      skipAuth: true,
+    });
+  }
+
   const nextSession = setStoredManagedAuth(session);
   broadcastAuthSessionChanged(nextSession);
+  await queueManagedPrivacyRefresh(true);
   return toRendererAuthSession(nextSession);
 });
 
@@ -1494,6 +1987,7 @@ ipcMain.handle("backend:authLogin", async (_event, payload) => {
   });
   const nextSession = setStoredManagedAuth(session);
   broadcastAuthSessionChanged(nextSession);
+  await queueManagedPrivacyRefresh(true);
   return toRendererAuthSession(nextSession);
 });
 
@@ -1513,6 +2007,7 @@ ipcMain.handle("backend:authLogout", async () => {
   }
 
   clearStoredManagedAuth();
+  managedServerPrivacySettings = null;
   broadcastAuthSessionChanged(null);
 
   if (logoutError) {
@@ -1529,6 +2024,7 @@ ipcMain.handle("backend:authSession", async () => {
   }
 
   refreshAuthSessionInBackground(storedAuth);
+  void queueManagedPrivacyRefresh();
   return toRendererAuthSession(storedAuth);
 });
 
@@ -1813,6 +2309,40 @@ function fetchLatestGitHubRelease(owner, repo) {
   });
 }
 
+function isTrustedUpdateDownloadUrl(candidateUrl) {
+  if (typeof candidateUrl !== "string" || !candidateUrl.trim()) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(candidateUrl);
+    if (parsed.protocol !== "https:") {
+      return false;
+    }
+
+    if (parsed.hostname !== "github.com") {
+      return false;
+    }
+
+    return /^\/nirvaankohli\/sideklick\/releases\//.test(parsed.pathname);
+  } catch {
+    return false;
+  }
+}
+
+function resolveCurrentUpdateDownloadUrl() {
+  const candidateUrl =
+    updateStatus && typeof updateStatus.url === "string"
+      ? updateStatus.url
+      : "https://github.com/nirvaankohli/sideklick/releases/latest";
+
+  if (!isTrustedUpdateDownloadUrl(candidateUrl)) {
+    throw new Error("Rejected untrusted update download URL.");
+  }
+
+  return candidateUrl;
+}
+
 async function triggerUpdateCheck() {
   const currentVersion = app.getVersion();
   if (autoUpdater) {
@@ -1858,10 +2388,8 @@ ipcMain.handle("update:quitAndInstall", () => {
   }
 });
 
-ipcMain.handle("update:openDownload", (_event, url) => {
-  if (url) {
-    shell.openExternal(url);
-  }
+ipcMain.handle("update:openDownload", () => {
+  shell.openExternal(resolveCurrentUpdateDownloadUrl());
 });
 
 ipcMain.handle("update:getStatus", () => {

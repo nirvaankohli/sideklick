@@ -1,4 +1,6 @@
 import { spawn } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 
 const target = process.argv[2];
 
@@ -12,9 +14,42 @@ const env = {
   npm_config_build_from_source: "true",
 };
 
+function getElectronTargetVersion() {
+  const installedPackagePath = path.join(
+    process.cwd(),
+    "node_modules",
+    "electron",
+    "package.json",
+  );
+
+  try {
+    const installedPackage = JSON.parse(
+      fs.readFileSync(installedPackagePath, "utf8"),
+    );
+    if (typeof installedPackage.version === "string" && installedPackage.version.trim()) {
+      return installedPackage.version.trim();
+    }
+  } catch {
+    // fall through to package.json fallback
+  }
+
+  const rootPackagePath = path.join(process.cwd(), "package.json");
+  const rootPackage = JSON.parse(fs.readFileSync(rootPackagePath, "utf8"));
+  const rawVersion =
+    rootPackage?.devDependencies?.electron ??
+    rootPackage?.dependencies?.electron ??
+    "";
+
+  if (typeof rawVersion !== "string" || !rawVersion.trim()) {
+    throw new Error("[rebuild:native] Could not determine Electron target version.");
+  }
+
+  return rawVersion.trim().replace(/^[~^]/, "");
+}
+
 if (target === "electron") {
   env.npm_config_runtime = "electron";
-  env.npm_config_target = "37.10.3";
+  env.npm_config_target = getElectronTargetVersion();
   env.npm_config_disturl = "https://electronjs.org/headers";
 }
 

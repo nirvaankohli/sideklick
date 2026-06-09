@@ -1,20 +1,34 @@
 #!/usr/bin/env node
 
 const net = require("node:net");
-const os = require("node:os");
+const fs = require("node:fs");
 const path = require("node:path");
+
+function resolveBridgeAuthModulePath() {
+  const candidates = [
+    path.resolve(__dirname, "../src/main/bridge-auth.cjs"),
+    path.resolve(__dirname, "../desktop/main/bridge-auth.cjs"),
+  ];
+
+  for (const candidatePath of candidates) {
+    if (fs.existsSync(candidatePath)) {
+      return candidatePath;
+    }
+  }
+
+  throw new Error("Could not locate bridge-auth.cjs for native host.");
+}
+
+const {
+  MAX_BRIDGE_MESSAGE_BYTES,
+  createEnvelope,
+  readBridgeSecret,
+  resolveBridgeSocketPath,
+} = require(resolveBridgeAuthModulePath());
 
 function getSocketPath() {
   const explicit = process.env.SIDEKLICK_NATIVE_BRIDGE_SOCKET;
-  if (typeof explicit === "string" && explicit.trim()) {
-    return explicit.trim();
-  }
-
-  if (process.platform === "win32") {
-    return "\\\\.\\pipe\\sideklick-native-bridge";
-  }
-
-  return path.join(os.homedir(), ".sideklick", "native-bridge.sock");
+  return resolveBridgeSocketPath(explicit);
 }
 
 function sendNativeMessage(message) {
@@ -30,10 +44,17 @@ function fail(message) {
 
 function forwardToDesktop(payload) {
   return new Promise((resolve, reject) => {
+    const secret = readBridgeSecret();
+    if (!secret) {
+      reject(new Error("Desktop bridge secret is missing."));
+      return;
+    }
+
     const socketPath = getSocketPath();
     const socket = net.createConnection(socketPath);
 
     let responseBuffer = "";
+    let responseBytes = 0;
     const timeout = setTimeout(() => {
       socket.destroy();
       reject(new Error("Timed out waiting for desktop response"));
@@ -42,10 +63,29 @@ function forwardToDesktop(payload) {
     socket.setEncoding("utf8");
 
     socket.on("connect", () => {
-      socket.write(`${JSON.stringify(payload)}\n`);
+      try {
+        const envelope = createEnvelope({ payload, secret });
+        const rawEnvelope = JSON.stringify(envelope);
+        if (Buffer.byteLength(rawEnvelope, "utf8") > MAX_BRIDGE_MESSAGE_BYTES) {
+          throw new Error("Bridge payload exceeds 1 MiB limit");
+        }
+        socket.write(`${rawEnvelope}\n`);
+      } catch (error) {
+        clearTimeout(timeout);
+        socket.destroy();
+        reject(error instanceof Error ? error : new Error("Failed to sign bridge envelope"));
+      }
     });
 
     socket.on("data", (chunk) => {
+      responseBytes += Buffer.byteLength(chunk, "utf8");
+      if (responseBytes > MAX_BRIDGE_MESSAGE_BYTES) {
+        clearTimeout(timeout);
+        socket.destroy();
+        reject(new Error("Desktop bridge response exceeded 1 MiB limit"));
+        return;
+      }
+
       responseBuffer += chunk;
       const newlineIndex = responseBuffer.indexOf("\n");
       if (newlineIndex < 0) {
@@ -84,8 +124,20 @@ let stdinBuffer = Buffer.alloc(0);
 process.stdin.on("data", (chunk) => {
   stdinBuffer = Buffer.concat([stdinBuffer, chunk]);
 
+  if (stdinBuffer.length > MAX_BRIDGE_MESSAGE_BYTES + 4) {
+    stdinBuffer = Buffer.alloc(0);
+    fail("Native host input exceeded 1 MiB limit");
+    return;
+  }
+
   while (stdinBuffer.length >= 4) {
     const messageLength = stdinBuffer.readUInt32LE(0);
+    if (messageLength > MAX_BRIDGE_MESSAGE_BYTES) {
+      stdinBuffer = Buffer.alloc(0);
+      fail("Native host input exceeded 1 MiB limit");
+      return;
+    }
+
     if (stdinBuffer.length < 4 + messageLength) {
       return;
     }

@@ -283,9 +283,101 @@ test("session responses render markdown in the answer and next step", async () =
   const assistantMeta = document.querySelector(
     ".chat-message.assistant:last-of-type .chat-message-meta",
   );
-  assert.match(assistantMeta?.innerHTML || "", /<strong>Next:<\/strong>/);
-  assert.match(assistantMeta?.innerHTML || "", /<strong>one<\/strong>/);
-  assert.match(assistantMeta?.innerHTML || "", /<code>comparison<\/code>/);
+  assert.equal(assistantMeta, null);
+
+  dom.window.close();
+});
+
+test("automatic screenshot mode asks backend first, then retries with the captured screen", async () => {
+  const dom = createDom();
+  installAnimationFrameStub(dom);
+
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.HTMLElement = dom.window.HTMLElement;
+  global.Event = dom.window.Event;
+  global.FileReader = class FakeFileReader {};
+
+  const assistPayloads = [];
+  const assistOptions = [];
+  let captureCalls = 0;
+
+  window.overlayApi = {
+    getWindowBounds: async () => ({ width: 100, height: 100 }),
+    resizeWindow: async () => ({}),
+    setThemeSource: async () => ({ shouldUseDarkColors: false }),
+    minimizeToDock: async () => ({}),
+    stopSession: async () => ({}),
+    closeWindow: async () => ({}),
+    expandWindow: async () => ({}),
+    getPrivacySettings: async () => ({ screenshotPolicy: "automatic" }),
+    captureScreenshotAttachment: async () => {
+      captureCalls += 1;
+      return "data:image/jpeg;base64,abc";
+    },
+    assist: async (payload, options = {}) => {
+      assistPayloads.push(payload);
+      assistOptions.push(options);
+      if (assistPayloads.length === 1) {
+        return {
+          requestMode: "smart",
+          needsScreenshot: true,
+          reason: "The student references the visible graph.",
+        };
+      }
+      return {
+        interactionId: 14,
+        answer: "The graph is increasing because the line slopes upward.",
+        nextStep: "Compare one more graph and name its slope direction.",
+        screenViewed: true,
+      };
+    },
+    submitFeedback: async () => ({}),
+    onThemeChanged: () => {},
+    onWindowMode: () => {},
+    onSessionChanged: () => {},
+    onIncomingPayload: () => {},
+    getCurrentSession: async () => ({
+      classId: 7,
+      className: "Algebra",
+      sessionName: "Graphs",
+      sessionNotes: "Need help reading slopes",
+    }),
+  };
+
+  const rendererPath = path.join(__dirname, "..", "apps", "desktop", "src", "renderer.js");
+  delete require.cache[require.resolve(rendererPath)];
+  require(rendererPath);
+
+  await new Promise((resolve) => {
+    window.dispatchEvent(new dom.window.Event("DOMContentLoaded"));
+    setTimeout(resolve, 0);
+  });
+
+  const chatInput = document.querySelector("#chat-input");
+  const chatForm = document.querySelector("#chat-form");
+  chatInput.value = "What is happening on this graph?";
+  chatForm.dispatchEvent(
+    new dom.window.Event("submit", { bubbles: true, cancelable: true }),
+  );
+
+  await waitFor(() => {
+    assert.equal(assistPayloads.length, 2);
+    const viewedMeta = document.querySelector(".screen-viewed-meta");
+    assert.equal(viewedMeta?.textContent, "Viewed your screen");
+  });
+
+  assert.equal(captureCalls, 1);
+  assert.equal(assistPayloads[0].requestMode, "smart");
+  assert.equal(assistPayloads[0].screenshotPolicy, "automatic");
+  assert.equal(assistPayloads[0].screenshotDataUrl, null);
+  assert.equal(assistOptions[0].suppressAutomaticCapture, true);
+  assert.equal(assistPayloads[1].requestMode, "smart");
+  assert.equal(assistPayloads[1].screenshotDataUrl, "data:image/jpeg;base64,abc");
+  assert.equal(assistOptions[1].suppressAutomaticCapture, true);
+
+  const screenshotPreview = document.querySelector(".incoming-payload-image");
+  assert.equal(screenshotPreview, null);
 
   dom.window.close();
 });

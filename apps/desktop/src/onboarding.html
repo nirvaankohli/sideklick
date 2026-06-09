@@ -3,8 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+    />
     <title>SideKlick Onboarding</title>
     <link rel="stylesheet" href="./styles.css" />
+    <script src="./lucide.min.js"></script>
   </head>
   <body>
     <main
@@ -22,11 +27,7 @@
             type="button"
             aria-label="Close window"
           >
-            <svg class="icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M18.3 7.11 16.89 5.7 12 10.59 7.11 5.7 5.7 7.11 10.59 12 5.7 16.89 7.11 18.3 12 13.41l4.89 4.89 1.41-1.41L13.41 12z"
-              ></path>
-            </svg>
+            <i class="icon-svg" data-lucide="x"></i>
           </button>
         </header>
 
@@ -165,12 +166,6 @@
                     Choose the appearance that feels right when SideKlick opens.
                   </p>
                 </div>
-                <p
-                  id="theme-status"
-                  class="panel-help onboarding-inline-status"
-                >
-                  Current preference: System
-                </p>
               </div>
               <div class="theme-choice-grid">
                 <button
@@ -232,12 +227,6 @@
                     class="setup-section-header onboarding-subsection-header"
                   >
                     <p class="panel-label">Discovery</p>
-                    <p
-                      id="source-status"
-                      class="panel-help setup-current-status"
-                    >
-                      No source selected yet.
-                    </p>
                   </div>
                   <label
                     class="setup-select-field setup-select-shell"
@@ -266,12 +255,6 @@
                     class="setup-section-header onboarding-subsection-header"
                   >
                     <p class="panel-label">Profile</p>
-                    <p
-                      id="profile-status"
-                      class="panel-help setup-current-status"
-                    >
-                      Pick the closest fit.
-                    </p>
                   </div>
                   <label
                     class="setup-select-field setup-select-shell"
@@ -308,22 +291,15 @@
                     whether future sync is okay.
                   </p>
                 </div>
-                <p
-                  id="privacy-onboarding-status"
-                  class="panel-help onboarding-inline-status"
-                >
-                  Screenshots are off until you opt in.
-                </p>
               </div>
               <div class="privacy-stack">
                 <div class="privacy-toggle-card">
                   <div class="privacy-toggle-copy">
                     <p class="privacy-toggle-label">Telemetry notice</p>
                     <p class="privacy-toggle-help">
-                      SideKlick may send privacy-filtered usage traces to our
-                      observability tools so we can debug AI features and
-                      improve reliability. Screenshots stay off unless you opt
-                      in, and visual payloads are redacted before tracing.
+                      SideKlick can send privacy-filtered usage traces so we can
+                      improve reliability. Visual payloads are redacted before
+                      tracing.
                     </p>
                   </div>
                 </div>
@@ -343,8 +319,8 @@
                       id="privacy-screenshot-policy-select"
                       class="setup-select-input"
                     >
+                      <option value="manual" selected>Manual</option>
                       <option value="automatic">Auto</option>
-                      <option value="manual">Manual</option>
                       <option value="disabled">Never</option>
                     </select>
                   </label>

@@ -1,4 +1,4 @@
-﻿const root = document.querySelector(".window-shell");
+const root = document.querySelector(".window-shell");
 const themeIconToggle = document.querySelector("#theme-icon-toggle");
 const shrinkWindow = document.querySelector("#shrink-window");
 const stopSessionButton = document.querySelector("#stop-session");
@@ -32,12 +32,29 @@ const ACTION_LABELS = {
 };
 const STREAM_CHUNK_SIZE = 3;
 const STREAM_INTERVAL_MS = 22;
-const MUI_ICON_PATHS = {
-  copy: "M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2m0 16H8V7h11z",
-  thumbsUp:
-    "M2 21h4V9H2zm20-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L13.17 1 6.59 7.59C6.22 7.95 6 8.45 6 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73z",
-  thumbsDown:
-    "M22 3h-4v12h4zM2 14c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L10.83 23l6.58-6.59c.37-.36.59-.86.59-1.41V5c0-1.1-.9-2-2-2H7c-.83 0-1.54.5-1.84 1.22L2.14 11.27c-.09.23-.14.47-.14.73z",
+const LUCIDE_ICON_NODES = {
+  copy: [
+    ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2" }],
+    ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" }],
+  ],
+  thumbsUp: [
+    ["path", { d: "M7 10v12" }],
+    [
+      "path",
+      {
+        d: "M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z",
+      },
+    ],
+  ],
+  thumbsDown: [
+    ["path", { d: "M17 14V2" }],
+    [
+      "path",
+      {
+        d: "M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z",
+      },
+    ],
+  ],
 };
 
 let currentTone = "light";
@@ -47,7 +64,7 @@ let clipboardAttachmentText = null;
 let attachmentStatusRow = null;
 let fitTextFrame = null;
 
-function fitTextToBox(element, minimumFontSize = 11) {
+function fitTextToBox(element, minimumFontSize = 8) {
   if (!(element instanceof HTMLElement)) {
     return;
   }
@@ -281,10 +298,6 @@ function setAssistantMessageContent(container, copy) {
   container.innerHTML = renderMarkdown(copy);
 }
 
-function setAssistantMetaContent(container, label, copy) {
-  container.innerHTML = `<strong>${escapeHtml(label)}</strong> ${renderInlineMarkdown(copy)}`;
-}
-
 function applyThemeState({ shouldUseDarkColors }) {
   currentTone = shouldUseDarkColors ? "dark" : "light";
   root.dataset.tone = currentTone;
@@ -309,16 +322,25 @@ function setMode(mode) {
   document.body.dataset.windowMode = mode;
 }
 
-function createMUIIcon(path, label) {
+function createLucideIcon(nodes, label) {
   const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   icon.setAttribute("class", "feedback-icon-svg");
   icon.setAttribute("viewBox", "0 0 24 24");
   icon.setAttribute("aria-hidden", "true");
   icon.setAttribute("focusable", "false");
+  icon.setAttribute("fill", "none");
+  icon.setAttribute("stroke", "currentColor");
+  icon.setAttribute("stroke-width", "1.85");
+  icon.setAttribute("stroke-linecap", "round");
+  icon.setAttribute("stroke-linejoin", "round");
 
-  const iconPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  iconPath.setAttribute("d", path);
-  icon.appendChild(iconPath);
+  for (const [tagName, attributes] of nodes) {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", tagName);
+    Object.entries(attributes).forEach(([key, value]) => {
+      node.setAttribute(key, value);
+    });
+    icon.appendChild(node);
+  }
 
   const text = document.createElement("span");
   text.className = "visually-hidden";
@@ -334,20 +356,37 @@ window.overlayApi.onPreferencesChanged?.((preferences) => {
 });
 
 async function copyToClipboard(value) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return;
+  if (window.overlayApi?.writeClipboardText) {
+    try {
+      window.overlayApi.writeClipboardText(value);
+      return;
+    } catch (err) {
+      console.warn("overlayApi.writeClipboardText failed, falling back", err);
+    }
   }
 
-  const tempInput = document.createElement("textarea");
-  tempInput.value = value;
-  tempInput.setAttribute("readonly", "");
-  tempInput.style.position = "fixed";
-  tempInput.style.opacity = "0";
-  document.body.appendChild(tempInput);
-  tempInput.select();
-  document.execCommand("copy");
-  document.body.removeChild(tempInput);
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch (err) {
+      console.warn("navigator.clipboard.writeText failed, falling back", err);
+    }
+  }
+
+  try {
+    const tempInput = document.createElement("textarea");
+    tempInput.value = value;
+    tempInput.setAttribute("readonly", "");
+    tempInput.style.position = "fixed";
+    tempInput.style.opacity = "0";
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand("copy");
+    document.body.removeChild(tempInput);
+  } catch (err) {
+    console.error("ExecCommand copy failed", err);
+  }
 }
 
 function createFeedbackRow(interactionId, messageCopy) {
@@ -358,23 +397,34 @@ function createFeedbackRow(interactionId, messageCopy) {
   copyButton.type = "button";
   copyButton.className = "ghost-button feedback-icon-button";
   copyButton.setAttribute("aria-label", "Copy response");
-  copyButton.append(createMUIIcon(MUI_ICON_PATHS.copy, "Copy response"));
+  copyButton.append(createLucideIcon(LUCIDE_ICON_NODES.copy, "Copy response"));
   copyButton.addEventListener("click", async () => {
     await copyToClipboard(messageCopy);
-    feedbackRow.replaceChildren(document.createTextNode("Copied."));
+    const statusText = document.createElement("span");
+    statusText.className = "feedback-status-text";
+    statusText.textContent = "Copied.";
+    feedbackRow.replaceChildren(statusText);
+    setTimeout(() => {
+      feedbackRow.replaceChildren(copyButton, helpfulButton, notHelpfulButton);
+    }, 1000);
   });
 
   const helpfulButton = document.createElement("button");
   helpfulButton.type = "button";
   helpfulButton.className = "ghost-button feedback-icon-button";
   helpfulButton.setAttribute("aria-label", "Helpful");
-  helpfulButton.append(createMUIIcon(MUI_ICON_PATHS.thumbsUp, "Helpful"));
+  helpfulButton.append(
+    createLucideIcon(LUCIDE_ICON_NODES.thumbsUp, "Helpful"),
+  );
   helpfulButton.addEventListener("click", async () => {
     await window.overlayApi.submitFeedback({
       interactionId,
       helped: true,
     });
-    feedbackRow.replaceChildren(document.createTextNode("Feedback saved."));
+    const statusText = document.createElement("span");
+    statusText.className = "feedback-status-text";
+    statusText.textContent = "Feedback saved.";
+    feedbackRow.replaceChildren(statusText);
   });
 
   const notHelpfulButton = document.createElement("button");
@@ -382,14 +432,17 @@ function createFeedbackRow(interactionId, messageCopy) {
   notHelpfulButton.className = "ghost-button feedback-icon-button";
   notHelpfulButton.setAttribute("aria-label", "Not helpful");
   notHelpfulButton.append(
-    createMUIIcon(MUI_ICON_PATHS.thumbsDown, "Not helpful"),
+    createLucideIcon(LUCIDE_ICON_NODES.thumbsDown, "Not helpful"),
   );
   notHelpfulButton.addEventListener("click", async () => {
     await window.overlayApi.submitFeedback({
       interactionId,
       helped: false,
     });
-    feedbackRow.replaceChildren(document.createTextNode("Feedback saved."));
+    const statusText = document.createElement("span");
+    statusText.className = "feedback-status-text";
+    statusText.textContent = "Feedback saved.";
+    feedbackRow.replaceChildren(statusText);
   });
 
   feedbackRow.append(copyButton, helpfulButton, notHelpfulButton);
@@ -496,19 +549,16 @@ function createPendingAssistantMessage(label) {
   const article = document.createElement("article");
   article.className = "chat-message assistant pending";
 
-  const meta = document.createElement("p");
-  meta.className = "chat-message-meta";
-  meta.textContent = label;
-
   const paragraph = document.createElement("div");
   paragraph.className = "chat-message-copy";
+  paragraph.setAttribute("aria-label", label);
 
   const thinking = document.createElement("span");
   thinking.className = "thinking-indicator";
   thinking.innerHTML = '<span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span>';
   paragraph.appendChild(thinking);
 
-  article.append(meta, paragraph);
+  article.appendChild(paragraph);
   chatThread.appendChild(article);
   chatThread.scrollTop = chatThread.scrollHeight;
   scheduleFitText();
@@ -516,7 +566,6 @@ function createPendingAssistantMessage(label) {
   return {
     article,
     paragraph,
-    meta,
   };
 }
 
@@ -535,14 +584,14 @@ async function streamTextToParagraph(paragraph, text) {
 
 async function resolvePendingAssistantMessage(pendingMessage, result) {
   pendingMessage.article.classList.remove("pending");
+  if (result?.screenViewed === true) {
+    const meta = document.createElement("p");
+    meta.className = "chat-message-meta screen-viewed-meta";
+    meta.textContent = "Viewed your screen";
+    pendingMessage.article.insertBefore(meta, pendingMessage.paragraph);
+  }
   await streamTextToParagraph(pendingMessage.paragraph, result.answer);
   setAssistantMessageContent(pendingMessage.paragraph, result.answer);
-
-  if (result.nextStep) {
-    setAssistantMetaContent(pendingMessage.meta, "Next:", result.nextStep);
-  } else {
-    pendingMessage.meta.remove();
-  }
 
   if (result.interactionId) {
     pendingMessage.article.appendChild(
@@ -555,7 +604,6 @@ function failPendingAssistantMessage(pendingMessage, errorMessage) {
   pendingMessage.article.classList.remove("pending");
   pendingMessage.article.classList.add("error");
   pendingMessage.paragraph.textContent = errorMessage;
-  pendingMessage.meta.textContent = "Request failed";
 }
 
 function ensureAttachmentStatusRow() {
@@ -634,9 +682,17 @@ function combineUserNotes(...parts) {
   return filteredParts.length > 0 ? filteredParts.join("\n\n") : null;
 }
 
-async function maybeCaptureAutomaticScreenshot(normalizedPayload) {
+async function maybeCaptureAutomaticScreenshot(normalizedPayload, options = {}) {
+  if (options.forceNoScreenshot) {
+    return null;
+  }
+
   if (normalizedPayload.screenshotDataUrl || screenshotDataUrl) {
     return normalizedPayload.screenshotDataUrl || screenshotDataUrl;
+  }
+
+  if (options.suppressAutomaticCapture) {
+    return null;
   }
 
   if (
@@ -701,24 +757,8 @@ function runClickFunction(clickFunctionName) {
   }
 
   const normalizedName = clickFunctionName.trim();
-  const clickTargets = {
-    "theme-icon-toggle": themeIconToggle,
-    "shrink-window": shrinkWindow,
-    "stop-session": stopSessionButton,
-    "close-window": closeWindow,
-    "compact-close-window": compactCloseWindow,
-    "restore-window": restoreWindow,
-    toggleTheme: themeIconToggle,
-    minimizeToDock: shrinkWindow,
-    stopSession: stopSessionButton,
-    closeWindow,
-    expandWindow: restoreWindow,
-  };
-
-  const target =
-    clickTargets[normalizedName] || document.getElementById(normalizedName);
-  if (target instanceof HTMLElement) {
-    target.click();
+  if (normalizedName === "restore-window" && restoreWindow instanceof HTMLElement) {
+    restoreWindow.click();
   }
 }
 
@@ -789,7 +829,7 @@ function buildAssistPayload(normalizedPayload, options = {}) {
     normalizedPayload.pageTitle ||
     normalizedPayload.actionLabel;
 
-  return {
+  const payload = {
     classId: currentSession.classId,
     sessionId: currentSession.sessionId || undefined,
     actionType: normalizedPayload.actionType,
@@ -807,9 +847,16 @@ function buildAssistPayload(normalizedPayload, options = {}) {
     screenshotDataUrl:
       options.screenshotDataUrl || null,
   };
+
+  if (options.requestMode === "smart") {
+    payload.requestMode = "smart";
+    payload.screenshotPolicy = options.screenshotPolicy || "automatic";
+  }
+
+  return payload;
 }
 
-async function executeAssistRequest(normalizedPayload) {
+async function executeAssistRequest(normalizedPayload, options = {}) {
   if (!currentSession || !currentSession.classId) {
     addMessage(
       "assistant",
@@ -831,8 +878,19 @@ async function executeAssistRequest(normalizedPayload) {
     return;
   }
 
-  const effectiveScreenshotDataUrl =
-    (await maybeCaptureAutomaticScreenshot(normalizedPayload)) || null;
+  const privacySettings =
+    typeof window.overlayApi?.getPrivacySettings === "function"
+      ? await window.overlayApi.getPrivacySettings()
+      : null;
+  const canUseSmartScreenRequest =
+    !options.forceNoScreenshot &&
+    privacySettings?.screenshotPolicy === "automatic";
+  let effectiveScreenshotDataUrl =
+    normalizedPayload.screenshotDataUrl || screenshotDataUrl || null;
+  if (!canUseSmartScreenRequest && !effectiveScreenshotDataUrl) {
+    effectiveScreenshotDataUrl =
+      (await maybeCaptureAutomaticScreenshot(normalizedPayload, options)) || null;
+  }
   const effectiveClipboardAttachmentText = clipboardAttachmentText;
 
   if (normalizedPayload.actionType === "chat") {
@@ -855,7 +913,8 @@ async function executeAssistRequest(normalizedPayload) {
     });
   }
 
-  if (effectiveScreenshotDataUrl) {
+  const isManuallyAttached = !!(normalizedPayload.screenshotDataUrl || screenshotDataUrl);
+  if (isManuallyAttached && effectiveScreenshotDataUrl && !options.forceNoScreenshot) {
     addAttachmentImageMessage(effectiveScreenshotDataUrl);
   }
 
@@ -864,12 +923,45 @@ async function executeAssistRequest(normalizedPayload) {
   );
 
   try {
-    const result = await window.overlayApi.assist(
+    let result = await window.overlayApi.assist(
       buildAssistPayload(normalizedPayload, {
         screenshotDataUrl: effectiveScreenshotDataUrl,
         clipboardAttachmentText: effectiveClipboardAttachmentText,
+        requestMode: canUseSmartScreenRequest ? "smart" : undefined,
+        screenshotPolicy: privacySettings?.screenshotPolicy,
       }),
+      {
+        suppressAutomaticCapture:
+          canUseSmartScreenRequest ||
+          options.suppressAutomaticCapture === true,
+      },
     );
+
+    if (
+      result?.requestMode === "smart" &&
+      result?.needsScreenshot === true &&
+      canUseSmartScreenRequest
+    ) {
+      effectiveScreenshotDataUrl =
+        (await maybeCaptureAutomaticScreenshot(normalizedPayload, {
+          ...options,
+          suppressAutomaticCapture: false,
+        })) || null;
+      if (!effectiveScreenshotDataUrl) {
+        throw new Error("SideKlick wanted to view your screen, but no screenshot was captured.");
+      }
+      result = await window.overlayApi.assist(
+        buildAssistPayload(normalizedPayload, {
+          screenshotDataUrl: effectiveScreenshotDataUrl,
+          clipboardAttachmentText: effectiveClipboardAttachmentText,
+          requestMode: "smart",
+          screenshotPolicy: privacySettings?.screenshotPolicy,
+        }),
+        {
+          suppressAutomaticCapture: true,
+        },
+      );
+    }
 
     screenshotDataUrl = null;
     clipboardAttachmentText = null;
@@ -895,7 +987,9 @@ function handleIncomingPayload(payload) {
     return;
   }
 
-  void executeAssistRequest(normalizedPayload);
+  void (async () => {
+    await executeAssistRequest(normalizedPayload);
+  })();
 }
 
 function applySession(session) {
@@ -943,7 +1037,7 @@ function attachResizeHandle(handle) {
   });
 }
 
-themeIconToggle.addEventListener("click", async () => {
+themeIconToggle?.addEventListener("click", async () => {
   const nextSource = currentTone === "dark" ? "light" : "dark";
   const result = await window.overlayApi.setThemeSource(nextSource);
   applyThemeState(result);
@@ -973,6 +1067,13 @@ compactStarButton?.addEventListener("click", async () => {
   const nextSource = currentTone === "dark" ? "light" : "dark";
   const result = await window.overlayApi.setThemeSource(nextSource);
   applyThemeState(result);
+});
+
+chatInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+    event.preventDefault();
+    chatForm.requestSubmit();
+  }
 });
 
 chatInput.addEventListener("paste", async (event) => {
@@ -1126,6 +1227,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   applyTransparencyPreference(preferences);
   attachResizeHandle(resizeHandle);
   renderAttachmentStatus();
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
 });
 
 window.addEventListener("resize", scheduleFitText);

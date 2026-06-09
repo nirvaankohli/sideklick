@@ -902,7 +902,7 @@ test("quiz, cram, and assessment UI can target specific saved class material", a
 
   await waitFor(() => {
     assert.equal(Boolean(assessmentPayload), true);
-    assert.equal(
+  assert.equal(
       assessmentPayload.uploadedMaterials.some((material) =>
         material.name === "thermo-review.txt",
       ),
@@ -919,8 +919,131 @@ test("quiz, cram, and assessment UI can target specific saved class material", a
         material.name === "Class Material Notes",
       ),
       false,
+  );
+});
+
+test("cram mode shows study credit errors inline without leaving the generate button stuck", async () => {
+  const dom = createHomeDom();
+  installAnimationFrameStub(dom);
+
+  global.window = dom.window;
+  global.document = dom.window.document;
+  global.HTMLElement = dom.window.HTMLElement;
+  global.HTMLSelectElement = dom.window.HTMLSelectElement;
+  global.Node = dom.window.Node;
+  global.Element = dom.window.Element;
+  global.Event = dom.window.Event;
+  global.CustomEvent = dom.window.CustomEvent;
+  global.File = dom.window.File;
+  global.navigator = dom.window.navigator;
+  global.FileReader = class FakeFileReader {};
+
+  window.matchMedia = () => ({
+    matches: false,
+    addEventListener() {},
+    removeEventListener() {},
+  });
+
+  const storedFolders = createStoredClassWithMaterial();
+
+  window.overlayApi = {
+    getClassFolders: async () => storedFolders,
+    getPreferences: async () => ({
+      themeSource: "light",
+      classFolders: storedFolders,
+      currentSession: null,
+    }),
+    getPrivacySettings: async () => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+    }),
+    getAuthSession: async () => ({
+      user: {
+        email: "student@example.com",
+        displayName: "Student",
+      },
+    }),
+    updateClassFolders: async (folders) => folders,
+    saveClassProfile: async (payload) => ({
+      classProfile: {
+        id: 101,
+        ...payload,
+      },
+    }),
+    setThemeSource: async () => ({
+      themeSource: "light",
+      shouldUseDarkColors: false,
+    }),
+    onThemeChanged: () => {},
+    onWindowMode: () => {},
+    onClassFoldersChanged: () => {},
+    onSessionChanged: () => {},
+    updatePrivacySettings: async (patch) => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+      ...patch,
+    }),
+    setPrivacySettings: async (settings) => settings,
+    resetPrivacySettings: async () => ({
+      screenshotPolicy: "manual",
+      syncConsent: "granted",
+      localOnly: false,
+    }),
+    logoutAccount: async () => null,
+    exportAccount: async () => ({}),
+    deleteAccount: async () => ({}),
+    extractStudyMaterial: async () => [],
+    generateCramPlan: async () => ({}),
+    generateCramPlanFromSessions: async () => ({
+      __managedCramPlanError: true,
+      status: 402,
+      message: "Not enough Study Credits for this action.",
+    }),
+    generateQuiz: async () => ({ questions: [] }),
+  };
+
+  const homePath = path.join(__dirname, "..", "apps", "desktop", "src", "home.js");
+  delete require.cache[require.resolve(homePath)];
+  require(homePath);
+
+  await new Promise((resolve) => {
+    window.dispatchEvent(new dom.window.Event("DOMContentLoaded"));
+    setTimeout(resolve, 0);
+  });
+
+  document.querySelector(".folder-open-button").click();
+  document.querySelector("#new-folder").click();
+  Array.from(document.querySelectorAll(".folder-action-menu-item"))
+    .find((button) => button.textContent.includes("Cram Mode"))
+    .click();
+
+  await waitFor(() => {
+    assert.equal(document.querySelector("#home-cram-view").hidden, false);
+  });
+
+  document.querySelector("#cram-exam-name").value = "Unit 5 Test";
+  document.querySelector("#generate-cram-button").click();
+
+  await waitFor(() => {
+    assert.equal(document.querySelector("#billing-modal-backdrop").hidden, false);
+    assert.equal(
+      document.querySelector("#billing-modal-title").textContent.trim(),
+      "Add more Study Credits",
+    );
+    assert.match(
+      document.querySelector("#billing-modal-copy").textContent.trim(),
+      /You do not have enough Study Credits for this action/
+    );
+    assert.equal(document.querySelector("#cram-status").textContent.trim(), "");
+    assert.equal(document.querySelector("#generate-cram-button").disabled, false);
+    assert.equal(
+      document.querySelector("#generate-cram-button").textContent.trim(),
+      "Generate Plan - 5 Study Credits",
     );
   });
+});
 
   dom.window.close();
 });

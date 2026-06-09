@@ -12,6 +12,7 @@ This repo(for now) is split into three segments
 - '/src'
     - In prod, this is running on the user's device as a desktop app.
 - `/extension`
+
     - This is the optional, lightweight extention that can be installed on a browswe to improve the experience of the user.
 
 
@@ -38,3 +39,9 @@ Define success criteria. Loop until verified.
 
 ## Rule 5 — Release Tagging & Electron Updates
 When pushing with a release tag, update the Electron version if it is being updated as part of the release.
+
+## Rule 6 — UI & Design Constraints
+- **No icon backgrounds**: Never wrap icons in a colored/filled container (e.g. no `background` on icon wrappers) unless explicitly asked.
+- **No cliché hover animations**: Avoid scale, lift/shadow-pop, or color-flood transitions on hover. Subtle opacity or underline shifts are fine.
+- **Accent color is for fills/strokes only**: Use the accent color on icon fills, text, borders, and underlines — never as a background color.
+- **No colored backgrounds**: UI surfaces and containers use neutral/transparent backgrounds only. Color belongs on content (text, icons, borders), not on the container behind it.

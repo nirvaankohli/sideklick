@@ -1,6 +1,7 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge, ipcRenderer, clipboard } = require("electron");
 
 contextBridge.exposeInMainWorld("overlayApi", {
+  writeClipboardText: (text) => clipboard.writeText(text),
   minimizeToDock: () => ipcRenderer.invoke("window:minimizeToDock"),
   expandWindow: () => ipcRenderer.invoke("window:expand"),
   minimizeNative: () => ipcRenderer.invoke("window:minimizeNative"),
@@ -29,7 +30,14 @@ contextBridge.exposeInMainWorld("overlayApi", {
   getAiBackendStatus: () => ipcRenderer.invoke("backend:getAiStatus"),
   analyzeAssessmentProfile: (payload) =>
     ipcRenderer.invoke("backend:assessmentProfileAnalyze", payload),
-  assist: (payload) => ipcRenderer.invoke("backend:assist", payload),
+  assist: (payload, options = {}) =>
+    ipcRenderer.invoke("backend:assist", {
+      ...(payload && typeof payload === "object" ? payload : {}),
+      __internalSuppressAutomaticCapture:
+        options && typeof options === "object"
+          ? options.suppressAutomaticCapture === true
+          : false,
+    }),
   submitFeedback: (payload) => ipcRenderer.invoke("backend:feedback", payload),
   generateCramPlan: (payload) => ipcRenderer.invoke("backend:cram", payload),
   generateCramPlanFromSessions: (payload) =>
@@ -76,7 +84,7 @@ contextBridge.exposeInMainWorld("overlayApi", {
     ipcRenderer.on("incoming:payload", (_event, payload) => callback(payload)),
   checkForUpdates: () => ipcRenderer.invoke("update:check"),
   quitAndInstallUpdate: () => ipcRenderer.invoke("update:quitAndInstall"),
-  openExternalUpdateUrl: (url) => ipcRenderer.invoke("update:openDownload", url),
+  openExternalUpdateUrl: () => ipcRenderer.invoke("update:openDownload"),
   getUpdateStatus: () => ipcRenderer.invoke("update:getStatus"),
   onUpdateStatusChanged: (callback) => {
     const subscription = (_event, payload) => callback(payload);

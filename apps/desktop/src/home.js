@@ -258,6 +258,24 @@ const cramSaveProgressButton = document.querySelector("#cram-save-progress");
 const cramQuizBackButton = document.querySelector("#cram-quiz-back-button");
 const cramQuizMeta = document.querySelector("#cram-quiz-meta");
 const cramQuizMount = document.querySelector("#cram-quiz-mount");
+const cramSetupStepper = document.querySelector("#cram-setup-stepper");
+const cramStepBackButton = document.querySelector("#cram-step-back-button");
+const cramSetupStep1 = document.querySelector("#cram-setup-step-1");
+const cramSetupStep2 = document.querySelector("#cram-setup-step-2");
+const cramSetupStep3 = document.querySelector("#cram-setup-step-3");
+const cramStep1Continue = document.querySelector("#cram-step-1-continue");
+const cramStep2Continue = document.querySelector("#cram-step-2-continue");
+const cramStep2SaveExit = document.querySelector("#cram-step-2-save-exit");
+const cramStep3Edit = document.querySelector("#cram-step-3-edit");
+const cramUseTeacherToggle = document.querySelector("#cram-use-teacher-toggle");
+const cramUploadedFilesList = document.querySelector("#cram-uploaded-files-list");
+const cramUploadedFilesHeading = document.querySelector("#cram-uploaded-files-heading");
+const cramNotesCharCounter = document.querySelector("#cram-notes-char-counter");
+const cramUploadDropzone = document.querySelector("#cram-upload-dropzone");
+const cramTabNotes = document.querySelector("#cram-tab-notes");
+const cramTabPaste = document.querySelector("#cram-tab-paste");
+const cramNotesTabPane = document.querySelector("#cram-notes-tab-pane");
+const cramPasteTabPane = document.querySelector("#cram-paste-tab-pane");
 const resizeHandle = document.querySelector("#resize-handle");
 const cramShared = window.CRAM_SHARED || {};
 const cramConstraintsConfig = cramShared.cramInputConstraints || {
@@ -391,6 +409,7 @@ let quizExplanationFollowScroll = true;
 let activeQuizExplanationIndex = null;
 let activeCramPlan = null;
 let uploadedCramMaterials = [];
+let currentCramStep = 1;
 let selectedCramClassMaterialKeys = new Set();
 let cramClassMaterialSelectionInitialized = false;
 let cramMaterialUploadError = "";
@@ -691,6 +710,21 @@ async function ensureCanRunCreditAction(actionType) {
   }
 }
 
+function toOverlayResultError(result, fallbackMessage) {
+  if (!result || typeof result !== "object" || result.__managedCramPlanError !== true) {
+    return null;
+  }
+
+  const error = new Error(
+    typeof result.message === "string" && result.message.trim()
+      ? result.message.trim()
+      : fallbackMessage,
+  );
+  error.status =
+    typeof result.status === "number" ? result.status : null;
+  return error;
+}
+
 async function getAiBackendStatus() {
   if (typeof window.overlayApi?.getAiBackendStatus !== "function") {
     return { available: true, message: "" };
@@ -720,26 +754,14 @@ async function ensureAiFeatureAvailable(onUnavailable) {
 }
 
 const customSettingsDropdowns = new Map();
-const SETTINGS_ICON_PATH =
-  "M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.28 7.28 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.13.53-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.41 1.05.72 1.63.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.58-.22 1.13-.53 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z";
-const HOME_ICON_PATH = "M12 3 3 10.4V21h6.5v-6h5v6H21V10.4z";
-const MUI_CREATE_ACTION_ICON_PATHS = {
-  class:
-    "M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3 1 9l11 6 9-4.91V17h2V9L12 3z",
-
-  unit: "M11.99 18.54 4.62 12.8 3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z",
-
-  lesson:
-    "M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z",
-
-  session:
-    "M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z",
-
-  quiz: "M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5.99 13H12v-2h2.01v2zm1.54-5.07-.9.92c-.65.66-.86 1.16-.86 2.15h-1.8v-.45c0-1 .41-1.91 1.07-2.57l1.24-1.26c.37-.36.58-.86.58-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H9.08c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.26z",
-  material:
-    "M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z",
-
-  cram: "M4 4h16v2H4V4zm0 5h10v2H4V9zm0 5h16v2H4v-2zm0 5h10v2H4v-2zm14-10h2v2h-2V9zm0 10h2v2h-2v-2z",
+const LUCIDE_ACTION_ICONS = {
+  class: "graduation-cap",
+  unit: "layers",
+  session: "calendar",
+  material: "file-text",
+  cram: "zap",
+  quiz: "help-circle",
+  lesson: "book-open",
 };
 
 const sourceLabels = {
@@ -902,30 +924,26 @@ function getContextualCreateActions() {
       {
         key: "class",
         label: "Class",
-        icon: MUI_CREATE_ACTION_ICON_PATHS.class,
       },
     ];
   }
 
   if (containerType === "class") {
     return [
-      { key: "unit", label: "Unit", icon: MUI_CREATE_ACTION_ICON_PATHS.unit },
+      { key: "unit", label: "Unit" },
       {
         key: "session",
         label: "Session",
-        icon: MUI_CREATE_ACTION_ICON_PATHS.session,
       },
       {
         key: "material",
         label: "Class Material",
-        icon: MUI_CREATE_ACTION_ICON_PATHS.material,
       },
       {
         key: "cram",
         label: "Cram Mode",
-        icon: MUI_CREATE_ACTION_ICON_PATHS.cram,
       },
-      { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
+      { key: "quiz", label: "Quiz" },
     ];
   }
 
@@ -934,24 +952,20 @@ function getContextualCreateActions() {
       {
         key: "lesson",
         label: "Lesson",
-        icon: MUI_CREATE_ACTION_ICON_PATHS.lesson,
       },
       {
         key: "session",
         label: "Session",
-        icon: MUI_CREATE_ACTION_ICON_PATHS.session,
       },
       {
         key: "material",
         label: "Class Material",
-        icon: MUI_CREATE_ACTION_ICON_PATHS.material,
       },
       {
         key: "cram",
         label: "Cram Mode",
-        icon: MUI_CREATE_ACTION_ICON_PATHS.cram,
       },
-      { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
+      { key: "quiz", label: "Quiz" },
     ];
   }
 
@@ -959,23 +973,20 @@ function getContextualCreateActions() {
     {
       key: "session",
       label: "Session",
-      icon: MUI_CREATE_ACTION_ICON_PATHS.session,
     },
     {
       key: "material",
       label: "Class Material",
-      icon: MUI_CREATE_ACTION_ICON_PATHS.material,
     },
     {
       key: "cram",
       label: "Cram Mode",
-      icon: MUI_CREATE_ACTION_ICON_PATHS.cram,
     },
-    { key: "quiz", label: "Quiz", icon: MUI_CREATE_ACTION_ICON_PATHS.quiz },
+    { key: "quiz", label: "Quiz" },
   ];
 }
 
-function fitTextToBox(element, minimumFontSize = 11) {
+function fitTextToBox(element, minimumFontSize = 8) {
   if (!(element instanceof HTMLElement)) {
     return;
   }
@@ -1062,7 +1073,7 @@ function setHomeView(nextView) {
             : activeHomeView === "settings"
               ? "Settings"
               : activeHomeView === "update-guide"
-                ? "Update Guide"
+              ? "Update Guide"
               : "Sign In";
   homeDashboardView.hidden = activeHomeView !== "dashboard";
   homeQuizView.hidden = activeHomeView !== "quiz";
@@ -2130,9 +2141,7 @@ function renderAssessmentManager() {
 
     openButton.innerHTML = `
       <span class="folder-card-icon" aria-hidden="true">
-        <svg class="icon-svg" viewBox="0 0 24 24">
-          <path d="M9 2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v10a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2zm0 6H7v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8h-2v2h-2V8h-4v2H9V8zm2-4v2h4V4h-4z"></path>
-        </svg>
+        <i class="icon-svg" data-lucide="clipboard-list"></i>
       </span>
       <span class="folder-card-title">${safeProfileName}</span>
       <span class="folder-card-summary">${safeMetaText}</span>
@@ -2151,9 +2160,7 @@ function renderAssessmentManager() {
     editButton.className = "folder-edit-button";
     editButton.setAttribute("aria-label", `Edit ${profile.name || "template"}`);
     editButton.innerHTML = `
-      <svg class="icon-svg" viewBox="0 0 24 24">
-        <path d="M14.06 9.02 15.48 10.44 6.92 19H5.5v-1.42l8.56-8.56ZM17.66 3c-.26 0-.51.1-.71.29l-1.83 1.83 3.75 3.75 1.83-1.83a.996.996 0 0 0 0-1.41l-2.34-2.34A.987.987 0 0 0 17.66 3ZM3.5 20.5h4.04l11.02-11.02-4.04-4.04L3.5 16.46V20.5Z"></path>
-      </svg>
+      <i class="icon-svg" data-lucide="pencil"></i>
     `;
     editButton.addEventListener("click", () => {
       switchActiveAssessmentProfile(profile.id);
@@ -2169,9 +2176,7 @@ function renderAssessmentManager() {
       `Delete ${profile.name || "template"}`,
     );
     deleteButton.innerHTML = `
-      <svg class="icon-svg" viewBox="0 0 24 24">
-        <path d="M16 9v10H8V9h8m-1.5-6H9.5l-1 1H5v2h14V4h-3.5l-1-1z"></path>
-      </svg>
+      <i class="icon-svg" data-lucide="trash-2"></i>
     `;
     deleteButton.addEventListener("click", async () => {
       activeAssessmentProfiles = activeAssessmentProfiles.filter(
@@ -2189,6 +2194,9 @@ function renderAssessmentManager() {
     assessmentProfileGrid.appendChild(article);
   });
 
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
   scheduleFitText();
 }
 
@@ -3663,6 +3671,9 @@ function resetCramSetupState() {
   if (cramAdditionalNotes) {
     cramAdditionalNotes.value = "";
   }
+  if (cramNotesCharCounter) {
+    cramNotesCharCounter.textContent = "0 / 1000";
+  }
   cramStatus.textContent = "";
   cramSetupPanel.hidden = false;
   cramActivePanel.hidden = true;
@@ -3673,9 +3684,22 @@ function resetCramSetupState() {
   activeCramOverviewPage = 0;
   cramScreenTitle.textContent = "Cram Mode";
   cramScreenMeta.textContent = "";
+
+  if (cramSetupStepper) {
+    cramSetupStepper.removeAttribute("hidden");
+  }
+  const defaultToolbar = document.querySelector(".cram-page-screen .quiz-page-toolbar");
+  if (defaultToolbar) {
+    defaultToolbar.setAttribute("hidden", "true");
+  }
+
   renderCramUploadRollup();
   renderCramClassMaterialPicker();
+  renderCramUploadedFilesList();
   updateCramMaterialCount();
+
+  currentCramStep = 1;
+  showCramStep(1);
 }
 
 function openCramSetupForCurrentClass() {
@@ -4138,6 +4162,13 @@ function renderCramPlan(plan) {
   cramSetupPanel.hidden = true;
   cramActivePanel.hidden = false;
   cramQuizPanel.hidden = true;
+  if (cramSetupStepper) {
+    cramSetupStepper.setAttribute("hidden", "true");
+  }
+  const defaultToolbar = document.querySelector(".cram-page-screen .quiz-page-toolbar");
+  if (defaultToolbar) {
+    defaultToolbar.removeAttribute("hidden");
+  }
   if (cramPageScreen) {
     cramPageScreen.dataset.cramState = "guide";
   }
@@ -4214,7 +4245,6 @@ function renderCramTaskDetail(task) {
     const sourceText = "Built from your selected study material.";
     const sections = Array.isArray(activeCramPlan.tasks) ? activeCramPlan.tasks : [];
     const highlights = sections.slice(0, 3);
-
     if (activeCramOverviewPage === 0) {
       cramTaskDetail.innerHTML = `
       <div class="cram-guide-overview cram-guide-overview-centered">
@@ -4620,6 +4650,31 @@ async function generateCramPlanForCurrentClass() {
   cramStatus.textContent = "Building plan...";
 
   try {
+    if (cramUseTeacherToggle && cramUseTeacherToggle.checked && selectedAssessmentProfile) {
+      classFolder.activeAssessmentProfileId = cramAssessmentProfileSelect.value;
+      classFolder.assessmentProfile = selectedAssessmentProfile;
+      try {
+        const assessmentSummary = summarizeAssessmentProfile(selectedAssessmentProfile);
+        await window.overlayApi.saveClassProfile(
+          buildBackendClassPayload({
+            course: classFolder.name,
+            dbClassId: classFolder.dbClassId,
+            teacherName: classFolder.teacherName || "",
+            description: classFolder.description || "",
+            teacherNotes: classFolder.teacherNotes || "",
+            assessmentProfiles: classFolder.assessmentProfiles || [],
+            activeAssessmentProfileId: classFolder.activeAssessmentProfileId,
+            assessmentProfile: classFolder.assessmentProfile,
+            testFormat: assessmentSummary.testFormat,
+            testExamples: assessmentSummary.testExamples,
+            additionalNotes: classFolder.additionalNotes || "",
+          })
+        );
+      } catch (saveError) {
+        console.error("Failed to save class profile to backend", saveError);
+      }
+    }
+
     const response = await window.overlayApi.generateCramPlanFromSessions({
       classId: dbClassId,
       sessionIds,
@@ -4634,6 +4689,13 @@ async function generateCramPlanForCurrentClass() {
         ? getTeacherAssessmentProfilePayload(selectedAssessmentProfile)
         : null,
     });
+    const cramPlanError = toOverlayResultError(
+      response,
+      "Cram plan failed.",
+    );
+    if (cramPlanError) {
+      throw cramPlanError;
+    }
     let plan = buildCramPlanEntry(response, values);
     cramStatus.textContent = "Building guide and quiz checkpoints...";
     plan = await prebuildCramTaskQuizzes(plan, dbClassId, activeCramPath);
@@ -5453,6 +5515,8 @@ function renderFolders() {
         item.name.toLowerCase().includes(searchQuery),
       )
     : filteredChildren;
+  // Remove any previously body-appended menus from a prior render
+  document.querySelectorAll(".folder-card-menu").forEach((m) => m.remove());
   folderGrid.replaceChildren();
   renderBreadcrumbs();
   backFolderButton.hidden = currentPath.length === 0;
@@ -5577,19 +5641,17 @@ function renderFolders() {
 
     openButton.innerHTML = `
       <span class="folder-card-icon" aria-hidden="true">
-        <svg class="icon-svg" viewBox="0 0 24 24">
-          ${
-            isSessionItem
-              ? '<path d="M7 2h8l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm7 1.5V8h4.5"></path>'
-              : isQuizItem
-                ? '<path d="M9 2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v10a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2zm0 6H7v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8h-2v2h-2V8h-4v2H9V8zm2-4v2h4V4h-4z"></path>'
-                : isCramItem
-                  ? `<path d="${MUI_CREATE_ACTION_ICON_PATHS.cram}"></path>`
-                  : isMaterialItem
-                    ? `<path d="${MUI_CREATE_ACTION_ICON_PATHS.material}"></path>`
-                    : '<path d="M10 4 12 6h8c1.1 0 2 .9 2 2v8.5c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h6z"></path>'
-          }
-        </svg>
+        <i class="icon-svg" data-lucide="${
+          isSessionItem
+            ? "calendar"
+            : isQuizItem
+              ? "help-circle"
+              : isCramItem
+                ? "zap"
+                : isMaterialItem
+                  ? "file-text"
+                  : "folder"
+        }"></i>
       </span>
       <span class="folder-card-title">${safeFolderName}</span>
       ${
@@ -5604,15 +5666,9 @@ function renderFolders() {
     const summaryNode = openButton.querySelector(".folder-card-summary");
     const statsNode = openButton.querySelector(".folder-card-session-stats");
     if (titleNode instanceof HTMLElement) {
-      titleNode.dataset.fitText = "true";
       if (isProcessingStudyItem) {
         titleNode.innerHTML = `${isProcessingCram ? "Cram Plan" : "Quiz"} - Processing<span class="jumping-dots" aria-hidden="true"><span></span><span></span><span></span></span>`;
         titleNode.classList.add("folder-card-title-processing");
-      }
-    }
-    if (metaNode instanceof HTMLElement) {
-      if (!isSessionItem) {
-        metaNode.dataset.fitText = "true";
       }
     }
     if (summaryNode instanceof HTMLElement) {
@@ -5620,9 +5676,6 @@ function renderFolders() {
         summaryNode.textContent = sessionSummaryText;
       }
       summaryNode.title = sessionSummaryText;
-    }
-    if (statsNode instanceof HTMLElement) {
-      statsNode.dataset.fitText = "true";
     }
     if (isSessionItem) {
       openButton.addEventListener("click", () => {
@@ -5653,32 +5706,37 @@ function renderFolders() {
     const actionButtons = document.createElement("div");
     actionButtons.className = "folder-card-actions";
 
+    const moreButton = document.createElement("button");
+    moreButton.type = "button";
+    moreButton.className = "folder-card-more-button";
+    moreButton.setAttribute("aria-label", `More options for ${folder.name}`);
+    moreButton.innerHTML = `<i class="icon-svg" data-lucide="more-vertical"></i>`;
+
+    const menu = document.createElement("div");
+    menu.className = "folder-card-menu";
+    menu.dataset.tone = currentTone || "dark";
+    menu.hidden = true;
+
     if (isClassItem) {
-      const editButton = document.createElement("button");
-      editButton.type = "button";
-      editButton.className = "folder-edit-button";
-      editButton.setAttribute("aria-label", `Edit ${folder.name}`);
-      editButton.innerHTML = `
-        <svg class="icon-svg" viewBox="0 0 24 24">
-          <path d="M14.06 9.02 15.48 10.44 6.92 19H5.5v-1.42l8.56-8.56ZM17.66 3c-.26 0-.51.1-.71.29l-1.83 1.83 3.75 3.75 1.83-1.83a.996.996 0 0 0 0-1.41l-2.34-2.34A.987.987 0 0 0 17.66 3ZM3.5 20.5h4.04l11.02-11.02-4.04-4.04L3.5 16.46V20.5Z"></path>
-        </svg>
-      `;
-      editButton.addEventListener("click", () => {
+      const editOption = document.createElement("button");
+      editOption.type = "button";
+      editOption.className = "folder-card-menu-item";
+      editOption.innerHTML = `<i class="icon-svg" data-lucide="pencil"></i><span>Edit</span>`;
+      editOption.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.hidden = true;
         openClassEditModal([folder.id]);
       });
-      actionButtons.appendChild(editButton);
+      menu.appendChild(editOption);
     }
 
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "folder-delete-button";
-    deleteButton.setAttribute("aria-label", `Delete ${folder.name}`);
-    deleteButton.innerHTML = `
-      <svg class="icon-svg" viewBox="0 0 24 24">
-        <path d="M16 9v10H8V9h8m-1.5-6H9.5l-1 1H5v2h14V4h-3.5l-1-1z"></path>
-      </svg>
-    `;
-    deleteButton.addEventListener("click", async () => {
+    const deleteOption = document.createElement("button");
+    deleteOption.type = "button";
+    deleteOption.className = "folder-card-menu-item danger";
+    deleteOption.innerHTML = `<i class="icon-svg" data-lucide="trash-2"></i><span>Delete</span>`;
+    deleteOption.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      menu.hidden = true;
       if (!requireSignedIn("delete content")) {
         return;
       }
@@ -5688,12 +5746,43 @@ function renderFolders() {
       const nextFolders = replaceChildrenAtPath(currentPath, nextChildren);
       await persistFolders(nextFolders);
     });
+    menu.appendChild(deleteOption);
 
-    actionButtons.appendChild(deleteButton);
+    moreButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const nextHidden = !menu.hidden;
+      document.querySelectorAll(".folder-card-menu").forEach((m) => {
+        m.hidden = true;
+      });
+      if (!nextHidden) {
+        const rect = moreButton.getBoundingClientRect();
+        menu.style.top = `${rect.bottom + 4}px`;
+        menu.style.left = `${rect.right - menu.offsetWidth || rect.left}px`;
+        menu.hidden = false;
+        // Clamp to viewport after render
+        requestAnimationFrame(() => {
+          const menuRect = menu.getBoundingClientRect();
+          if (menuRect.right > window.innerWidth) {
+            menu.style.left = `${rect.right - menuRect.width}px`;
+          }
+          if (menuRect.bottom > window.innerHeight) {
+            menu.style.top = `${rect.top - menuRect.height - 4}px`;
+          }
+        });
+      } else {
+        menu.hidden = true;
+      }
+    });
+
+    actionButtons.append(moreButton);
+    document.body.appendChild(menu);
     article.append(openButton, actionButtons);
     folderGrid.appendChild(article);
   }
 
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
   scheduleFitText();
 }
 
@@ -6165,6 +6254,12 @@ classModalBackdrop.addEventListener("click", (event) => {
   }
 });
 document.addEventListener("click", (event) => {
+  document.querySelectorAll(".folder-card-menu").forEach((menu) => {
+    if (!menu.hidden && event.target instanceof Node && !menu.parentElement.contains(event.target)) {
+      menu.hidden = true;
+    }
+  });
+
   if (!isFolderActionMenuOpen) {
     return;
   }
@@ -6311,6 +6406,12 @@ assessmentMaterialFile?.addEventListener("change", async () => {
   setAssessmentDraft(nextDraft);
   assessmentMaterialFile.value = "";
 });
+generateQuizButton?.addEventListener("click", () => {
+  void generateQuizForActiveSession();
+});
+generateCramButton?.addEventListener("click", () => {
+  void generateCramPlanForCurrentClass();
+});
 quizAssessmentProfileSelect?.addEventListener("change", () => {
   updateQuizAssessmentProfileMeta();
 });
@@ -6392,11 +6493,10 @@ function openFolderActionMenu() {
     button.type = "button";
     button.className = "folder-action-menu-item";
     button.setAttribute("role", "menuitem");
+    const iconName = LUCIDE_ACTION_ICONS[action.key] || "folder";
     button.innerHTML = `
       <span class="folder-action-menu-item-icon" aria-hidden="true">
-          <svg class="icon-svg" viewBox="0 0 24 24">
-          <path d="${action.icon || MUI_CREATE_ACTION_ICON_PATHS.session}"></path>
-        </svg>
+        <i class="icon-svg" data-lucide="${iconName}"></i>
       </span>
       <span class="folder-action-menu-item-label">${action.label}</span>
     `;
@@ -6414,6 +6514,10 @@ function openFolderActionMenu() {
     });
     folderActionMenu.appendChild(button);
   });
+
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
 
   isFolderActionMenuOpen = true;
   newFolderButton.dataset.open = "true";
@@ -6566,6 +6670,312 @@ privacyExportButton.addEventListener("click", async () => {
     privacyExportButton.disabled = false;
   }
 });
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  const kb = bytes / 1024;
+  if (kb < 1024) return kb.toFixed(1) + " KB";
+  const mb = kb / 1024;
+  return mb.toFixed(1) + " MB";
+}
+
+function updateCramStepperUI() {
+  if (!cramSetupStepper) return;
+  const steps = cramSetupStepper.querySelectorAll(".cram-stepper-step");
+  const lines = cramSetupStepper.querySelectorAll(".cram-stepper-line");
+
+  steps.forEach((stepEl) => {
+    const stepNum = parseInt(stepEl.dataset.step, 10);
+    const circle = stepEl.querySelector(".cram-stepper-circle");
+    
+    if (stepNum < currentCramStep) {
+      stepEl.classList.add("is-completed");
+      stepEl.classList.remove("is-active");
+      if (circle) {
+        circle.innerHTML = `<i data-lucide="check" class="stepper-check-icon"></i>`;
+      }
+    } else if (stepNum === currentCramStep) {
+      stepEl.classList.add("is-active");
+      stepEl.classList.remove("is-completed");
+      if (circle) {
+        circle.textContent = stepNum;
+      }
+    } else {
+      stepEl.classList.remove("is-active", "is-completed");
+      if (circle) {
+        circle.textContent = stepNum;
+      }
+    }
+  });
+
+  lines.forEach((lineEl, index) => {
+    if (currentCramStep > index + 1) {
+      lineEl.classList.add("is-active");
+    } else {
+      lineEl.classList.remove("is-active");
+    }
+  });
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+function showCramStep(step) {
+  currentCramStep = step;
+  
+  if (cramSetupStep1) cramSetupStep1.hidden = (step !== 1);
+  if (cramSetupStep2) cramSetupStep2.hidden = (step !== 2);
+  if (cramSetupStep3) cramSetupStep3.hidden = (step !== 3);
+
+  updateCramStepperUI();
+
+  if (cramStatus) {
+    cramStatus.textContent = "";
+  }
+
+  if (step === 2) {
+    renderCramUploadedFilesList();
+  } else if (step === 3) {
+    renderCramStep3Review();
+  }
+}
+
+function renderCramStep3Review() {
+  const examNameEl = document.querySelector("#review-exam-name");
+  const timeEl = document.querySelector("#review-time-available");
+  const formatEl = document.querySelector("#review-assessment-format");
+  const materialsCountEl = document.querySelector("#review-materials-count");
+  const materialsListEl = document.querySelector("#review-materials-list");
+  const notesEl = document.querySelector("#review-additional-notes");
+
+  if (examNameEl) {
+    examNameEl.textContent = cramExamNameInput?.value.trim() || "Untitled Exam";
+  }
+  if (timeEl) {
+    timeEl.textContent = cramTimeAvailableSelect?.value || "1 hour";
+  }
+  if (formatEl) {
+    const classFolder = getCurrentClassFolder();
+    const selectedProfile = cramAssessmentProfileSelect?.value
+      ? getSelectedClassAssessmentProfile(classFolder, cramAssessmentProfileSelect.value)
+      : null;
+    const summary = summarizeAssessmentProfile(selectedProfile);
+    formatEl.textContent = selectedProfile ? (summary.analysis.profileName || selectedProfile.name || "Template") : "Generic cram plan";
+  }
+
+  const classFolder = getCurrentClassFolder();
+  const selectedClassSources = getSelectedClassMaterialSources(
+    selectedCramClassMaterialKeys,
+    classFolder,
+  );
+
+  const totalMaterials = uploadedCramMaterials.length + selectedClassSources.length;
+  if (materialsCountEl) {
+    materialsCountEl.textContent = `${totalMaterials} file${totalMaterials === 1 ? "" : "s"} / source${totalMaterials === 1 ? "" : "s"} selected`;
+  }
+
+  if (materialsListEl) {
+    materialsListEl.replaceChildren();
+    
+    selectedClassSources.forEach((source) => {
+      const li = document.createElement("li");
+      li.className = "review-materials-list-item";
+      li.innerHTML = `<i data-lucide="graduation-cap" class="material-list-icon"></i> <span>${escapeHtml(source.name)} (Class Source)</span>`;
+      materialsListEl.appendChild(li);
+    });
+
+    uploadedCramMaterials.forEach((file) => {
+      const li = document.createElement("li");
+      li.className = "review-materials-list-item";
+      let icon = "file-text";
+      const ext = file.name.split(".").pop().toLowerCase();
+      if (ext === "pdf") icon = "file-text";
+      else if (ext === "pptx") icon = "presentation";
+      else if (ext === "docx" || ext === "doc") icon = "file-code";
+      
+      li.innerHTML = `<i data-lucide="${icon}" class="material-list-icon ext-${ext}"></i> <span>${escapeHtml(file.name)}</span>`;
+      materialsListEl.appendChild(li);
+    });
+
+    if (totalMaterials === 0) {
+      const li = document.createElement("li");
+      li.className = "review-materials-list-item empty-state";
+      li.textContent = "No materials selected";
+      materialsListEl.appendChild(li);
+    }
+  }
+
+  const dropdownContainer = document.querySelector("#view-all-materials-dropdown-container");
+  const popoverEl = document.querySelector("#view-all-materials-popover");
+  
+  if (totalMaterials > 3) {
+    if (dropdownContainer) dropdownContainer.removeAttribute("hidden");
+    if (popoverEl) {
+      popoverEl.replaceChildren();
+      
+      selectedClassSources.forEach((source) => {
+        const div = document.createElement("div");
+        div.className = "popover-material-item";
+        div.innerHTML = `<i data-lucide="graduation-cap" class="popover-icon"></i> <span>${escapeHtml(source.name)}</span>`;
+        popoverEl.appendChild(div);
+      });
+      uploadedCramMaterials.forEach((file) => {
+        const div = document.createElement("div");
+        div.className = "popover-material-item";
+        const ext = file.name.split(".").pop().toLowerCase();
+        let icon = "file-text";
+        if (ext === "pptx") icon = "presentation";
+        else if (ext === "docx" || ext === "doc") icon = "file-code";
+        div.innerHTML = `<i data-lucide="${icon}" class="popover-icon ext-${ext}"></i> <span>${escapeHtml(file.name)}</span>`;
+        popoverEl.appendChild(div);
+      });
+    }
+  } else {
+    if (dropdownContainer) dropdownContainer.setAttribute("hidden", "true");
+  }
+
+  if (notesEl) {
+    const notesValue = cramAdditionalNotes?.value.trim() || cramMaterialText?.value.trim();
+    notesEl.textContent = notesValue || "No additional notes added.";
+  }
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+function renderCramUploadedFilesList() {
+  if (!cramUploadedFilesList) return;
+  cramUploadedFilesList.replaceChildren();
+
+  if (cramUploadedFilesHeading) {
+    cramUploadedFilesHeading.textContent = `Uploaded files (${uploadedCramMaterials.length})`;
+  }
+
+  uploadedCramMaterials.forEach((file, index) => {
+    const item = document.createElement("div");
+    item.className = "cram-uploaded-file-item";
+
+    const ext = file.name.split(".").pop().toLowerCase();
+    let lucideIcon = "file-text";
+    let colorClass = "ext-other";
+    if (ext === "pdf") {
+      lucideIcon = "file-text";
+      colorClass = "ext-pdf";
+    } else if (ext === "pptx") {
+      lucideIcon = "presentation";
+      colorClass = "ext-pptx";
+    } else if (ext === "docx" || ext === "doc") {
+      lucideIcon = "file-code";
+      colorClass = "ext-docx";
+    }
+
+    const sizeText = file.sizeText || (file.content ? formatFileSize(file.content.length * 4) : "0 B");
+    const timeText = file.timeText || "Uploaded just now";
+
+    item.innerHTML = `
+      <div class="cram-file-info-left">
+        <div class="cram-file-icon-bg ${colorClass}">
+          <i data-lucide="${lucideIcon}" class="cram-file-icon"></i>
+        </div>
+        <div class="cram-file-meta-block">
+          <span class="cram-file-name-span" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</span>
+          <span class="cram-file-sub-span">${sizeText} • ${timeText}</span>
+        </div>
+      </div>
+      <button type="button" class="cram-file-remove-btn" aria-label="Remove file">
+        <i data-lucide="x" class="remove-icon"></i>
+      </button>
+    `;
+
+    item.querySelector(".cram-file-remove-btn").addEventListener("click", () => {
+      uploadedCramMaterials.splice(index, 1);
+      renderCramUploadedFilesList();
+      updateCramMaterialCount();
+    });
+
+    cramUploadedFilesList.appendChild(item);
+  });
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+async function handleCramFilesUploaded(files) {
+  if (files.length === 0) {
+    uploadedCramMaterials = [];
+    cramMaterialUploadError = "";
+    cramMaterialUploadSummary = "";
+    renderCramUploadedFilesList();
+    updateCramMaterialCount();
+    return;
+  }
+
+  cramMaterialUploadError = "";
+  cramMaterialUploadSummary = "Reading files...";
+  updateCramMaterialCount();
+
+  try {
+    const successfulFiles = [];
+    let failedCount = 0;
+
+    for (const file of files) {
+      try {
+        const [extracted] = await extractStudyMaterialFromFiles([file], "cram");
+        if (extracted) {
+          extracted.sizeText = formatFileSize(file.size);
+          extracted.uploadedAt = Date.now();
+          extracted.timeText = "Uploaded just now";
+          successfulFiles.push(extracted);
+        } else {
+          failedCount++;
+        }
+      } catch (err) {
+        console.error("Failed to read Cram Mode material file", file.name, err);
+        failedCount++;
+      }
+    }
+
+    const totalOriginalCharacters = successfulFiles.reduce(
+      (total, file) => total + file.originalCharacters,
+      0,
+    );
+    const totalCompressedCharacters = successfulFiles.reduce(
+      (total, file) => total + file.compressedCharacters,
+      0,
+    );
+    const totalTokenSavings = successfulFiles.reduce(
+      (total, file) => total + file.estimatedTokenSavings,
+      0,
+    );
+
+    uploadedCramMaterials = [...uploadedCramMaterials, ...successfulFiles];
+    cramMaterialUploadError = failedCount
+      ? `Loaded ${successfulFiles.length} file${successfulFiles.length === 1 ? "" : "s"}, but ${failedCount} file${failedCount === 1 ? "" : "s"} couldn't be read cleanly.`
+      : "";
+    cramMaterialUploadSummary =
+      successfulFiles.length > 0
+        ? `Condensed ${successfulFiles.length} upload${successfulFiles.length === 1 ? "" : "s"} from ${totalOriginalCharacters.toLocaleString()} to ${totalCompressedCharacters.toLocaleString()} characters.`
+        : "";
+    
+    renderCramUploadedFilesList();
+  } catch (error) {
+    cramMaterialUploadError = "Could not extract readable text from those files.";
+    cramMaterialUploadSummary = "";
+    console.error("Failed to read Cram Mode material files", error);
+  }
+  updateCramMaterialCount();
+}
+
+function exitCramSetup() {
+  restoreQuizViewToModal();
+  activeQuizContext = "page";
+  currentPath = [...cramReturnPath];
+  setHomeView("dashboard");
+  renderFolders();
+}
+
 cramAssessmentProfileSelect?.addEventListener("change", () => {
   const currentClassFolder = getCurrentClassFolder();
   if (currentClassFolder) {
@@ -6579,112 +6989,126 @@ cramMaterialText?.addEventListener("input", () => {
   }
 });
 cramAdditionalNotes?.addEventListener("input", () => {
+  if (cramNotesCharCounter) {
+    cramNotesCharCounter.textContent = `${cramAdditionalNotes.value.length} / 1000`;
+  }
   if (cramStatus) {
     cramStatus.textContent = "";
   }
 });
 cramMaterialFile?.addEventListener("change", async () => {
   const files = Array.from(cramMaterialFile.files || []);
-  if (files.length === 0) {
-    uploadedCramMaterials = [];
-    cramMaterialUploadError = "";
-    cramMaterialUploadSummary = "";
-    if (cramFileName) {
-      cramFileName.textContent = "No files selected";
-    }
-    renderCramUploadRollup();
-    updateCramMaterialCount();
-    return;
-  }
-
-  try {
-    const results = await Promise.allSettled(
-      files.map((file) => extractStudyMaterialFromFiles([file], "cram")),
-    );
-    const successfulFiles = results
-      .filter((result) => result.status === "fulfilled")
-      .map((result) => result.value[0]);
-    const failedCount = results.length - successfulFiles.length;
-    const totalOriginalCharacters = successfulFiles.reduce(
-      (total, file) => total + file.originalCharacters,
-      0,
-    );
-    const totalCompressedCharacters = successfulFiles.reduce(
-      (total, file) => total + file.compressedCharacters,
-      0,
-    );
-    uploadedCramMaterials = successfulFiles;
-    cramMaterialUploadError = failedCount
-      ? `Loaded ${successfulFiles.length} file${successfulFiles.length === 1 ? "" : "s"}, but ${failedCount} file${failedCount === 1 ? "" : "s"} couldn't be read cleanly.`
-      : "";
-    cramMaterialUploadSummary =
-      successfulFiles.length > 0
-        ? `Condensed ${successfulFiles.length} upload${successfulFiles.length === 1 ? "" : "s"} from ${totalOriginalCharacters.toLocaleString()} to ${totalCompressedCharacters.toLocaleString()} characters.`
-        : "";
-    if (cramFileName) {
-      cramFileName.textContent = getCramUploadSummaryText();
-    }
-    renderCramUploadRollup();
-  } catch (error) {
-    uploadedCramMaterials = [];
-    cramMaterialUploadError =
-      "Could not extract readable text from those files.";
-    cramMaterialUploadSummary = "";
-    if (cramFileName) {
-      cramFileName.textContent = "Files couldn't be read";
-    }
-    renderCramUploadRollup();
-    console.error("Failed to read Cram Mode material files", error);
-  }
-  updateCramMaterialCount();
+  await handleCramFilesUploaded(files);
 });
-privacyDeleteAccountButton.addEventListener("click", async () => {
-  if (!requireSignedIn("delete account data")) {
+
+cramStepBackButton?.addEventListener("click", () => {
+  if (currentCramStep > 1) {
+    showCramStep(currentCramStep - 1);
+  } else {
+    exitCramSetup();
+  }
+});
+
+cramStep1Continue?.addEventListener("click", () => {
+  const examName = cramExamNameInput?.value.trim() || "";
+  if (!examName) {
+    cramExamNameInput?.focus();
     return;
   }
-  const confirmed = window.confirm(
-    "Delete managed backend account data? This cannot be undone.",
+  showCramStep(2);
+});
+
+cramStep2Continue?.addEventListener("click", () => {
+  const classFolder = getCurrentClassFolder();
+  const pastedMaterial = cramMaterialText?.value.trim() || "";
+  const selectedClassMaterial = formatSelectedClassMaterialText(
+    selectedCramClassMaterialKeys,
+    classFolder,
   );
-  if (!confirmed) {
+  const uploadedMaterial = [
+    selectedClassMaterial,
+    getCombinedUploadedCramMaterial().trim(),
+    pastedMaterial,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  const materialValidation = validateCramMaterialPayload(uploadedMaterial);
+  if (!materialValidation.ok) {
+    if (cramMaterialStatus) {
+      cramMaterialStatus.dataset.tone = "danger";
+      cramMaterialStatus.textContent = materialValidation.message;
+    }
+    cramMaterialText?.focus();
     return;
   }
+  showCramStep(3);
+});
 
-  privacyDeleteAccountButton.disabled = true;
-  setPrivacyAccountStatus("Queueing account deletion...", "neutral");
+cramStep2SaveExit?.addEventListener("click", () => {
+  exitCramSetup();
+});
 
-  try {
-    await window.overlayApi.deleteAccount();
-    setPrivacyAccountStatus(
-      "Account deletion was queued. Local privacy settings remain on this device.",
-      "success",
-    );
-  } catch (error) {
-    setPrivacyAccountStatus(
-      error instanceof Error ? formatErrorMessage(error.message) : "Account deletion failed.",
-      "danger",
-    );
-  } finally {
-    privacyDeleteAccountButton.disabled = false;
-  }
+cramStep3Edit?.addEventListener("click", () => {
+  showCramStep(1);
 });
-generateQuizButton.addEventListener("click", async () => {
-  await generateQuizForActiveSession();
+
+cramTabNotes?.addEventListener("click", () => {
+  cramTabNotes.classList.add("active");
+  cramTabPaste.classList.remove("active");
+  if (cramNotesTabPane) cramNotesTabPane.removeAttribute("hidden");
+  if (cramPasteTabPane) cramPasteTabPane.setAttribute("hidden", "true");
 });
-saveQuizButton.addEventListener("click", async () => {
-  await saveActiveQuizToExplorer();
+
+cramTabPaste?.addEventListener("click", () => {
+  cramTabPaste.classList.add("active");
+  cramTabNotes.classList.remove("active");
+  if (cramPasteTabPane) cramPasteTabPane.removeAttribute("hidden");
+  if (cramNotesTabPane) cramNotesTabPane.setAttribute("hidden", "true");
 });
-generateCramButton?.addEventListener("click", async () => {
-  if (activeHomeView !== "cram") {
-    return;
-  }
-  await generateCramPlanForCurrentClass();
-});
+
+if (cramUploadDropzone) {
+  cramUploadDropzone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    cramUploadDropzone.classList.add("dragover");
+  });
+
+  cramUploadDropzone.addEventListener("dragleave", () => {
+    cramUploadDropzone.classList.remove("dragover");
+  });
+
+  cramUploadDropzone.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    cramUploadDropzone.classList.remove("dragover");
+    
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length > 0) {
+      await handleCramFilesUploaded(files);
+    }
+  });
+}
+
+const viewAllBtn = document.querySelector("#view-all-materials-btn");
+const popoverEl = document.querySelector("#view-all-materials-popover");
+if (viewAllBtn && popoverEl) {
+  viewAllBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    popoverEl.hidden = !popoverEl.hidden;
+  });
+  document.addEventListener("click", () => {
+    popoverEl.hidden = true;
+  });
+}
+
 cramBackButton?.addEventListener("click", () => {
-  restoreQuizViewToModal();
-  activeQuizContext = "page";
-  currentPath = [...cramReturnPath];
-  setHomeView("dashboard");
-  renderFolders();
+  if (cramPageScreen.dataset.cramState === "setup") {
+    if (currentCramStep > 1) {
+      showCramStep(currentCramStep - 1);
+    } else {
+      exitCramSetup();
+    }
+  } else {
+    exitCramSetup();
+  }
 });
 cramQuizBackButton?.addEventListener("click", () => {
   cramQuizPanel.hidden = true;
@@ -6910,6 +7334,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     } catch (e) {
       console.warn("[updater] failed to load initial status", e);
     }
+  }
+
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
   }
 });
 

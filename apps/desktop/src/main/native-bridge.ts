@@ -1,33 +1,33 @@
 import net from "node:net";
 import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-import { z } from "zod";
 
-const nativePayloadSchema = z.object({
-  action_type: z.string().trim().min(1),
-  selected_text: z.string().default(""),
-  surrounding_text: z.string().nullable().optional().default(null),
-  page_title: z.string().default(""),
-  page_url: z.union([z.string().url(), z.literal(""), z.null()]).default(""),
-  user_note: z.string().default(""),
-  screenshot_data_url: z.union([z.string(), z.null()]).default(null),
-  click_function: z.string().default("restore-window"),
-});
-
-function getSocketPath(explicitPath?: string) {
-  if (explicitPath && explicitPath.trim()) {
-    return explicitPath.trim();
-  }
-
-  if (process.platform === "win32") {
-    return "\\\\.\\pipe\\sideklick-native-bridge";
-  }
-
-  const baseDir = path.join(os.homedir(), ".sideklick");
-  fs.mkdirSync(baseDir, { recursive: true });
-  return path.join(baseDir, "native-bridge.sock");
-}
+const {
+  MAX_BRIDGE_MESSAGE_BYTES,
+  resolveBridgeSocketPath,
+  verifyEnvelope,
+} = require("./bridge-auth.cjs") as {
+  MAX_BRIDGE_MESSAGE_BYTES: number;
+  resolveBridgeSocketPath: (
+    explicitSocketPath?: string,
+    explicitHomeDirectory?: string,
+  ) => string;
+  verifyEnvelope: (options: {
+    envelope: unknown;
+    secret: string;
+    seenNonces: Map<string, number>;
+    now?: number;
+    ttlMs?: number;
+  }) =>
+    | {
+        ok: true;
+        payload: Record<string, unknown>;
+      }
+    | {
+        ok: false;
+        statusCode: number;
+        error: string;
+      };
+};
 
 function safeUnlink(socketPath: string) {
   if (process.platform === "win32") {
@@ -45,14 +45,21 @@ function safeUnlink(socketPath: string) {
 
 export function createNativeMessagingIpcServer({
   dispatchIncomingPayload,
+  authSecret,
   log = console,
   socketPath,
 }: {
   dispatchIncomingPayload: (payload: Record<string, unknown>) => void;
+  authSecret: string;
   log?: Pick<typeof console, "log" | "error">;
   socketPath?: string;
 }) {
-  const resolvedSocketPath = getSocketPath(socketPath);
+  if (!authSecret || !authSecret.trim()) {
+    throw new Error("Missing native bridge auth secret.");
+  }
+
+  const resolvedSocketPath = resolveBridgeSocketPath(socketPath);
+  const seenNonces = new Map<string, number>();
   let server: net.Server | null = null;
 
   function processLine(line: string) {
@@ -61,22 +68,40 @@ export function createNativeMessagingIpcServer({
       return { ok: false, error: "Empty message" };
     }
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(trimmed);
-    } catch {
+    if (Buffer.byteLength(trimmed, "utf8") > MAX_BRIDGE_MESSAGE_BYTES) {
+      return { ok: false, error: "Bridge payload exceeds 1 MiB limit" };
+    }
+
+    const envelope = (() => {
+      try {
+        return JSON.parse(trimmed);
+      } catch {
+        return null;
+      }
+    })();
+
+    if (!envelope) {
       return { ok: false, error: "Invalid JSON payload" };
     }
 
-    try {
-      const payload = nativePayloadSchema.parse(parsed);
-      dispatchIncomingPayload(payload as Record<string, unknown>);
-      return { ok: true };
-    } catch (error) {
+    const verified = verifyEnvelope({
+      envelope,
+      secret: authSecret,
+      seenNonces,
+    });
+
+    if (!verified.ok) {
       return {
         ok: false,
-        error: error instanceof z.ZodError ? "Invalid bridge payload" : "Bridge dispatch failed",
+        error: verified.error,
       };
+    }
+
+    try {
+      dispatchIncomingPayload(verified.payload);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Bridge dispatch failed" };
     }
   }
 
@@ -94,8 +119,15 @@ export function createNativeMessagingIpcServer({
       server = net.createServer((socket) => {
         socket.setEncoding("utf8");
         let buffer = "";
+        let receivedBytes = 0;
 
         socket.on("data", (chunk) => {
+          receivedBytes += Buffer.byteLength(chunk, "utf8");
+          if (receivedBytes > MAX_BRIDGE_MESSAGE_BYTES) {
+            socket.destroy();
+            return;
+          }
+
           buffer += chunk;
 
           while (true) {
@@ -121,6 +153,13 @@ export function createNativeMessagingIpcServer({
       });
 
       server.listen(resolvedSocketPath, () => {
+        if (process.platform !== "win32") {
+          try {
+            fs.chmodSync(resolvedSocketPath, 0o600);
+          } catch {
+            // best effort permissions hardening
+          }
+        }
         log.log(`[native-bridge] listening on ${resolvedSocketPath}`);
       });
 

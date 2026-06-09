@@ -35,6 +35,8 @@
     "rebuild:native:electron": "node scripts/rebuild-native.mjs electron",
     "desktop:build": "node scripts/build-desktop.mjs",
     "desktop:pack": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder --dir",
+    "desktop:configure-fuses": "node scripts/configure-electron-fuses.mjs",
+    "desktop:verify-fuses": "node scripts/verify-electron-fuses.mjs",
     "desktop:dist": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder -mwl --publish always",
     "desktop:dist:mac": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder --mac --publish always",
     "desktop:dist:win": "pnpm run rebuild:native:electron && pnpm run desktop:build && pnpm exec electron-builder --win --publish always",
@@ -49,7 +51,8 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.6",
     "@types/node": "^25.6.0",
-    "electron": "^37.2.0",
+    "@electron/fuses": "^2.0.0",
+    "electron": "42.3.0",
     "electron-builder": "^26.0.12",
     "esbuild": "^0.25.10",
     "jsdom": "^29.0.2",
@@ -76,6 +79,7 @@
       "dist/native-host/**",
       "package.json"
     ],
+    "afterPack": "scripts/electron-builder-after-pack.cjs",
     "extraMetadata": {
       "main": "dist/desktop/main.cjs"
     },
