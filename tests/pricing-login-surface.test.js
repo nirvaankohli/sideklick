@@ -57,18 +57,16 @@ test("desktop settings includes billing and Study Credits surfaces", () => {
   const homeJs = readRepoFile("apps", "desktop", "src", "home.js");
   const styles = readRepoFile("apps", "desktop", "src", "styles.css");
 
-  assert.match(homeHtml, /Study Credits and plan access/);
+  assert.match(homeHtml, /settings-billing-link/);
+  assert.match(homeHtml, /https:\/\/sideklick\.nirvaankohli\.com\/pricing/);
+  assert.match(homeHtml, /Available Study Credits/);
+  assert.match(homeHtml, /Refresh Date/);
   assert.match(homeHtml, /Generate Quiz - 2 Study Credits/);
   assert.match(homeHtml, /Generate Plan - 5 Study Credits/);
   assert.match(homeHtml, /Save &amp; Process - 8 Study Credits/);
-  assert.match(homeHtml, /Finals Pack \+125/);
-  assert.match(homeHtml, /billing-plus-monthly-button/);
-  assert.match(homeHtml, /billing-max-yearly-button/);
-  assert.match(homeHtml, /billing-credits-50-button/);
-  assert.match(homeHtml, /billing-portal-button/);
   assert.match(homeHtml, /billing-modal-backdrop/);
   assert.doesNotMatch(homeHtml, /Prep Pack/i);
-  assert.match(homeJs, /quoteStudyCredits/);
+  assert.match(homeJs, /settingsBillingLink/);
   assert.match(homeJs, /getBillingSummary/);
   assert.match(homeJs, /createBillingCheckout/);
   assert.match(homeJs, /createBillingPortal/);

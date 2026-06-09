@@ -34,14 +34,7 @@
               </div>
             </div>
           </div>
-          <button
-            id="study-credit-balance"
-            class="study-credit-pill no-drag"
-            type="button"
-            hidden
-          >
-            Study Credits: --
-          </button>
+
           <div class="window-actions no-drag">
             <button
               id="shrink-window"
@@ -1097,21 +1090,20 @@
                     <section id="settings-billing-section" class="settings-pricing-section">
                       <div class="settings-pricing-header">
                         <div>
-                          <p class="panel-label">Billing</p>
-                          <p class="settings-pricing-title">
-                            Study Credits and plan access
-                          </p>
+                          <a
+                            id="settings-billing-link"
+                            href="https://sideklick.nirvaankohli.com/pricing"
+                            class="settings-billing-link panel-label"
+                          >
+                            Billing
+                            <i class="icon-svg" data-lucide="arrow-up-left"></i>
+                          </a>
                         </div>
                         <span id="billing-plan-badge" class="settings-pricing-badge">Free</span>
                       </div>
-                      <p class="panel-help settings-pricing-copy">
-                        Study Credits power AI-heavy actions like quizzes, Cram
-                        Plans, point-leak reports, graded-work analysis, and
-                        deep cram reports.
-                      </p>
                       <div class="settings-credit-summary">
                         <div>
-                          <span>Available</span>
+                          <span>Available Study Credits</span>
                           <strong id="billing-credit-total">-- Study Credits</strong>
                         </div>
                         <div>
@@ -1123,105 +1115,8 @@
                           <strong id="billing-credit-purchased">--</strong>
                         </div>
                         <div>
-                          <span>Refresh</span>
+                          <span>Refresh Date</span>
                           <strong id="billing-renewal-date">--</strong>
-                        </div>
-                      </div>
-                      <div class="settings-pricing-grid">
-                        <article class="settings-pricing-card">
-                          <p class="settings-pricing-card-kicker">Free</p>
-                          <h3>$0/month</h3>
-                          <p>For trying SideKlick with lighter study output.</p>
-                          <ul>
-                            <li>10 Study Credits/month</li>
-                            <li>Limited classes and uploads</li>
-                            <li>Limited quizzes and cram outputs</li>
-                          </ul>
-                        </article>
-                        <article class="settings-pricing-card settings-pricing-card-featured">
-                          <p class="settings-pricing-card-kicker">Plus</p>
-                          <h3>$7.99/mo</h3>
-                          <p>For full Cram Mode, weak-spot memory, and regular study weeks.</p>
-                          <ul>
-                            <li>100 Study Credits/month</li>
-                            <li>$49/year option</li>
-                            <li>Higher upload limits</li>
-                          </ul>
-                          <div class="settings-pricing-actions">
-                            <button
-                              id="billing-plus-monthly-button"
-                              class="settings-chip-button"
-                              type="button"
-                            >
-                              Monthly
-                            </button>
-                            <button
-                              id="billing-plus-yearly-button"
-                              class="settings-chip-button"
-                              type="button"
-                            >
-                              Yearly
-                            </button>
-                          </div>
-                        </article>
-                        <article class="settings-pricing-card">
-                          <p class="settings-pricing-card-kicker">Max</p>
-                          <h3>$14.99/mo</h3>
-                          <p>For graded-work analysis, point-leak diagnosis, and higher limits.</p>
-                          <ul>
-                            <li>300 Study Credits/month</li>
-                            <li>$99/year option</li>
-                            <li>Priority advanced beta access</li>
-                          </ul>
-                          <div class="settings-pricing-actions">
-                            <button
-                              id="billing-max-monthly-button"
-                              class="settings-chip-button"
-                              type="button"
-                            >
-                              Monthly
-                            </button>
-                            <button
-                              id="billing-max-yearly-button"
-                              class="settings-chip-button"
-                              type="button"
-                            >
-                              Yearly
-                            </button>
-                          </div>
-                        </article>
-                      </div>
-                      <div class="settings-credit-pack-row">
-                        <span>Extra credits: +50 for $4.99 or Finals Pack +125 for $9.99.</span>
-                        <div class="settings-credit-pack-actions">
-                          <button
-                            id="billing-credits-50-button"
-                            class="settings-chip-button"
-                            type="button"
-                          >
-                            +50
-                          </button>
-                          <button
-                            id="billing-finals-pack-button"
-                            class="settings-chip-button"
-                            type="button"
-                          >
-                            Finals Pack
-                          </button>
-                          <button
-                            id="billing-portal-button"
-                            class="settings-chip-button"
-                            type="button"
-                          >
-                            Manage
-                          </button>
-                          <button
-                            id="billing-refresh-button"
-                            class="settings-chip-button"
-                            type="button"
-                          >
-                            Refresh
-                          </button>
                         </div>
                       </div>
                     </section>

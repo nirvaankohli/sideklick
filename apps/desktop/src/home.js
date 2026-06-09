@@ -334,6 +334,7 @@ const privacyDeleteAccountButton = document.querySelector(
 );
 const privacyAccountStatus = document.querySelector("#privacy-account-status");
 const billingPlanBadge = document.querySelector("#billing-plan-badge");
+const settingsBillingLink = document.querySelector("#settings-billing-link");
 const billingCreditTotal = document.querySelector("#billing-credit-total");
 const billingCreditMonthly = document.querySelector("#billing-credit-monthly");
 const billingCreditPurchased = document.querySelector(
@@ -6282,6 +6283,18 @@ closeQuizModalButton.addEventListener("click", closeQuizModal);
 
 studyCreditBalance?.addEventListener("click", () => {
   setHomeView("settings");
+});
+
+settingsBillingLink?.addEventListener("click", async (event) => {
+  event.preventDefault();
+  const url = settingsBillingLink.getAttribute("href");
+  if (url) {
+    if (typeof window.overlayApi?.openExternalUrl === "function") {
+      await window.overlayApi.openExternalUrl(url);
+    } else if (typeof window.overlayApi?.openExternalUpdateUrl === "function") {
+      await window.overlayApi.openExternalUpdateUrl(url);
+    }
+  }
 });
 
 billingRefreshButton?.addEventListener("click", async () => {
