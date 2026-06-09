@@ -1,0 +1,317 @@
+{
+  "navigation": {
+    "links": [
+      {
+        "route": "home",
+        "title": "Home",
+        "href": "/"
+      },
+      {
+        "title": "How it helps",
+        "href": "/#how-it-helps"
+      },
+      {
+        "title": "Compare",
+        "href": "/#compare"
+      },
+      {
+        "route": "pricing",
+        "title": "Pricing",
+        "href": "/pricing"
+      }
+    ],
+    "accountTitle": "Account",
+    "signInTitle": "Sign In",
+    "accountHref": "/login"
+  },
+  "home": {
+    "hero": {
+      "headingPrefix": "Turn class notes into",
+      "headingEmphasis": "quizzes, summaries, and help",
+      "body": "SideKlick helps students turn class material into something useful right away, without copying everything into five different apps.",
+      "secondaryCtaLabel": "Other releases"
+    },
+    "features": {
+      "heading": "How SideKlick helps while you study",
+      "weakSpots": {
+        "headingPrefix": "SideKlick",
+        "headingHighlight": "remembers",
+        "headingSuffix": "what you miss",
+        "body": "It keeps track of weak spots from your study sessions, so the next quiz and plan are built around what still needs work.",
+        "imageAlt": "SideKlick quiz screen showing strengths, gaps, and a targeted review question."
+      },
+      "assist": {
+        "headingPrefix": "When you need help, SideKlick",
+        "headingHighlight": "assists",
+        "headingSuffix": "in the moment",
+        "body": "Ask for help while reading notes, reviewing slides, or browsing course material and get support without breaking your flow.",
+        "imageAlt": "SideKlick assist panel answering a biology question and suggesting the next review step."
+      }
+    },
+    "compare": {
+      "heading": "SideKlick vs Quizlet",
+      "body": "SideKlick adapts to how you study, what you miss, and what you need to be ready for next.",
+      "sideklick": {
+        "name": "SideKlick",
+        "description": "Learns from your class material and study habits"
+      },
+      "quizlet": {
+        "name": "Quizlet",
+        "description": "Better for flashcards and simple review"
+      },
+      "rows": [
+        {
+          "label": "Remembers what you miss",
+          "sideklick": "Yes",
+          "quizlet": "No",
+          "sideklickPositive": true,
+          "quizletPositive": false
+        },
+        {
+          "label": "Builds a plan to ace your test",
+          "sideklick": "Yes",
+          "quizlet": "Limited",
+          "sideklickPositive": true,
+          "quizletPositive": false
+        },
+        {
+          "label": "Makes quizzes from what you know and do not know",
+          "sideklick": "Yes",
+          "quizlet": "Limited",
+          "sideklickPositive": true,
+          "quizletPositive": false
+        },
+        {
+          "label": "Fits into your study workflow",
+          "sideklick": "Yes",
+          "quizlet": "Limited",
+          "sideklickPositive": true,
+          "quizletPositive": false
+        },
+        {
+          "label": "Works from your real class material",
+          "sideklick": "Yes",
+          "quizlet": "Yes",
+          "sideklickPositive": true,
+          "quizletPositive": true
+        }
+      ]
+    },
+    "download": {
+      "heading": "Ready to study from what actually happened in class?",
+      "body": "Download SideKlick, connect it to your notes and materials, and let it help with the parts you are most likely to miss.",
+      "extensionCtaLabel": "Get the extension",
+      "downloadingLabel": "Downloading...",
+      "mobileDownloadTitle": "Desktop app downloads are only available on desktop devices."
+    }
+  },
+  "pricing": {
+    "foundingBetaApplicationUrl": "https://forms.gle/eFJsyvUeqwAsCuiQ9",
+    "eyebrow": "Pricing",
+    "headingPrefix": "Study Credits for",
+    "headingEmphasis": "test-week focus",
+    "headingSuffix": ".",
+    "body": "Study Credits power AI-heavy study actions like Cram Plans, point-leak reports, graded-work analysis, and deep cram reports. Subscriptions include monthly credits, and students can buy extra credits during heavy test weeks.",
+    "creditPacksHeading": "Credit packs",
+    "plans": [
+      {
+        "name": "Free",
+        "price": "$0/month",
+        "audience": "For trying SideKlick",
+        "description": "Start with a small monthly Study Credit balance for light quizzes and quick cram outputs.",
+        "note": "10 Study Credits/month",
+        "ctaLabel": "Download app",
+        "ctaHref": "/#download",
+        "accent": "neutral",
+        "icon": "BookOpenCheck",
+        "features": [
+          "10 Study Credits each month",
+          "Limited classes and material uploads",
+          "Limited quizzes and cram outputs"
+        ]
+      },
+      {
+        "name": "Plus",
+        "price": "$7.99/mo or $49/yr",
+        "audience": "For regular test prep",
+        "description": "For students who want full Cram Mode, weak-spot memory, and enough monthly credits for normal study weeks.",
+        "note": "100 Study Credits/month",
+        "ctaLabel": "Sign in",
+        "ctaHref": "/login",
+        "accent": "focused",
+        "icon": "Target",
+        "features": [
+          "100 Study Credits each month",
+          "Full Cram Mode",
+          "Weak-spot memory",
+          "Higher upload limits",
+          "Standard usage limits"
+        ]
+      },
+      {
+        "name": "Max",
+        "price": "$14.99/mo or $99/yr",
+        "audience": "For heavy exam weeks",
+        "description": "For students who need deeper point-leak diagnosis, graded-work analysis, higher limits, and priority access to advanced beta features.",
+        "note": "300 Study Credits/month",
+        "ctaLabel": "Sign in",
+        "ctaHref": "/login",
+        "accent": "school",
+        "icon": "Crown",
+        "features": [
+          "300 Study Credits each month",
+          "Advanced point-leak analysis",
+          "Graded-work upload and analysis",
+          "Higher usage limits",
+          "Priority access to advanced beta features"
+        ]
+      }
+    ],
+    "creditPacks": [
+      {
+        "name": "+50 Study Credits",
+        "credits": "50 credits",
+        "price": "$4.99",
+        "description": "A small top-up for a heavier week."
+      },
+      {
+        "name": "Finals Pack",
+        "credits": "125 credits",
+        "price": "$9.99",
+        "description": "Extra room for finals, midterms, and stacked deadlines."
+      }
+    ],
+    "foundingBetaHighlights": {
+      "icon": "Flame",
+      "title": "Founding beta",
+      "body": "Accepted founding beta users receive free lifetime individual access to Plus. Beta users can optionally purchase lifetime Max for $8.99. Lifetime access is for individual student use and remains subject to fair-use limits.",
+      "ctaLabel": "Apply for founding beta"
+    },
+    "creditActionCosts": [
+      {
+        "label": "Generate basic quiz",
+        "cost": "2 Study Credits"
+      },
+      {
+        "label": "Generate Cram Plan",
+        "cost": "5 Study Credits"
+      },
+      {
+        "label": "Analyze graded work / point leaks",
+        "cost": "8 Study Credits"
+      },
+      {
+        "label": "Generate deep Max-style cram report",
+        "cost": "15 Study Credits"
+      }
+    ],
+    "disclaimer": "Plan credits refresh monthly and do not roll over. Purchased Study Credit packs persist until used. Max-only features require Max access even when a student has enough credits."
+  },
+  "login": {
+    "eyebrow": "SideKlick account",
+    "headingPrefix": "Keep your study workspace",
+    "headingEmphasis": "connected",
+    "headingSuffix": ".",
+    "body": "Sign in with the same managed account system used by the desktop app.",
+    "tabs": {
+      "login": "Sign in",
+      "register": "Create account"
+    },
+    "fields": {
+      "displayName": {
+        "label": "Name",
+        "placeholder": "Student name"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "student@example.com"
+      },
+      "password": {
+        "label": "Password",
+        "placeholder": "8 characters minimum"
+      }
+    },
+    "buttons": {
+      "login": "Sign in",
+      "register": "Create account",
+      "loginLoading": "Signing in...",
+      "registerLoading": "Creating account...",
+      "logout": "Log out"
+    },
+    "signedIn": {
+      "eyebrow": "Signed in",
+      "fallbackName": "SideKlick account"
+    },
+    "validation": {
+      "emailRequired": "Enter an email address.",
+      "passwordTooShort": "Password must be at least 8 characters.",
+      "genericError": "Something went wrong. Try again."
+    },
+    "status": {
+      "signedInTemplate": "Signed in as {account}.",
+      "signedOut": "Signed out."
+    }
+  },
+  "foundingBetaPopup": {
+    "dismissLabel": "Dismiss founding beta announcement",
+    "eyebrow": "Founding beta",
+    "heading": "Free lifetime Plus for accepted students.",
+    "body": "We are opening SideKlick to a small group of students before launch. Accepted founding beta users get free lifetime individual Plus, with an optional lifetime Max upgrade for $8.99.",
+    "primaryCtaLabel": "Apply to beta",
+    "secondaryCtaLabel": "Maybe later"
+  },
+  "footer": {
+    "headline": "Study smarter with the material you already have.",
+    "contacts": [
+      {
+        "label": "nirvaan.kohli@gmail.com",
+        "href": "mailto:nirvaan.kohli@gmail.com"
+      },
+      {
+        "label": "andreastsang28@gmail.com",
+        "href": "mailto:andreastsang28@gmail.com"
+      }
+    ],
+    "productTitle": "Product",
+    "productLinks": [
+      {
+        "label": "Home",
+        "href": "/"
+      },
+      {
+        "label": "How it helps",
+        "href": "/#how-it-helps"
+      },
+      {
+        "label": "Pricing",
+        "href": "/pricing"
+      },
+      {
+        "label": "Download",
+        "href": "/#download"
+      }
+    ],
+    "moreTitle": "More",
+    "moreLinks": [
+      {
+        "label": "Extension",
+        "href": "/#download"
+      },
+      {
+        "label": "Other releases",
+        "href": "GITHUB_RELEASES_PAGE_URL",
+        "external": true
+      },
+      {
+        "label": "Contact",
+        "href": "mailto:nirvaan.kohli@gmail.com"
+      }
+    ],
+    "accountLabel": "Account",
+    "signInLabel": "Sign In",
+    "wordmark": "SIDEKLICK",
+    "copyright": "\\u00a9 2026 SideKlick",
+    "tagline": "Student study tools",
+    "backToTopLabel": "Back to top \\u2191"
+  }
+}
