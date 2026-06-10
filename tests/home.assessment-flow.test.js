@@ -1043,7 +1043,7 @@ test("cram mode shows study credit errors inline without leaving the generate bu
     assert.equal(document.querySelector("#generate-cram-button").disabled, false);
     assert.equal(
       document.querySelector("#generate-cram-button").textContent.trim(),
-      "Generate Plan - 5 Study Credits",
+      "Generate Plan",
     );
   });
 

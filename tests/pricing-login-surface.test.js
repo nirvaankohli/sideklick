@@ -61,8 +61,10 @@ test("desktop settings includes billing and Study Credits surfaces", () => {
   assert.match(homeHtml, /https:\/\/sideklick\.nirvaankohli\.com\/pricing/);
   assert.match(homeHtml, /Available Study Credits/);
   assert.match(homeHtml, /Refresh Date/);
-  assert.match(homeHtml, /Generate Quiz - 2 Study Credits/);
-  assert.match(homeHtml, /Generate Plan - 5 Study Credits/);
+  assert.match(homeHtml, /Generate Quiz/);
+  assert.match(homeHtml, /2 Study Credits/);
+  assert.match(homeHtml, /Generate Plan/);
+  assert.match(homeHtml, /5 Study Credits/);
   assert.match(homeHtml, /Save &amp; Process - 8 Study Credits/);
   assert.match(homeHtml, /billing-modal-backdrop/);
   assert.doesNotMatch(homeHtml, /Prep Pack/i);

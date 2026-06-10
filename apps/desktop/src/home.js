@@ -26,6 +26,9 @@ const emptyCopy = document.querySelector("#empty-copy");
 const editCurrentClassButton = document.querySelector(
   "#edit-current-class-button",
 );
+const classMoreButton = document.querySelector("#class-more-button");
+const classActionMenu = document.querySelector("#class-action-menu");
+const classMenuEdit = document.querySelector("#class-menu-edit");
 const classModalBackdrop = document.querySelector("#class-modal-backdrop");
 const classModalKicker = document.querySelector("#class-modal-kicker");
 const classModalTitle = document.querySelector("#class-modal-title");
@@ -1024,6 +1027,22 @@ function scheduleFitText() {
     document
       .querySelectorAll("[data-fit-text]")
       .forEach((element) => fitTextToBox(element));
+    adjustFolderCardTitleFontSizes();
+  });
+}
+
+function adjustFolderCardTitleFontSizes() {
+  const titles = document.querySelectorAll(".folder-card-title");
+  titles.forEach((title) => {
+    title.style.fontSize = "";
+    const computedStyle = window.getComputedStyle(title);
+    let lineHeight = parseFloat(computedStyle.lineHeight);
+    if (isNaN(lineHeight)) {
+      lineHeight = parseFloat(computedStyle.fontSize) * 1.25;
+    }
+    if (title.clientHeight > lineHeight * 2.5) {
+      title.style.fontSize = "0.95rem";
+    }
   });
 }
 
@@ -3417,11 +3436,10 @@ function updateCramMaterialCount() {
   }
   if (generateCramButton) {
     generateCramButton.disabled = isGeneratingCramPlan;
-    if (!isGeneratingCramPlan) {
-      generateCramButton.textContent = formatStudyCreditActionLabel(
-        "cram_plan",
-        "Generate Plan",
-      );
+    if (isGeneratingCramPlan) {
+      generateCramButton.textContent = "Generating...";
+    } else {
+      generateCramButton.textContent = "Generate Plan";
     }
   }
 
@@ -4708,7 +4726,10 @@ async function generateCramPlanForCurrentClass() {
     activeCramPath = [...activeCramPath, plan.id];
     activeCramPlan = plan;
     renderCramPlan(plan);
-    void refreshBillingSummary();
+    const summary = await refreshBillingSummary();
+    if (summary && typeof summary.credits?.totalRemaining === "number") {
+      showStudyCreditsNotification("Cram Plan", summary.credits.totalRemaining);
+    }
   } catch (error) {
     if (error instanceof Error && showCreditProblemFromMessage(error.message)) {
       cramStatus.textContent = "";
@@ -4720,10 +4741,7 @@ async function generateCramPlanForCurrentClass() {
   } finally {
     if (generateCramButton) {
       generateCramButton.disabled = false;
-      generateCramButton.textContent = formatStudyCreditActionLabel(
-        "cram_plan",
-        "Generate Plan",
-      );
+      generateCramButton.textContent = "Generate Plan";
     }
   }
 }
@@ -5339,7 +5357,10 @@ async function generateQuizForActiveSession() {
       readOnly: false,
       hideSave: true,
     });
-    void refreshBillingSummary();
+    const summary = await refreshBillingSummary();
+    if (summary && typeof summary.credits?.totalRemaining === "number") {
+      showStudyCreditsNotification("Quiz", summary.credits.totalRemaining);
+    }
   } catch (error) {
     if (error instanceof Error) {
       showCreditProblemFromMessage(error.message);
@@ -5362,10 +5383,7 @@ async function generateQuizForActiveSession() {
       error instanceof Error ? formatErrorMessage(error.message) : "Quiz generation failed.";
   } finally {
     generateQuizButton.disabled = false;
-    generateQuizButton.textContent = formatStudyCreditActionLabel(
-      "basic_quiz",
-      "Generate Quiz",
-    );
+    generateQuizButton.textContent = "Generate Quiz";
   }
 }
 
@@ -5522,11 +5540,15 @@ function renderFolders() {
   renderBreadcrumbs();
   backFolderButton.hidden = currentPath.length === 0;
   emptyState.hidden = visibleChildren.length > 0;
-  editCurrentClassButton.hidden = !currentClassFolder;
+  editCurrentClassButton.hidden = true;
   editCurrentClassButton.textContent = currentClassFolder
     ? `Edit ${currentClassFolder.name || "Class"}`
     : "Edit Class";
+  if (classMoreButton) {
+    classMoreButton.hidden = !currentClassFolder;
+  }
   closeFolderActionMenu();
+  closeClassActionMenu();
   if (currentPath.length === 0) {
     folderNameInput.placeholder = "Search classes";
     emptyTitle.textContent = "No classes here yet.";
@@ -5555,6 +5577,9 @@ function renderFolders() {
   for (const folder of visibleChildren) {
     const article = document.createElement("article");
     article.className = "folder-card";
+    if (folder.type === "material") {
+      article.classList.add("folder-card-file");
+    }
 
     const openButton = document.createElement("button");
     openButton.type = "button";
@@ -5657,7 +5682,7 @@ function renderFolders() {
       <span class="folder-card-title">${safeFolderName}</span>
       ${
         isSessionItem || isQuizItem || isMaterialItem
-          ? `<span class="folder-card-summary">${isSessionItem ? "" : safeSessionSummaryText}</span>
+          ? `<span class="folder-card-summary">${(isSessionItem || isMaterialItem) ? "" : safeSessionSummaryText}</span>
       <span class="folder-card-session-stats">${isSessionItem ? escapeHtml(sessionStatsText || "") : safeMetaText}</span>`
           : `<span class="folder-card-meta">${safeMetaText}</span>`
       }
@@ -6247,7 +6272,7 @@ folderNameInput.addEventListener("keydown", (event) => {
 folderNameInput.addEventListener("input", renderFolders);
 
 closeClassModal.addEventListener("click", closeModal);
-cancelClassModal.addEventListener("click", closeModal);
+cancelClassModal?.addEventListener("click", closeModal);
 saveClassModal.addEventListener("click", saveModal);
 classModalBackdrop.addEventListener("click", (event) => {
   if (event.target === classModalBackdrop) {
@@ -6260,6 +6285,17 @@ document.addEventListener("click", (event) => {
       menu.hidden = true;
     }
   });
+
+  if (
+    classActionMenu &&
+    !classActionMenu.hidden &&
+    event.target instanceof Node &&
+    classMoreButton &&
+    !classMoreButton.contains(event.target) &&
+    !classActionMenu.contains(event.target)
+  ) {
+    closeClassActionMenu();
+  }
 
   if (!isFolderActionMenuOpen) {
     return;
@@ -6353,6 +6389,23 @@ saveClassMaterialButton?.addEventListener("click", () => {
 });
 
 editCurrentClassButton?.addEventListener("click", () => {
+  openClassEditModal();
+});
+
+
+classMoreButton?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const nextHidden = !classActionMenu.hidden;
+  document.querySelectorAll(".folder-card-menu").forEach((m) => m.hidden = true);
+  closeFolderActionMenu();
+  classActionMenu.hidden = nextHidden;
+  classMoreButton?.setAttribute("aria-expanded", String(!nextHidden));
+});
+
+classMenuEdit?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (classActionMenu) classActionMenu.hidden = true;
+  classMoreButton?.setAttribute("aria-expanded", "false");
   openClassEditModal();
 });
 openAssessmentConfigButton?.addEventListener("click", () => {
@@ -6495,6 +6548,15 @@ function closeFolderActionMenu() {
   newFolderButton.setAttribute("aria-expanded", "false");
   folderActionMenu.hidden = true;
   folderActionMenu.replaceChildren();
+}
+
+function closeClassActionMenu() {
+  if (classActionMenu) {
+    classActionMenu.hidden = true;
+  }
+  if (classMoreButton) {
+    classMoreButton.setAttribute("aria-expanded", "false");
+  }
 }
 
 function openFolderActionMenu() {
@@ -7355,3 +7417,49 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 window.addEventListener("resize", scheduleFitText);
+
+function showStudyCreditsNotification(actionName, remainingCredits) {
+  const existing = document.querySelector(".credits-toast-notification");
+  if (existing) {
+    existing.remove();
+  }
+
+  const toast = document.createElement("div");
+  toast.className = "credits-toast-notification";
+  toast.innerHTML = `
+    <div class="credits-toast-content">
+      <div class="credits-toast-message">
+        <span class="credits-toast-title">${actionName} generated!</span>
+        <span class="credits-toast-subtitle">${remainingCredits.toLocaleString()} Study Credits remaining</span>
+      </div>
+      <button class="credits-toast-close" type="button" aria-label="Close notification">&times;</button>
+    </div>
+    <div class="credits-toast-progress">
+      <div class="credits-toast-progress-bar"></div>
+    </div>
+  `;
+
+  document.body.appendChild(toast);
+
+  toast.getBoundingClientRect();
+  toast.classList.add("is-visible");
+
+  let autoCloseTimeout;
+
+  const closeToast = () => {
+    toast.classList.remove("is-visible");
+    toast.classList.add("is-hiding");
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  };
+
+  toast.querySelector(".credits-toast-close").addEventListener("click", () => {
+    clearTimeout(autoCloseTimeout);
+    closeToast();
+  });
+
+  autoCloseTimeout = setTimeout(() => {
+    closeToast();
+  }, 2000);
+}

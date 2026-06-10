@@ -84,10 +84,40 @@
                     id="edit-current-class-button"
                     class="ghost-button home-browser-action"
                     type="button"
+                    style="display: none !important;"
                     hidden
                   >
                     Edit Class
                   </button>
+                  <div class="class-action-menu-shell">
+                    <button
+                      id="class-more-button"
+                      class="class-more-button"
+                      type="button"
+                      aria-label="Class options"
+                      aria-haspopup="menu"
+                      aria-expanded="false"
+                      hidden
+                    >
+                      <i class="icon-svg" data-lucide="more-vertical"></i>
+                    </button>
+                    <div
+                      id="class-action-menu"
+                      class="class-action-menu"
+                      role="menu"
+                      hidden
+                    >
+                      <button
+                        id="class-menu-edit"
+                        class="class-action-menu-item"
+                        type="button"
+                        role="menuitem"
+                      >
+                        <i class="icon-svg" data-lucide="pencil"></i>
+                        <span>Edit Class</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="folder-create-row">
@@ -592,11 +622,13 @@
 
                     <p id="cram-status" class="panel-help"></p>
 
-                    <div class="cram-step-actions flex-end">
-                      <button id="generate-cram-button" class="continue-button generate-plan-btn" type="button">
-                        <i data-lucide="sparkles" class="button-icon"></i>
-                        <span>Generate Plan - 5 Study Credits</span>
-                      </button>
+                    <div class="cram-step-actions-wrapper">
+                      <div class="cram-step-actions">
+                        <button id="generate-cram-button" class="continue-button generate-plan-btn" type="button">
+                          <span>Generate Plan</span>
+                        </button>
+                      </div>
+                      <p class="action-cost-text">5 Study Credits</p>
                     </div>
                   </div>
 
@@ -750,14 +782,17 @@
                     <span id="quiz-gap-focus-value">50%</span>
                   </div>
 
-                  <div class="modal-actions">
-                    <button
-                      id="generate-quiz-button"
-                      class="continue-button"
-                      type="button"
-                    >
-                      Generate Quiz - 2 Study Credits
-                    </button>
+                  <div class="modal-actions-wrapper">
+                    <div class="modal-actions">
+                      <button
+                        id="generate-quiz-button"
+                        class="continue-button"
+                        type="button"
+                      >
+                        Generate Quiz
+                      </button>
+                    </div>
+                    <p class="action-cost-text">2 Study Credits</p>
                   </div>
                 </div>
 
@@ -1507,14 +1542,7 @@
               </label>
             </div>
 
-            <div class="modal-actions">
-              <button
-                id="cancel-class-modal"
-                class="ghost-button"
-                type="button"
-              >
-                Cancel
-              </button>
+            <div class="modal-actions-wrapper">
               <button
                 id="save-class-modal"
                 class="continue-button"
@@ -1627,14 +1655,16 @@
 
               <div id="class-material-rollup" class="assessment-upload-rollup"></div>
 
-              <div class="modal-actions">
-                <button
-                  id="save-class-material-button"
-                  class="continue-button"
-                  type="button"
-                >
-                  Save Material
-                </button>
+              <div class="modal-actions-wrapper">
+                <div class="modal-actions">
+                  <button
+                    id="save-class-material-button"
+                    class="continue-button"
+                    type="button"
+                  >
+                    Save Material
+                  </button>
+                </div>
               </div>
             </div>
           </section>
