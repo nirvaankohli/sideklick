@@ -919,7 +919,10 @@ test("quiz, cram, and assessment UI can target specific saved class material", a
         material.name === "Class Material Notes",
       ),
       false,
-  );
+    );
+  });
+
+  dom.window.close();
 });
 
 test("cram mode shows study credit errors inline without leaving the generate button stuck", async () => {
@@ -1043,7 +1046,6 @@ test("cram mode shows study credit errors inline without leaving the generate bu
       "Generate Plan - 5 Study Credits",
     );
   });
-});
 
   dom.window.close();
 });
