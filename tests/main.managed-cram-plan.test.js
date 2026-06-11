@@ -195,3 +195,90 @@ test("managed cram plan does not hide non-session backend failures", async () =>
   await assert.rejects(() => harness.run(requestBody), originalError);
   assert.equal(harness.calls.length, 1);
 });
+
+test("managed cram plan retries with compatibility-adjusted payload when initial request fails with validation error", async () => {
+  const requestBody = {
+    classId: 12,
+    sessionIds: [34],
+    examName: "Chemistry Final",
+    teacherAssessmentProfile: { gradingNotes: "Strict grading" },
+  };
+  const harness = createHarness([
+    createStatusError(400, "Invalid cram plan payload or model output."),
+    { ok: true, cleaned: true },
+  ]);
+
+  const result = await harness.run(requestBody);
+
+  assert.deepEqual(result, { ok: true, cleaned: true });
+  assert.deepEqual(harness.calls, [
+    {
+      endpoint: "/api/cram-plan",
+      options: {
+        method: "POST",
+        body: requestBody,
+      },
+    },
+    {
+      endpoint: "/api/cram-plan",
+      options: {
+        method: "POST",
+        body: {
+          classId: 12,
+          sessionIds: [34],
+          examName: "Chemistry Final",
+        },
+      },
+    },
+  ]);
+});
+
+test("managed cram plan retries with compatibility-adjusted payload when session-free retry fails with validation error", async () => {
+  const requestBody = {
+    classId: 12,
+    sessionIds: [999],
+    examName: "Math Final",
+    teacherAssessmentProfile: { gradingNotes: "Strict grading" },
+  };
+  const harness = createHarness([
+    createStatusError(404, "Session resource not found."),
+    createStatusError(400, "Invalid cram plan payload or model output."),
+    { ok: true, sessionFreeCleaned: true },
+  ]);
+
+  const result = await harness.run(requestBody);
+
+  assert.deepEqual(result, { ok: true, sessionFreeCleaned: true });
+  assert.deepEqual(harness.calls, [
+    {
+      endpoint: "/api/cram-plan",
+      options: {
+        method: "POST",
+        body: requestBody,
+      },
+    },
+    {
+      endpoint: "/api/cram-plan",
+      options: {
+        method: "POST",
+        body: {
+          classId: 12,
+          sessionIds: [],
+          examName: "Math Final",
+          teacherAssessmentProfile: { gradingNotes: "Strict grading" },
+        },
+      },
+    },
+    {
+      endpoint: "/api/cram-plan",
+      options: {
+        method: "POST",
+        body: {
+          classId: 12,
+          sessionIds: [],
+          examName: "Math Final",
+        },
+      },
+    },
+  ]);
+});

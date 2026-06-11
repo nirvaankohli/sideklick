@@ -35,6 +35,30 @@ function toManagedCramPlanErrorResult(error) {
   };
 }
 
+function isManagedCramPlanValidationError(error) {
+  const message =
+    error instanceof Error ? error.message : String(error || "");
+  return (
+    Number(error?.status) === 400 &&
+    /invalid cram plan payload or model output/i.test(message)
+  );
+}
+
+function adjustCramPlanRequestBodyForCompatibility(requestBody) {
+  if (!requestBody || typeof requestBody !== "object") {
+    return { body: requestBody, adjusted: false };
+  }
+  const body = { ...requestBody };
+  let adjusted = false;
+
+  if ("teacherAssessmentProfile" in body) {
+    delete body.teacherAssessmentProfile;
+    adjusted = true;
+  }
+
+  return { body, adjusted };
+}
+
 async function performManagedCramPlanWithCompatibility({
   requestBody,
   callManagedBackend,
@@ -45,8 +69,28 @@ async function performManagedCramPlanWithCompatibility({
       body: requestBody,
     });
   } catch (error) {
-    if (isManagedStudyCreditError(error)) {
-      return toManagedCramPlanErrorResult(error);
+    let activeError = error;
+
+    if (isManagedStudyCreditError(activeError)) {
+      return toManagedCramPlanErrorResult(activeError);
+    }
+
+    // Check if it's a validation error and we can adjust the body
+    if (isManagedCramPlanValidationError(activeError)) {
+      const { body: adjustedBody, adjusted } = adjustCramPlanRequestBodyForCompatibility(requestBody);
+      if (adjusted) {
+        try {
+          return await callManagedBackend("/api/cram-plan", {
+            method: "POST",
+            body: adjustedBody,
+          });
+        } catch (retryValError) {
+          activeError = retryValError;
+          if (isManagedStudyCreditError(activeError)) {
+            return toManagedCramPlanErrorResult(activeError);
+          }
+        }
+      }
     }
 
     const sessionIds = Array.isArray(requestBody?.sessionIds)
@@ -54,9 +98,9 @@ async function performManagedCramPlanWithCompatibility({
       : [];
     if (
       sessionIds.length === 0 ||
-      !isManagedSessionCompatibilityError(error)
+      !isManagedSessionCompatibilityError(activeError)
     ) {
-      throw error;
+      throw activeError;
     }
 
     try {
@@ -71,6 +115,27 @@ async function performManagedCramPlanWithCompatibility({
       if (isManagedStudyCreditError(retryError)) {
         return toManagedCramPlanErrorResult(retryError);
       }
+
+      // If the session-free retry fails with a validation error, retry with adjusted body
+      if (isManagedCramPlanValidationError(retryError)) {
+        const { body: adjustedBody, adjusted } = adjustCramPlanRequestBodyForCompatibility({
+          ...requestBody,
+          sessionIds: [],
+        });
+        if (adjusted) {
+          try {
+            return await callManagedBackend("/api/cram-plan", {
+              method: "POST",
+              body: adjustedBody,
+            });
+          } catch (sessionValError) {
+            if (isManagedStudyCreditError(sessionValError)) {
+              return toManagedCramPlanErrorResult(sessionValError);
+            }
+            throw sessionValError;
+          }
+        }
+      }
       throw retryError;
     }
   }
@@ -79,6 +144,8 @@ async function performManagedCramPlanWithCompatibility({
 module.exports = {
   isManagedSessionCompatibilityError,
   isManagedStudyCreditError,
+  isManagedCramPlanValidationError,
+  adjustCramPlanRequestBodyForCompatibility,
   performManagedCramPlanWithCompatibility,
   toManagedCramPlanErrorResult,
 };

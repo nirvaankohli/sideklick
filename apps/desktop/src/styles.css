@@ -5331,7 +5331,7 @@ button {
   gap: 10px;
   min-height: 52px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 18px;
   border: 1px solid rgba(216, 226, 238, 0.14);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.045), transparent 56%),
@@ -5508,7 +5508,7 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   padding: 4px;
-  border-radius: 10px;
+  border-radius: 18px;
   border: 1px solid rgba(216, 226, 238, 0.12);
   background: rgba(255, 255, 255, 0.035);
 }
@@ -5518,7 +5518,7 @@ button {
   display: grid;
   gap: 2px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 16px;
   color: rgba(245, 249, 255, 0.66);
   cursor: pointer;
   overflow: hidden;
@@ -5533,7 +5533,7 @@ button {
   content: "";
   position: absolute;
   inset: 4px;
-  border-radius: 7px;
+  border-radius: 15px;
   background: linear-gradient(
     135deg,
     rgba(148, 163, 184, 0.24),
@@ -7915,8 +7915,8 @@ button {
 
 .quiz-page-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
   align-items: center;
   justify-items: stretch;
   padding: 16px 20px 14px;
@@ -9769,4 +9769,142 @@ button {
   to {
     width: 0%;
   }
+}
+
+/* Tag Selector Styles */
+.tag-selector-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.tag-selector-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(216, 226, 238, 0.15);
+  background: rgba(255, 255, 255, 0.035);
+  min-height: 44px;
+  cursor: text;
+}
+
+.tag-selector-input-container:focus-within {
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+.tag-selector-input {
+  flex: 1;
+  min-width: 120px;
+  border: none !important;
+  background: transparent !important;
+  color: var(--dark-strong) !important;
+  outline: none !important;
+  font-size: 0.9rem;
+  padding: 4px 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+.window-shell[data-tone="light"] .tag-selector-input {
+  color: var(--light-strong) !important;
+}
+
+.tag-selector-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--dark-strong);
+}
+
+.window-shell[data-tone="light"] .tag-chip {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+  color: var(--light-strong);
+}
+
+.tag-chip-remove {
+  background: transparent !important;
+  border: none !important;
+  color: var(--dark-muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.tag-chip-remove:hover {
+  color: #ef4444;
+}
+
+.tag-selector-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  margin-top: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid rgba(216, 226, 238, 0.15);
+  background: #0b141e;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.window-shell[data-tone="light"] .tag-selector-dropdown {
+  background: #ffffff;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.tag-selector-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 100ms ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.window-shell[data-tone="light"] .tag-selector-item {
+  border-bottom-color: rgba(0, 0, 0, 0.03);
+}
+
+.tag-selector-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.window-shell[data-tone="light"] .tag-selector-item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.tag-selector-item-title {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--dark-strong);
+}
+
+.tag-selector-item-meta {
+  font-size: 0.76rem;
+  color: var(--dark-muted);
 }

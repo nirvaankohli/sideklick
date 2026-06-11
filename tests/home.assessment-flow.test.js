@@ -839,12 +839,12 @@ test("quiz, cram, and assessment UI can target specific saved class material", a
 
   clickMaterialCheckbox("#quiz-class-material-picker", "lab-graph-notes.txt");
   clickMaterialCheckbox("#quiz-class-material-picker", "Class Material Notes");
-  document.querySelector('input[name="quiz-question-count"][value="8"]').click();
+  document.querySelector('input[name="quiz-question-count"][value="20"]').click();
   document.querySelector("#generate-quiz-button").click();
 
   await waitFor(() => {
     assert.equal(Boolean(quizPayload), true);
-    assert.equal(quizPayload.questionCount, 8);
+    assert.equal(quizPayload.questionCount, 20);
     assert.match(quizPayload.uploadedMaterial, /thermo-review\.txt/i);
     assert.doesNotMatch(quizPayload.uploadedMaterial, /lab-graph-notes\.txt/i);
     assert.doesNotMatch(quizPayload.uploadedMaterial, /Teacher note: focus on equilibrium and entropy\./i);

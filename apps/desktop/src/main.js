@@ -67,6 +67,9 @@ const {
 const {
   performManagedCramPlanWithCompatibility,
 } = require("./main/managed-cram-plan.js");
+const {
+  performManagedQuizWithCompatibility,
+} = require("./main/managed-quiz.js");
 
 const windowsByKey = new Map();
 const windowState = new Map();
@@ -1858,12 +1861,31 @@ ipcMain.handle("backend:assist", async (_event, payload) => {
     );
   }
 
-  return performManagedAssistWithCompatibility({
+  const result = await performManagedAssistWithCompatibility({
     requestBody,
     callManagedBackend,
     callLocalDesktopBackend,
     attemptAssistRequest,
   });
+
+  if (result && typeof result.answer === "string") {
+    try {
+      const { persistAssistMemory } = require("./main/server/services/memory.ts");
+      persistAssistMemory(
+        requestBody,
+        {
+          answer: result.answer,
+          nextStep: result.nextStep,
+          gapCandidates: result.gapCandidates || [],
+        },
+        result.context || {},
+      );
+    } catch (err) {
+      console.error("[assist] failed to persist interaction copy locally", err);
+    }
+  }
+
+  return result;
 });
 
 ipcMain.handle("backend:feedback", async (_event, payload) => {
@@ -1882,9 +1904,9 @@ ipcMain.handle("backend:cram", async (_event, payload) => {
 });
 
 ipcMain.handle("backend:quiz", async (_event, payload) => {
-  return callManagedBackend("/api/quiz", {
-    method: "POST",
-    body: payload,
+  return performManagedQuizWithCompatibility({
+    requestBody: payload,
+    callManagedBackend,
     idempotencyKey: crypto.randomUUID(),
   });
 });

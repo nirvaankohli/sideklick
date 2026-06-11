@@ -451,7 +451,7 @@ const STUDY_CREDIT_ACTIONS = {
     label: "Generate Quiz",
   },
   cram_plan: {
-    cost: 5,
+    cost: 10,
     label: "Generate Plan",
   },
   graded_work_analysis: {
@@ -2935,29 +2935,161 @@ function renderQuizSessionPicker(sessions) {
     return;
   }
 
-  sessions.forEach((session) => {
-    const label = document.createElement("label");
-    label.className = "quiz-session-option";
+  const selectedSessionIds = new Set();
 
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.value = String(session.dbSessionId);
+  const wrapper = document.createElement("div");
+  wrapper.className = "tag-selector-wrapper";
 
-    const textWrap = document.createElement("div");
-    textWrap.className = "quiz-session-option-copy";
+  const inputContainer = document.createElement("div");
+  inputContainer.className = "tag-selector-input-container";
 
-    const title = document.createElement("span");
-    title.className = "quiz-session-option-title";
-    title.textContent = session.name || "Saved Session";
+  const chipsContainer = document.createElement("div");
+  chipsContainer.className = "tag-selector-chips";
 
-    const meta = document.createElement("span");
-    meta.className = "quiz-session-option-meta";
-    meta.textContent = buildSessionCardStats(session);
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "tag-selector-input";
+  input.placeholder = "Search and select sessions...";
 
-    textWrap.append(title, meta);
-    label.append(input, textWrap);
-    quizSessionPicker.appendChild(label);
+  inputContainer.append(chipsContainer, input);
+
+  const dropdown = document.createElement("div");
+  dropdown.className = "tag-selector-dropdown";
+  dropdown.style.display = "none";
+
+  const hiddenInputsContainer = document.createElement("div");
+  hiddenInputsContainer.className = "tag-selector-hidden-inputs";
+  hiddenInputsContainer.style.display = "none";
+
+  wrapper.append(inputContainer, dropdown, hiddenInputsContainer);
+  quizSessionPicker.appendChild(wrapper);
+
+  input.addEventListener("focus", () => {
+    renderDropdown();
   });
+
+  input.addEventListener("input", () => {
+    renderDropdown();
+  });
+
+  inputContainer.addEventListener("click", () => {
+    input.focus();
+  });
+
+  const handleOutsideClick = (e) => {
+    if (!wrapper.contains(e.target)) {
+      dropdown.style.display = "none";
+    }
+  };
+  document.addEventListener("click", handleOutsideClick);
+
+  function renderChips() {
+    chipsContainer.replaceChildren();
+    hiddenInputsContainer.replaceChildren();
+
+    selectedSessionIds.forEach((id) => {
+      const session = sessions.find((s) => s.dbSessionId === id);
+      if (!session) return;
+
+      const chip = document.createElement("div");
+      chip.className = "tag-chip";
+
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "tag-chip-name";
+      nameSpan.textContent = session.name || "Saved Session";
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "tag-chip-remove";
+      removeBtn.innerHTML = "&times;";
+      removeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        selectedSessionIds.delete(id);
+        renderChips();
+        renderDropdown();
+        input.focus();
+      });
+
+      chip.append(nameSpan, removeBtn);
+      chipsContainer.appendChild(chip);
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = true;
+      checkbox.value = String(id);
+      hiddenInputsContainer.appendChild(checkbox);
+    });
+
+    if (selectedSessionIds.size > 0) {
+      input.placeholder = "";
+    } else {
+      input.placeholder = "Search and select sessions...";
+    }
+  }
+
+  function renderDropdown() {
+    dropdown.replaceChildren();
+
+    const query = input.value.trim().toLowerCase();
+    const filtered = sessions.filter((session) => {
+      if (selectedSessionIds.has(session.dbSessionId)) {
+        return false;
+      }
+      if (query) {
+        const nameMatches = (session.name || "").toLowerCase().includes(query);
+        const stats = buildSessionCardStats(session).toLowerCase();
+        return nameMatches || stats.includes(query);
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      const emptyItem = document.createElement("div");
+      emptyItem.className = "tag-selector-item";
+      emptyItem.style.cursor = "default";
+      emptyItem.style.pointerEvents = "none";
+
+      const title = document.createElement("span");
+      title.className = "tag-selector-item-title";
+      title.textContent = query ? "No matching sessions" : "All sessions selected";
+
+      emptyItem.appendChild(title);
+      dropdown.appendChild(emptyItem);
+    } else {
+      filtered.forEach((session) => {
+        const item = document.createElement("div");
+        item.className = "tag-selector-item";
+
+        const title = document.createElement("span");
+        title.className = "tag-selector-item-title";
+        title.textContent = session.name || "Saved Session";
+
+        const meta = document.createElement("span");
+        meta.className = "tag-selector-item-meta";
+        meta.textContent = buildSessionCardStats(session);
+
+        item.append(title, meta);
+
+        item.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+        });
+
+        item.addEventListener("click", () => {
+          selectedSessionIds.add(session.dbSessionId);
+          input.value = "";
+          renderChips();
+          renderDropdown();
+          input.focus();
+        });
+
+        dropdown.appendChild(item);
+      });
+    }
+
+    dropdown.style.display = "block";
+  }
+
+  renderChips();
 }
 
 function renderClassAssessmentProfileSelect(
@@ -5272,8 +5404,8 @@ function renderQuizQuestions(quiz) {
 
 function getSelectedQuizQuestionCount() {
   const selected = quizQuestionCountInputs.find((input) => input.checked);
-  const parsed = selected ? Number(selected.value) : 5;
-  return [3, 5, 8].includes(parsed) ? parsed : 5;
+  const parsed = selected ? Number(selected.value) : 10;
+  return [5, 10, 20].includes(parsed) ? parsed : 10;
 }
 
 async function generateQuizForActiveSession() {

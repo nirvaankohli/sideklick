@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 
 // Shared helpers keep route validation and model-output validation consistent.
 const nullableTrimmedString = z
@@ -276,14 +276,14 @@ export const quizRequestSchema = z.object({
   uploadedMaterial: nullableTrimmedString,
   titleHint: nullableTrimmedString.optional(),
   gapFocus: z.number().min(0).max(100),
-  questionCount: z.number().int().min(3).max(8).default(5),
+  questionCount: z.number().int().min(3).max(20).default(10),
   teacherAssessmentProfile: teacherAssessmentProfileSchema.nullable().optional(),
 }).strict();
 
 export const quizResponseSchema = z.object({
   title: z.string().trim().min(1),
   subtitle: z.string().trim().min(1),
-  questions: z.array(quizQuestionSchema).min(3).max(8),
+  questions: z.array(quizQuestionSchema).min(3).max(20),
 }).strict();
 
 export const cramTimeAvailableSchema = z.enum([

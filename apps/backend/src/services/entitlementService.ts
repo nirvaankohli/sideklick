@@ -69,7 +69,7 @@ export const CREDIT_ACTIONS: Record<CreditActionType, CreditActionDefinition> = 
     actionType: "cram_plan",
     label: "Generate Cram Plan",
     description: "Turn notes, weak spots, and exam timing into a plan.",
-    cost: 5,
+    cost: 10,
   },
   graded_work_analysis: {
     actionType: "graded_work_analysis",

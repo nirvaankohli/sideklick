@@ -215,7 +215,7 @@ test("purchased credit packs persist and are used after monthly credits", async 
 
     const summary = getBillingSummary("user-1", db);
     assert.equal(summary.credits.monthly.remaining, 0);
-    assert.equal(summary.credits.purchased.remaining, 45);
+    assert.equal(summary.credits.purchased.remaining, 40);
   } finally {
     db.close();
   }

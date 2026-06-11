@@ -319,11 +319,6 @@
             <div id="home-cram-view" class="home-view" hidden>
               <section class="quiz-screen cram-page-screen">
                 <div class="quiz-page-toolbar">
-                  <div>
-                    <p class="panel-label">Cram Mode</p>
-                    <h2 id="cram-screen-title" class="cram-title">Cram Mode</h2>
-                    <p id="cram-screen-meta" class="panel-help"></p>
-                  </div>
                   <button
                     id="cram-back-button"
                     class="ghost-button quiz-page-back-button cram-icon-back-button"
@@ -332,6 +327,11 @@
                   >
                     <i class="icon-svg" data-lucide="arrow-left"></i>
                   </button>
+                  <div>
+                    <p class="panel-label">Cram Mode</p>
+                    <h2 id="cram-screen-title" class="cram-title">Cram Mode</h2>
+                    <p id="cram-screen-meta" class="panel-help"></p>
+                  </div>
                 </div>
 
                 <div id="cram-setup-stepper" class="cram-stepper-header" hidden>
@@ -628,7 +628,7 @@
                           <span>Generate Plan</span>
                         </button>
                       </div>
-                      <p class="action-cost-text">5 Study Credits</p>
+                      <p class="action-cost-text">10 Study Credits</p>
                     </div>
                   </div>
 
@@ -679,6 +679,14 @@
             <div id="home-quiz-view" class="home-view" hidden>
               <section class="quiz-screen">
                 <div class="quiz-page-toolbar">
+                  <button
+                    id="close-quiz-modal"
+                    class="ghost-button quiz-page-back-button cram-icon-back-button"
+                    type="button"
+                    aria-label="Back to home"
+                  >
+                    <i class="icon-svg" data-lucide="arrow-left"></i>
+                  </button>
                   <div class="quiz-page-toolbar-copy">
                     <p class="panel-label">Quiz Mode</p>
                     <h2 id="quiz-modal-title" class="cram-title">
@@ -689,24 +697,15 @@
                       context.
                     </p>
                   </div>
-                  <button
-                    id="close-quiz-modal"
-                    class="ghost-button quiz-page-back-button"
-                    type="button"
-                    aria-label="Back to home"
-                  >
-                    <i class="icon-svg" data-lucide="arrow-left"></i>
-                    <span>Back</span>
-                  </button>
                 </div>
 
                 <div id="quiz-setup-view" class="quiz-setup-form quiz-page-section">
                   <p id="quiz-session-meta" class="panel-help"></p>
 
-                  <label class="modal-field">
+                  <div class="modal-field">
                     <span>Sessions</span>
                     <div id="quiz-session-picker" class="quiz-session-picker"></div>
-                  </label>
+                  </div>
 
                   <label class="modal-field">
                     <span>Assessment format</span>
@@ -722,19 +721,19 @@
                     <legend>Question amount</legend>
                     <div class="quiz-question-count-options">
                       <label class="quiz-question-count-option">
-                        <input type="radio" name="quiz-question-count" value="3" />
+                        <input type="radio" name="quiz-question-count" value="5" />
                         <span>Less</span>
-                        <small>3 focused</small>
+                        <small>5 focused</small>
                       </label>
                       <label class="quiz-question-count-option">
-                        <input type="radio" name="quiz-question-count" value="5" checked />
-                        <span>Default</span>
-                        <small>5 balanced</small>
+                        <input type="radio" name="quiz-question-count" value="10" checked />
+                        <span>Middle</span>
+                        <small>10 balanced</small>
                       </label>
                       <label class="quiz-question-count-option">
-                        <input type="radio" name="quiz-question-count" value="8" />
+                        <input type="radio" name="quiz-question-count" value="20" />
                         <span>More</span>
-                        <small>8 thorough</small>
+                        <small>20 thorough</small>
                       </label>
                     </div>
                   </fieldset>
