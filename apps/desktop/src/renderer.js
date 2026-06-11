@@ -994,6 +994,31 @@ function handleIncomingPayload(payload) {
 
 function applySession(session) {
   currentSession = session;
+  const hasSession = !!session;
+  if (root) {
+    root.dataset.hasSession = hasSession ? "true" : "false";
+  }
+
+  // Update compact strip buttons for active session state
+  const restoreBtn = document.querySelector("#restore-window");
+  const closeBtn = document.querySelector("#compact-close-window");
+  if (restoreBtn && closeBtn) {
+    if (hasSession) {
+      restoreBtn.innerHTML = `Ask <i class="icon-svg" data-lucide="sparkle"></i>`;
+      restoreBtn.setAttribute("aria-label", "Expand overlay and ask");
+      closeBtn.innerHTML = `<i class="icon-svg" data-lucide="square"></i>`;
+      closeBtn.setAttribute("aria-label", "Stop session");
+    } else {
+      restoreBtn.innerHTML = `Open`;
+      restoreBtn.setAttribute("aria-label", "Expand overlay and open");
+      closeBtn.innerHTML = `<i class="icon-svg" data-lucide="x"></i>`;
+      closeBtn.setAttribute("aria-label", "Close window");
+    }
+    if (typeof lucide !== "undefined") {
+      lucide.createIcons();
+    }
+  }
+
   if (!session) {
     sessionClassLabel.textContent = "No active class";
     sessionNameLabel.textContent = "No active session";
@@ -1056,7 +1081,11 @@ closeWindow.addEventListener("click", async () => {
 });
 
 compactCloseWindow.addEventListener("click", async () => {
-  await window.overlayApi.closeWindow();
+  if (root && root.dataset.hasSession === "true") {
+    await window.overlayApi.stopSession();
+  } else {
+    await window.overlayApi.closeWindow();
+  }
 });
 
 restoreWindow.addEventListener("click", async () => {

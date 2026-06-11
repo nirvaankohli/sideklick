@@ -15,11 +15,10 @@ const sharedWindowTemplate = {
     skipTaskbar: false,
   },
   compactBrowserWindow: {
-    transparent: false,
-    roundedCorners: true,
-    backgroundColor: "#edf2f7",
+    transparent: true,
+    backgroundColor: "#00000000",
     resizable: false,
-    hasShadow: false,
+    hasShadow: true,
   },
   layout: {
     expanded: {
@@ -29,8 +28,8 @@ const sharedWindowTemplate = {
       minHeight: 180,
     },
     compact: {
-      width: 138,
-      height: 38,
+      width: 146,
+      height: 40,
     },
     anchor: {
       horizontal: "right",
@@ -62,8 +61,8 @@ const windowTemplates = {
         viewportHeightRatio: 0.82,
       },
       compact: {
-        width: 138,
-        height: 38,
+        width: 146,
+        height: 40,
       },
       anchor: {
         horizontal: "center",
@@ -86,8 +85,8 @@ const windowTemplates = {
         minHeight: 520,
       },
       compact: {
-        width: 138,
-        height: 38,
+        width: 146,
+        height: 40,
       },
     },
   },
@@ -103,8 +102,8 @@ const windowTemplates = {
         minHeight: 150,
       },
       compact: {
-        width: 138,
-        height: 38,
+        width: 146,
+        height: 40,
       },
     },
   },
