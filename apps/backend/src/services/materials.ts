@@ -270,9 +270,6 @@ export function buildDirectMaterialInputContent(
       content.push({
         type: "input_file",
         file_id: material.openaiFileId,
-        filename: material.filename.endsWith(".pdf")
-          ? material.filename
-          : `${material.filename.replace(/\.[^.]+$/, "")}.pdf`,
         detail: "high",
       });
       continue;

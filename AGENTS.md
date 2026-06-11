@@ -42,6 +42,7 @@ When pushing with a release tag, update the Electron version if it is being upda
 
 ## Rule 6 — UI & Design Constraints
 - **No icon backgrounds**: Never wrap icons in a colored/filled container (e.g. no `background` on icon wrappers) unless explicitly asked.
-- **No cliché hover animations**: Avoid scale, lift/shadow-pop, or color-flood transitions on hover. Subtle opacity or underline shifts are fine.
 - **Accent color is for fills/strokes only**: Use the accent color on icon fills, text, borders, and underlines — never as a background color.
-- **No colored backgrounds**: UI surfaces and containers use neutral/transparent backgrounds only. Color belongs on content (text, icons, borders), not on the container behind it.
+- **No colored backgrounds**: UI surfaces and containers use neutral/transparent backgrounds only. Color belongs on content (text, icons, borders), not on the container behind it. Unless its a button.
+
+Commit after request, however if it is a big one commit after every change. However do not commit it.
