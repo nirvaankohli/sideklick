@@ -19,6 +19,15 @@ import {
   getObservedOpenAIClient,
   withLangfuseObservation,
 } from "../../../desktop/src/shared/langfuse.ts";
+import {
+  buildDirectMaterialInputContent,
+  buildInlineMaterialText,
+  createEphemeralMaterialVectorStore,
+  getClassMaterialVectorStoreId,
+  getMaterialRecordsByIds,
+  retrieveMaterialEvidence,
+  shouldUseFileSearchForMaterials,
+} from "./materials.ts";
 
 const DEFAULT_ASSESSMENT_MODEL = "gpt-5.4-mini";
 const MAX_SOURCE_SNIPPETS = 8;
@@ -201,7 +210,20 @@ function deriveLikelyQuestionMoves(
 
 function buildFallbackAnalysis(
   input: AssessmentProfileAnalysisRequest,
+  fileMaterials: Array<{
+    filename: string;
+    extractedText?: string | null;
+    fallbackText?: string | null;
+  }> = [],
 ): AssessmentProfileAnalysisResponse {
+  const mergedUploadedMaterials = [
+    ...input.uploadedMaterials,
+    ...fileMaterials.map((material) => ({
+      name: material.filename,
+      content: material.extractedText || material.fallbackText || "",
+      handler: "material_id",
+    })),
+  ].filter((material) => material.content.trim());
   const profileName = formatLabel(input.profileName || input.presetLabel || "Teacher profile");
   const testFormat =
     input.customFormat?.trim() ||
@@ -209,14 +231,14 @@ function buildFallbackAnalysis(
     "Teacher-specific mixed assessment style";
   const exampleQuestions = deriveExampleQuestions(
     input.exampleQuestions,
-    input.uploadedMaterials,
+    mergedUploadedMaterials,
   );
   const gradingSignals = deriveGradingSignals(
     input.gradingNotes ?? "",
     input.customFormat ?? "",
   );
   const wordingPatterns = deriveWordingPatterns(
-    input.uploadedMaterials,
+    mergedUploadedMaterials,
     exampleQuestions,
   );
   const likelyQuestionMoves = deriveLikelyQuestionMoves(
@@ -267,13 +289,20 @@ function buildFallbackAnalysis(
       4,
     ),
     sourceMaterialNames: uniqueStrings(
-      input.uploadedMaterials.map((material) => material.name),
+      mergedUploadedMaterials.map((material) => material.name),
       12,
     ),
   });
 }
 
-function buildPromptPacket(input: AssessmentProfileAnalysisRequest) {
+function buildPromptPacket(
+  input: AssessmentProfileAnalysisRequest,
+  materialContext: {
+    materialText?: string | null;
+    retrievedText?: string | null;
+    fileMaterialNames?: string[];
+  } | null = null,
+) {
   return {
     task: "Summarize how this teacher's real assessments differ from generic study content.",
     class_id: input.classId ?? null,
@@ -287,6 +316,9 @@ function buildPromptPacket(input: AssessmentProfileAnalysisRequest) {
       handler: material.handler ?? null,
       content: material.content,
     })),
+    file_materials: materialContext?.fileMaterialNames ?? [],
+    material_text: materialContext?.materialText ?? null,
+    retrieved_evidence: materialContext?.retrievedText ?? null,
     output_goals: [
       "Identify the teacher's actual test format and what makes it non-generic.",
       "Capture wording patterns, grading signals, and what practice should imitate.",
@@ -299,11 +331,20 @@ export async function analyzeAssessmentProfile(
   input: unknown,
 ): Promise<AssessmentProfileAnalysisResponse> {
   const parsedInput = assessmentProfileAnalysisRequestSchema.parse(input);
+  const fileMaterials = getMaterialRecordsByIds(parsedInput.materialIds || []);
   const client = getOpenAIClient();
 
   if (!client) {
-    return buildFallbackAnalysis(parsedInput);
+    return buildFallbackAnalysis(parsedInput, fileMaterials);
   }
+
+  const inlineMaterialText = parsedInput.uploadedMaterials
+    .map((material) => `${material.name}\n${material.content}`)
+    .join("\n\n");
+  const fileBackedMaterialText = buildInlineMaterialText(fileMaterials);
+  const useFileSearch =
+    fileMaterials.length > 0 &&
+    shouldUseFileSearchForMaterials(fileMaterials, inlineMaterialText.length);
 
   return withLangfuseObservation(
     "assessment-profile.analyze",
@@ -315,6 +356,7 @@ export async function analyzeAssessmentProfile(
         customFormat: parsedInput.customFormat ?? null,
         exampleQuestionCount: parsedInput.exampleQuestions.length,
         uploadedMaterialCount: parsedInput.uploadedMaterials.length,
+        materialIdCount: parsedInput.materialIds?.length ?? 0,
         uploadedMaterialNames: parsedInput.uploadedMaterials.map(
           (material) => material.name,
         ),
@@ -323,6 +365,7 @@ export async function analyzeAssessmentProfile(
         feature: "assessment-profile",
         classId: parsedInput.classId ?? null,
         uploadedMaterialCount: parsedInput.uploadedMaterials.length,
+        materialIdCount: parsedInput.materialIds?.length ?? 0,
       },
       tags: ["assessment-profile", "backend"],
       output: (result) => {
@@ -342,8 +385,37 @@ export async function analyzeAssessmentProfile(
           feature: "assessment-profile",
           classId: parsedInput.classId ?? null,
           uploadedMaterialCount: parsedInput.uploadedMaterials.length,
+          materialIdCount: parsedInput.materialIds?.length ?? 0,
         },
       });
+
+      let retrievalText = "";
+      if (useFileSearch) {
+        const vectorStoreId =
+          (parsedInput.classId ? getClassMaterialVectorStoreId(parsedInput.classId) : null) ||
+          (await createEphemeralMaterialVectorStore(
+            fileMaterials,
+            `Assessment profile materials${parsedInput.classId ? ` for class ${parsedInput.classId}` : ""}`,
+          ));
+        if (vectorStoreId) {
+          const retrieval = await retrieveMaterialEvidence({
+            client: observedClient,
+            model: getOpenAIModel(),
+            vectorStoreIds: [vectorStoreId],
+            query: [
+              "Retrieve the best evidence for analyzing a teacher's assessment style.",
+              "Prioritize format cues, grading language, question patterns, rubric language, and diagram-heavy evidence.",
+              parsedInput.customFormat ? `Known format hint: ${parsedInput.customFormat}` : null,
+              inlineMaterialText ? `Inline source text:\n${inlineMaterialText}` : null,
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
+            featureLabel: "assessment-profile",
+          });
+          retrievalText = retrieval.text;
+        }
+      }
+
       const response = await observedClient.responses.parse({
         model: getOpenAIModel(),
         prompt_cache_key: "assessment-profile-analysis-v1",
@@ -364,8 +436,22 @@ export async function analyzeAssessmentProfile(
             content: [
               {
                 type: "input_text",
-                text: JSON.stringify(buildPromptPacket(parsedInput), null, 2),
+                text: JSON.stringify(
+                  buildPromptPacket(parsedInput, {
+                    fileMaterialNames: fileMaterials.map((material) => material.filename),
+                    materialText: [
+                      inlineMaterialText,
+                      useFileSearch ? retrievalText : fileBackedMaterialText,
+                    ]
+                      .filter(Boolean)
+                      .join("\n\n"),
+                    retrievedText: retrievalText,
+                  }),
+                  null,
+                  2,
+                ),
               },
+              ...(!useFileSearch ? buildDirectMaterialInputContent(fileMaterials) : []),
             ],
           },
         ],

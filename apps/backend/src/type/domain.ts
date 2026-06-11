@@ -206,6 +206,42 @@ export type AssessmentProfileMaterial = {
   handler?: string | null;
 };
 
+export type MaterialScope = "class_saved" | "request_ephemeral";
+
+export type MaterialSourceKind = "pdf" | "pptx" | "image" | "text";
+
+export type MaterialDerivativeStatus = "raw" | "pdf_converted" | "text_fallback";
+
+export type MaterialVisualFidelity = "full" | "text_only_fallback";
+
+export type MaterialSyncState = "pending" | "synced" | "failed";
+
+export type MaterialRecord = {
+  materialId: string;
+  classId?: number | null;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  sha256: string;
+  ownership: "managed_backend";
+  scope: MaterialScope;
+  sourceKind: MaterialSourceKind;
+  derivativeStatus: MaterialDerivativeStatus;
+  visualFidelity: MaterialVisualFidelity;
+  syncState: MaterialSyncState;
+  statusText: string;
+  openaiFileId?: string | null;
+  vectorStoreId?: string | null;
+  vectorStoreFileId?: string | null;
+  extractedText?: string | null;
+  fallbackText?: string | null;
+  storagePath?: string | null;
+  derivativePdfPath?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  expiresAt?: string | null;
+};
+
 export type AssessmentProfileAnalysisRequest = {
   classId?: number;
   profileName?: string | null;
@@ -214,6 +250,7 @@ export type AssessmentProfileAnalysisRequest = {
   exampleQuestions: string[];
   gradingNotes?: string | null;
   uploadedMaterials: AssessmentProfileMaterial[];
+  materialIds?: string[];
 };
 
 export type AssessmentProfileAnalysisResponse = TeacherAssessmentProfile;
@@ -226,6 +263,7 @@ export type QuizRequest = {
   includeKeyTopics: boolean;
   includeUploadedMaterial: boolean;
   uploadedMaterial?: string | null;
+  materialIds?: string[];
   titleHint?: string | null;
   gapFocus: number;
   questionCount: number;
@@ -248,7 +286,8 @@ export type CramRequest = {
   classId?: number;
   examName: string;
   timeAvailable: CramTimeAvailable;
-  examMaterial: string;
+  examMaterial?: string | null;
+  materialIds?: string[];
   additionalNotes?: string | null;
   courseName?: string | null;
   unitPathLabel?: string | null;
@@ -337,6 +376,7 @@ export type CramPlanRequest = {
   deadline: string;
   availableMinutes: number;
   uploadedMaterial?: string | null;
+  materialIds?: string[];
   additionalNotes?: string | null;
   currentUnit?: string | null;
   gapFocus: number;

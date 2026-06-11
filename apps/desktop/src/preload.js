@@ -25,6 +25,12 @@ contextBridge.exposeInMainWorld("overlayApi", {
   readClipboardAttachment: () => ipcRenderer.invoke("clipboard:readAttachment"),
   extractStudyMaterial: (payload) =>
     ipcRenderer.invoke("study-material:extract", payload),
+  uploadMaterial: (payload) =>
+    ipcRenderer.invoke("backend:uploadMaterial", payload),
+  syncClassMaterials: (payload) =>
+    ipcRenderer.invoke("backend:syncClassMaterials", payload),
+  deleteMaterial: (payload) =>
+    ipcRenderer.invoke("backend:deleteMaterial", payload),
   saveClassProfile: (classProfile) =>
     ipcRenderer.invoke("backend:saveClassProfile", classProfile),
   getAiBackendStatus: () => ipcRenderer.invoke("backend:getAiStatus"),

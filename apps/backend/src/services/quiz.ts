@@ -15,6 +15,15 @@ import type {
 } from "../type/index.ts";
 import { getClassProfileById } from "./classes.ts";
 import {
+  buildDirectMaterialInputContent,
+  buildInlineMaterialText,
+  createEphemeralMaterialVectorStore,
+  getClassMaterialVectorStoreId,
+  getMaterialRecordsByIds,
+  retrieveMaterialEvidence,
+  shouldUseFileSearchForMaterials,
+} from "./materials.ts";
+import {
   getObservedOpenAIClient,
   withLangfuseObservation,
 } from "../../../desktop/src/shared/langfuse.ts";
@@ -171,6 +180,7 @@ export function buildQuizPromptPacket({
   sessions,
   keyTopics,
   gapRows,
+  materialContext = null,
 }: {
   input: QuizRequest;
   classProfile: ClassProfile | null;
@@ -178,6 +188,11 @@ export function buildQuizPromptPacket({
   sessions: SessionRow[];
   keyTopics: string[];
   gapRows: GapRow[];
+  materialContext?: {
+    inlineText?: string | null;
+    retrievedText?: string | null;
+    materialText?: string | null;
+  } | null;
 }) {
   const includedSources = [
     input.includeSessionSummary && sessions.length > 0
@@ -197,6 +212,12 @@ export function buildQuizPromptPacket({
       : null,
     input.includeUploadedMaterial && input.uploadedMaterial
       ? `Uploaded material:\n${input.uploadedMaterial}`
+      : null,
+    materialContext?.materialText
+      ? `File-backed material:\n${materialContext.materialText}`
+      : null,
+    materialContext?.retrievedText
+      ? `Retrieved evidence:\n${materialContext.retrievedText}`
       : null,
   ].filter(Boolean);
 
@@ -247,7 +268,13 @@ export function buildQuizPromptPacket({
   };
 }
 
-function buildQuizPrompt(input: QuizRequest): string {
+function buildQuizPrompt(
+  input: QuizRequest,
+  materialContext: {
+    materialText?: string | null;
+    retrievedText?: string | null;
+  } | null = null,
+): string {
   const sessions = getSessionRows(input.sessionIds);
   const classProfile = getClassProfileById(input.classId);
   const teacherAssessmentProfile = input.teacherAssessmentProfile
@@ -268,6 +295,7 @@ function buildQuizPrompt(input: QuizRequest): string {
       sessions,
       keyTopics,
       gapRows,
+      materialContext,
     }),
     null,
     2,
@@ -279,6 +307,12 @@ export async function generateQuiz(input: unknown, observationName: string = "qu
   const teacherAssessmentProfile = parsedInput.teacherAssessmentProfile
     ? teacherAssessmentProfileSchema.parse(parsedInput.teacherAssessmentProfile)
     : null;
+  const fileMaterials = getMaterialRecordsByIds(parsedInput.materialIds || []);
+  const inlineMaterialText = parsedInput.uploadedMaterial || "";
+  const fileBackedMaterialText = buildInlineMaterialText(fileMaterials);
+  const useFileSearch =
+    fileMaterials.length > 0 &&
+    shouldUseFileSearchForMaterials(fileMaterials, inlineMaterialText.length);
 
   return withLangfuseObservation(
     observationName,
@@ -293,6 +327,7 @@ export async function generateQuiz(input: unknown, observationName: string = "qu
         includeKeyTopics: parsedInput.includeKeyTopics,
         includeUploadedMaterial: parsedInput.includeUploadedMaterial,
         uploadedMaterialLength: parsedInput.uploadedMaterial?.length ?? 0,
+        materialIdCount: parsedInput.materialIds?.length ?? 0,
         titleHint: parsedInput.titleHint ?? null,
         hasTeacherAssessmentProfile: Boolean(teacherAssessmentProfile),
       },
@@ -319,8 +354,46 @@ export async function generateQuiz(input: unknown, observationName: string = "qu
           feature: "quiz",
           classId: parsedInput.classId,
           questionCount: parsedInput.questionCount,
+          materialIdCount: parsedInput.materialIds?.length ?? 0,
         },
       });
+
+      let retrievalText = "";
+      if (useFileSearch) {
+        const vectorStoreId =
+          getClassMaterialVectorStoreId(parsedInput.classId) ||
+          (await createEphemeralMaterialVectorStore(
+            fileMaterials,
+            `Quiz materials for class ${parsedInput.classId}`,
+          ));
+        if (vectorStoreId) {
+          const retrieval = await retrieveMaterialEvidence({
+            client: observedClient,
+            model: getOpenAIModel(),
+            vectorStoreIds: [vectorStoreId],
+            query: [
+              "Retrieve the most relevant evidence for writing a study quiz.",
+              "Prioritize concept explanations, worked examples, common mistakes, and likely distractor material.",
+              parsedInput.titleHint
+                ? `Title hint: ${parsedInput.titleHint}`
+                : null,
+              inlineMaterialText ? `Inline notes:\n${inlineMaterialText}` : null,
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
+            featureLabel: "quiz",
+          });
+          retrievalText = retrieval.text;
+        }
+      }
+
+      const materialText = [
+        inlineMaterialText,
+        useFileSearch ? retrievalText : fileBackedMaterialText,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+
       const response = await observedClient.responses.parse({
         model: getOpenAIModel(),
         input: [
@@ -339,8 +412,12 @@ export async function generateQuiz(input: unknown, observationName: string = "qu
             content: [
               {
                 type: "input_text",
-                text: buildQuizPrompt(parsedInput),
+                text: buildQuizPrompt(parsedInput, {
+                  materialText,
+                  retrievedText: retrievalText,
+                }),
               },
+              ...(!useFileSearch ? buildDirectMaterialInputContent(fileMaterials) : []),
             ],
           },
         ],

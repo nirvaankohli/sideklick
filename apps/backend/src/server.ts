@@ -30,6 +30,7 @@ import { cramRouter } from "./routes/cram";
 import { cramPlanRouter } from "./routes/cram-plan";
 import { creditsRouter } from "./routes/credits";
 import { feedbackRouter } from "./routes/feedback";
+import { materialsRouter } from "./routes/materials";
 import { personalRouter } from "./routes/personal";
 import { privacyRouter } from "./routes/privacy";
 import { quizRouter } from "./routes/quiz";
@@ -213,6 +214,7 @@ export function createServer(): Express {
   app.use("/api/cram-plan", cramPlanRouter);
   app.use("/api/credits", creditsRouter);
   app.use("/api/feedback", feedbackRouter);
+  app.use("/api/materials", materialsRouter);
   app.use("/api/personal", personalRouter);
   app.use("/api/web-analytics", webAnalyticsRouter);
   app.use("/api", privacyRouter);

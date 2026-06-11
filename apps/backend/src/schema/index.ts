@@ -13,6 +13,7 @@ const nullableScreenshotDataUrl = z
   .regex(/^data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/)
   .nullable()
   .optional();
+const materialIdSchema = z.string().trim().min(1);
 const tracingConsentSchema = z.object({
   requestSyncConsent: z.enum(["unknown", "granted", "denied"]),
   serverSyncConsent: z.enum(["unknown", "granted", "denied"]),
@@ -260,7 +261,8 @@ export const assessmentProfileAnalysisRequestSchema = z.object({
   customFormat: nullableTrimmedString,
   exampleQuestions: z.array(z.string().trim().min(1)).max(12).default([]),
   gradingNotes: nullableTrimmedString,
-  uploadedMaterials: z.array(assessmentProfileMaterialSchema).min(1).max(12),
+  uploadedMaterials: z.array(assessmentProfileMaterialSchema).max(12).default([]),
+  materialIds: z.array(materialIdSchema).optional(),
 }).strict();
 
 export const assessmentProfileAnalysisResponseSchema =
@@ -274,6 +276,7 @@ export const quizRequestSchema = z.object({
   includeKeyTopics: z.boolean(),
   includeUploadedMaterial: z.boolean(),
   uploadedMaterial: nullableTrimmedString,
+  materialIds: z.array(materialIdSchema).optional(),
   titleHint: nullableTrimmedString.optional(),
   gapFocus: z.number().min(0).max(100),
   questionCount: z.number().int().min(3).max(20).default(10),
@@ -297,7 +300,8 @@ export const cramRequestSchema = z.object({
   classId: z.number().int().positive().optional(),
   examName: z.string().trim().min(1),
   timeAvailable: cramTimeAvailableSchema,
-  examMaterial: z.string().trim().min(1),
+  examMaterial: z.string().trim().optional().default(""),
+  materialIds: z.array(materialIdSchema).optional(),
   additionalNotes: nullableTrimmedString,
   courseName: nullableTrimmedString,
   unitPathLabel: nullableTrimmedString,
@@ -392,6 +396,7 @@ export const cramPlanRequestSchema = z.object({
   deadline: z.string().trim().min(1),
   availableMinutes: z.number().int().min(15).max(1440),
   uploadedMaterial: nullableTrimmedString,
+  materialIds: z.array(materialIdSchema).optional(),
   additionalNotes: nullableTrimmedString,
   currentUnit: nullableTrimmedString,
   gapFocus: z.number().min(0).max(100).default(50),

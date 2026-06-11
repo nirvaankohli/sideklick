@@ -26,6 +26,15 @@ import {
   getObservedOpenAIClient,
   withLangfuseObservation,
 } from "../../../desktop/src/shared/langfuse.ts";
+import {
+  buildDirectMaterialInputContent,
+  buildInlineMaterialText,
+  createEphemeralMaterialVectorStore,
+  getClassMaterialVectorStoreId,
+  getMaterialRecordsByIds,
+  retrieveMaterialEvidence,
+  shouldUseFileSearchForMaterials,
+} from "./materials.ts";
 
 const require = createRequire(import.meta.url);
 const {
@@ -552,6 +561,10 @@ async function requestChunkInsightFromOpenAI(
   client: OpenAI,
   input: CramRequest,
   chunk: CramMaterialChunk,
+  directMaterialContent: Array<{
+    type: "input_file" | "input_image" | "input_text";
+    [key: string]: unknown;
+  }> = [],
 ): Promise<CramChunkInsight> {
   const teacherAssessmentProfile = input.teacherAssessmentProfile
     ? teacherAssessmentProfileSchema.parse(input.teacherAssessmentProfile)
@@ -633,6 +646,7 @@ async function requestChunkInsightFromOpenAI(
                   2,
                 ),
               },
+              ...directMaterialContent,
             ],
           },
         ],
@@ -655,6 +669,10 @@ async function requestChunkInsightFromOpenAI(
 async function buildChunkInsights(
   input: CramRequest,
   chunks: CramMaterialChunk[],
+  directMaterialContent: Array<{
+    type: "input_file" | "input_image" | "input_text";
+    [key: string]: unknown;
+  }> = [],
 ): Promise<CramChunkInsight[]> {
   const client = getOpenAIClient();
   if (!client) {
@@ -662,7 +680,9 @@ async function buildChunkInsights(
   }
 
   return Promise.all(
-    chunks.map((chunk) => requestChunkInsightFromOpenAI(client, input, chunk)),
+    chunks.map((chunk) =>
+      requestChunkInsightFromOpenAI(client, input, chunk, directMaterialContent),
+    ),
   );
 }
 
@@ -772,7 +792,20 @@ function mergeChunkInsightsToExamMap(chunkInsights: CramChunkInsight[]): CramExa
 
 export async function buildCramExamMap(input: unknown): Promise<CramExamMap> {
   const parsedInput = cramRequestSchema.parse(input);
-  const materialValidation = validateCramMaterialInput(parsedInput.examMaterial);
+  const fileMaterials = getMaterialRecordsByIds(parsedInput.materialIds || []);
+  const inlineMaterialText = parsedInput.examMaterial || "";
+  const fileBackedMaterialText = buildInlineMaterialText(fileMaterials);
+  const useFileSearch =
+    fileMaterials.length > 0 &&
+    shouldUseFileSearchForMaterials(fileMaterials, inlineMaterialText.length);
+  const directMaterialContent = buildDirectMaterialInputContent(fileMaterials);
+  const combinedMaterialText = [
+    inlineMaterialText,
+    useFileSearch ? "" : fileBackedMaterialText,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  const materialValidation = validateCramMaterialInput(combinedMaterialText);
   if (!materialValidation.ok) {
     throw new CramMaterialValidationError(
       materialValidation.message,
@@ -791,11 +824,13 @@ export async function buildCramExamMap(input: unknown): Promise<CramExamMap> {
         unitPathLabel: parsedInput.unitPathLabel ?? null,
         materialLength: materialValidation.normalizedMaterial.length,
         chunkCount: chunks.length,
+        materialIdCount: parsedInput.materialIds?.length ?? 0,
       },
       metadata: {
         feature: "cram",
         stage: "exam-map",
         chunkCount: chunks.length,
+        materialIdCount: parsedInput.materialIds?.length ?? 0,
       },
       tags: ["cram", "exam-map", "backend"],
       output: (result) => {
@@ -808,7 +843,57 @@ export async function buildCramExamMap(input: unknown): Promise<CramExamMap> {
       },
     },
     async () => {
-      const chunkInsights = await buildChunkInsights(parsedInput, chunks);
+      const client = getOpenAIClient();
+      const observedClient = client
+        ? getObservedOpenAIClient(client, {
+            generationName: "cram-material-insight-openai-response",
+            generationMetadata: {
+              feature: "cram",
+              stage: "exam-map",
+              materialIdCount: parsedInput.materialIds?.length ?? 0,
+            },
+          })
+        : null;
+
+      let retrievalText = "";
+      if (useFileSearch && observedClient) {
+        const vectorStoreId =
+          (parsedInput.classId ? getClassMaterialVectorStoreId(parsedInput.classId) : null) ||
+          (await createEphemeralMaterialVectorStore(
+            fileMaterials,
+            `Cram materials${parsedInput.classId ? ` for class ${parsedInput.classId}` : ""}`,
+          ));
+        if (vectorStoreId) {
+          const retrieval = await retrieveMaterialEvidence({
+            client: observedClient,
+            model: getOpenAIModel(),
+            vectorStoreIds: [vectorStoreId],
+            query: [
+              "Retrieve the highest-yield cram evidence for this exam material.",
+              "Prioritize repeated definitions, formulas, relationships, worked examples, and likely testable connections.",
+              parsedInput.examName ? `Exam name: ${parsedInput.examName}` : null,
+              inlineMaterialText ? `Inline material:\n${inlineMaterialText}` : null,
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
+            featureLabel: "cram",
+          });
+          retrievalText = retrieval.text;
+        }
+      }
+
+      const analysisMaterialText = [
+        inlineMaterialText,
+        useFileSearch ? retrievalText : fileBackedMaterialText,
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+      const chunks = chunkCramMaterial(analysisMaterialText);
+      const chunkInsights = await buildChunkInsights(
+        parsedInput,
+        chunks,
+        !useFileSearch ? directMaterialContent : [],
+      );
       return mergeChunkInsightsToExamMap(chunkInsights);
     },
   );
@@ -914,11 +999,13 @@ async function requestFinalCramPlanFromOpenAI(
         formulaCount: examMap.formulasToMemorize.length,
         definitionCount: examMap.definitionsToKnow.length,
         hasTeacherAssessmentProfile: Boolean(teacherAssessmentProfile),
+        materialIdCount: input.materialIds?.length ?? 0,
       },
       metadata: {
         feature: "cram",
         stage: "final-plan",
         topTopicCount: examMap.topTopics.length,
+        materialIdCount: input.materialIds?.length ?? 0,
       },
       tags: ["cram", "final-plan", "backend"],
       output: (result) => {
@@ -937,6 +1024,7 @@ async function requestFinalCramPlanFromOpenAI(
           feature: "cram",
           stage: "final-plan",
           topTopicCount: examMap.topTopics.length,
+          materialIdCount: input.materialIds?.length ?? 0,
         },
       });
       const response = await observedClient.responses.parse({

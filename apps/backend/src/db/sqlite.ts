@@ -52,6 +52,7 @@ function createTables(db: DatabaseLike): void {
       test_examples TEXT NOT NULL DEFAULT '[]',
       key_concepts TEXT NOT NULL DEFAULT '[]',
       notes TEXT,
+      material_vector_store_id TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
@@ -155,6 +156,41 @@ function createTables(db: DatabaseLike): void {
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users (id)
     );
+
+    CREATE TABLE IF NOT EXISTS materials (
+      material_id TEXT PRIMARY KEY,
+      owner_user_id TEXT,
+      class_id INTEGER,
+      filename TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size_bytes INTEGER NOT NULL,
+      sha256 TEXT NOT NULL,
+      ownership TEXT NOT NULL,
+      scope TEXT NOT NULL,
+      source_kind TEXT NOT NULL,
+      derivative_status TEXT NOT NULL,
+      visual_fidelity TEXT NOT NULL,
+      sync_state TEXT NOT NULL,
+      status_text TEXT NOT NULL,
+      openai_file_id TEXT,
+      vector_store_id TEXT,
+      vector_store_file_id TEXT,
+      extracted_text TEXT,
+      fallback_text TEXT,
+      storage_path TEXT,
+      derivative_pdf_path TEXT,
+      expires_at TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      deleted_at TEXT,
+      FOREIGN KEY (class_id) REFERENCES classes (id),
+      FOREIGN KEY (owner_user_id) REFERENCES users (id)
+    );
+
+    CREATE INDEX IF NOT EXISTS materials_sha256_idx
+      ON materials(sha256);
+    CREATE INDEX IF NOT EXISTS materials_class_scope_idx
+      ON materials(class_id, scope, deleted_at);
   `);
 }
 
@@ -191,6 +227,12 @@ function ensureClassColumns(db: DatabaseLike): void {
   if (!columnNames.has("notes")) {
     db.exec(
       "ALTER TABLE classes ADD COLUMN notes TEXT;",
+    );
+  }
+
+  if (!columnNames.has("material_vector_store_id")) {
+    db.exec(
+      "ALTER TABLE classes ADD COLUMN material_vector_store_id TEXT;",
     );
   }
 

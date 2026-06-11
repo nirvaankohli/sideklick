@@ -1380,6 +1380,93 @@ function notifyHomeWindowFoldersChanged(classFolders) {
   }
 }
 
+async function callManagedBackendRaw(endpoint, options = {}) {
+  const baseUrl = normalizeManagedBackendBaseUrl(getManagedBackendBaseUrl());
+  const requestUrl = buildManagedBackendRequestUrl(baseUrl, endpoint);
+  const headers = {};
+
+  if (options.headers && typeof options.headers === "object") {
+    Object.assign(headers, options.headers);
+  }
+  if (typeof options.contentType === "string" && options.contentType.trim()) {
+    headers["Content-Type"] = options.contentType.trim();
+  }
+  if (typeof options.idempotencyKey === "string" && options.idempotencyKey.trim()) {
+    headers["X-Idempotency-Key"] = options.idempotencyKey.trim();
+  }
+
+  const explicitAuthToken =
+    typeof options.authToken === "string" && options.authToken.trim()
+      ? options.authToken.trim()
+      : null;
+  const managedBackendJwt = options.skipAuth
+    ? null
+    : explicitAuthToken || getManagedBackendJwt();
+  if (managedBackendJwt) {
+    headers.Authorization = `Bearer ${managedBackendJwt}`;
+  }
+
+  const rawBody = options.body;
+  const fetchOptions = {
+    method: options.method || "POST",
+    headers,
+    body:
+      rawBody === undefined || rawBody === null
+        ? undefined
+        : Buffer.isBuffer(rawBody)
+          ? rawBody
+          : rawBody instanceof Uint8Array
+            ? Buffer.from(rawBody)
+            : rawBody instanceof ArrayBuffer
+              ? Buffer.from(rawBody)
+              : Buffer.from(rawBody),
+  };
+
+  if (
+    requestUrl.startsWith("https://") &&
+    process.env.MANAGED_BACKEND_ALLOW_SELF_SIGNED === "true" &&
+    !app.isPackaged &&
+    isLocalhostUrl(requestUrl)
+  ) {
+    fetchOptions.agent = new https.Agent({
+      rejectUnauthorized: false,
+    });
+  }
+
+  let response;
+  try {
+    response = await fetch(requestUrl, fetchOptions);
+  } catch (error) {
+    enqueueManagedOfflineRequest(endpoint, options);
+    throw error;
+  }
+
+  const rawText = await response.text();
+  let payload = null;
+  try {
+    payload = rawText ? JSON.parse(rawText) : null;
+  } catch {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    enqueueManagedOfflineRequest(
+      endpoint,
+      options,
+      response.headers.get("retry-after"),
+    );
+    const error = new Error(
+      payload && typeof payload.error === "string"
+        ? payload.error
+        : rawText || `Managed backend request failed for ${endpoint}`,
+    );
+    error.status = response.status;
+    throw error;
+  }
+
+  return payload;
+}
+
 function broadcastAuthSessionChanged(nextSession) {
   const rendererSession = toRendererAuthSession(nextSession);
   for (const win of windowsByKey.values()) {
@@ -1812,6 +1899,59 @@ ipcMain.handle("backend:assessmentProfileAnalyze", async (_event, payload) => {
     method: "POST",
     body: payload,
     idempotencyKey: crypto.randomUUID(),
+  });
+});
+
+ipcMain.handle("backend:uploadMaterial", async (_event, payload) => {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Invalid material upload payload.");
+  }
+
+  const bytes = payload.bytes;
+  const headers = {
+    "x-material-name": String(payload.filename || payload.name || "uploaded-file"),
+    "x-material-mime-type": String(payload.mimeType || payload.type || "application/octet-stream"),
+    "x-material-scope": String(payload.scope || "request_ephemeral"),
+  };
+  if (payload.classId !== undefined && payload.classId !== null && payload.classId !== "") {
+    headers["x-class-id"] = String(payload.classId);
+  }
+
+  return callManagedBackendRaw("/api/materials", {
+    method: "POST",
+    body: Buffer.isBuffer(bytes)
+      ? bytes
+      : bytes instanceof Uint8Array
+        ? bytes
+        : bytes instanceof ArrayBuffer
+          ? Buffer.from(bytes)
+          : Buffer.from(bytes || []),
+    contentType: "application/octet-stream",
+    headers,
+  });
+});
+
+ipcMain.handle("backend:syncClassMaterials", async (_event, payload) => {
+  return callManagedBackend("/api/materials/sync-class", {
+    method: "POST",
+    body: payload,
+    idempotencyKey: crypto.randomUUID(),
+  });
+});
+
+ipcMain.handle("backend:deleteMaterial", async (_event, payload) => {
+  const materialId =
+    typeof payload === "string"
+      ? payload.trim()
+      : typeof payload?.materialId === "string"
+        ? payload.materialId.trim()
+        : "";
+  if (!materialId) {
+    throw new Error("Invalid material ID.");
+  }
+
+  return callManagedBackend(`/api/materials/${encodeURIComponent(materialId)}`, {
+    method: "DELETE",
   });
 });
 

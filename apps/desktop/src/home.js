@@ -405,6 +405,7 @@ let fitTextFrame = null;
 let activeQuizClassFolder = null;
 let uploadedQuizMaterial = "";
 let uploadedQuizMaterialSummary = "";
+let uploadedQuizMaterialRecord = null;
 let selectedQuizClassMaterialKeys = new Set();
 let quizClassMaterialSelectionInitialized = false;
 let activeQuiz = null;
@@ -413,6 +414,7 @@ let quizExplanationFollowScroll = true;
 let activeQuizExplanationIndex = null;
 let activeCramPlan = null;
 let uploadedCramMaterials = [];
+let uploadedCramMaterialRecords = [];
 let currentCramStep = 1;
 let selectedCramClassMaterialKeys = new Set();
 let cramClassMaterialSelectionInitialized = false;
@@ -1685,6 +1687,26 @@ function normalizeAssessmentUploads(uploads) {
         typeof upload.name === "string" ? upload.name.trim() : "Uploaded file",
       handler: typeof upload.handler === "string" ? upload.handler : "text",
       content: typeof upload.content === "string" ? upload.content.trim() : "",
+      materialId:
+        typeof upload.materialId === "string" && upload.materialId.trim()
+          ? upload.materialId.trim()
+          : "",
+      syncState:
+        typeof upload.syncState === "string" && upload.syncState.trim()
+          ? upload.syncState.trim()
+          : "pending",
+      sourceKind:
+        typeof upload.sourceKind === "string" && upload.sourceKind.trim()
+          ? upload.sourceKind.trim()
+          : "text",
+      visualFidelity:
+        typeof upload.visualFidelity === "string" && upload.visualFidelity.trim()
+          ? upload.visualFidelity.trim()
+          : "full",
+      statusText:
+        typeof upload.statusText === "string" && upload.statusText.trim()
+          ? upload.statusText.trim()
+          : "",
       originalCharacters: Number(upload.originalCharacters) || 0,
       compressedCharacters: Number(upload.compressedCharacters) || 0,
       estimatedTokenSavings: Number(upload.estimatedTokenSavings) || 0,
@@ -2587,6 +2609,7 @@ async function analyzeActiveAssessmentProfile() {
   if (!canUseAi) {
     return;
   }
+  const managedMaterialPipeline = await isManagedMaterialPipelineAvailable();
 
   const draft = getAssessmentDraft();
   const classMaterialSources = getClassMaterialAssessmentSources();
@@ -2598,6 +2621,13 @@ async function analyzeActiveAssessmentProfile() {
     })),
     ...classMaterialSources,
   ].slice(0, 12);
+  const materialIds = uniqueStrings(
+    [
+      ...draft.uploads.map((upload) => upload.materialId || ""),
+      ...classMaterialSources.map((source) => source.materialId || ""),
+    ],
+    24,
+  );
   if (uploadedMaterials.length === 0) {
     assessmentUploadError =
       "Upload material or select class material before processing.";
@@ -2630,6 +2660,7 @@ async function analyzeActiveAssessmentProfile() {
       exampleQuestions: draft.exampleQuestions,
       gradingNotes: draft.gradingNotes || null,
       uploadedMaterials,
+      ...(managedMaterialPipeline ? { materialIds } : {}),
     });
 
     setAssessmentDraft({
@@ -2802,6 +2833,183 @@ async function extractStudyMaterialFromFiles(files, mode) {
   });
 }
 
+async function isManagedMaterialPipelineAvailable() {
+  const status = await getAiBackendStatus();
+  return status?.available !== false && status?.provider === "managed";
+}
+
+async function uploadStudyMaterialFile(file, options = {}) {
+  if (!file || typeof window.overlayApi?.uploadMaterial !== "function") {
+    return null;
+  }
+
+  const shouldUpload = await isManagedMaterialPipelineAvailable();
+  if (!shouldUpload) {
+    return null;
+  }
+
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    return await window.overlayApi.uploadMaterial({
+      filename: file.name,
+      mimeType: file.type || "application/octet-stream",
+      bytes,
+      classId: options.classId ?? null,
+      scope: options.scope || "request_ephemeral",
+    });
+  } catch (error) {
+    console.warn("[materials] managed upload failed, falling back to text path", error);
+    return null;
+  }
+}
+
+async function uploadStudyMaterialTextMaterial(upload, options = {}) {
+  if (!upload || typeof upload.content !== "string" || !upload.content.trim()) {
+    return null;
+  }
+  if (typeof window.overlayApi?.uploadMaterial !== "function") {
+    return null;
+  }
+
+  const shouldUpload = await isManagedMaterialPipelineAvailable();
+  if (!shouldUpload) {
+    return null;
+  }
+
+  try {
+    const bytes = new TextEncoder().encode(upload.content);
+    return await window.overlayApi.uploadMaterial({
+      filename: `${upload.name || "material"}.txt`,
+      mimeType: "text/plain",
+      bytes,
+      classId: options.classId ?? null,
+      scope: options.scope || "request_ephemeral",
+    });
+  } catch (error) {
+    console.warn("[materials] legacy material migration upload failed", error);
+    return null;
+  }
+}
+
+function mergeStudyMaterialUploadRecord(file, extracted, uploadResult, options = {}) {
+  const content =
+    typeof extracted?.content === "string" && extracted.content.trim()
+      ? extracted.content.trim()
+      : typeof uploadResult?.extractedText === "string" && uploadResult.extractedText.trim()
+        ? uploadResult.extractedText.trim()
+        : "";
+  const handler =
+    typeof extracted?.handler === "string" && extracted.handler.trim()
+      ? extracted.handler.trim()
+      : "text";
+  const record = {
+    name: file?.name || extracted?.name || "file",
+    content,
+    handler,
+    materialId:
+      typeof uploadResult?.materialId === "string" && uploadResult.materialId.trim()
+        ? uploadResult.materialId.trim()
+        : "",
+    syncState:
+      typeof uploadResult?.syncState === "string" && uploadResult.syncState.trim()
+        ? uploadResult.syncState.trim()
+        : content ? "failed" : "pending",
+    sourceKind:
+      typeof uploadResult?.sourceKind === "string" && uploadResult.sourceKind.trim()
+        ? uploadResult.sourceKind.trim()
+        : handler || "text",
+    visualFidelity:
+      typeof uploadResult?.visualFidelity === "string" && uploadResult.visualFidelity.trim()
+        ? uploadResult.visualFidelity.trim()
+        : content ? "full" : "text_only_fallback",
+    statusText:
+      typeof uploadResult?.statusText === "string" && uploadResult.statusText.trim()
+        ? uploadResult.statusText.trim()
+        : content
+          ? "visual fidelity preserved"
+          : "fell back to text extraction",
+    originalCharacters: Number(extracted?.originalCharacters) || content.length,
+    compressedCharacters:
+      Number(extracted?.compressedCharacters) || content.length,
+    estimatedTokenSavings: Number(extracted?.estimatedTokenSavings) || 0,
+    addedAt: new Date().toISOString(),
+    scope: options.scope || "request_ephemeral",
+    classId: options.classId ?? null,
+  };
+  return record;
+}
+
+async function ensureClassMaterialUploadsSynced(classFolder) {
+  if (!classFolder || !classFolder.dbClassId) {
+    return;
+  }
+
+  const classMaterialItem = getClassMaterialItemForClassFolder(classFolder);
+  const uploads = normalizeClassMaterialUploads(classMaterialItem?.uploads || []);
+  const needsMigration = uploads.some((upload) => !upload.materialId && upload.content);
+  if (!needsMigration) {
+    return;
+  }
+
+  const migratedUploads = [];
+  for (const upload of uploads) {
+    if (upload.materialId || !upload.content) {
+      migratedUploads.push(upload);
+      continue;
+    }
+
+    const uploadResult = await uploadStudyMaterialTextMaterial(upload, {
+      classId: classFolder.dbClassId,
+      scope: "class_saved",
+    });
+    migratedUploads.push({
+      ...upload,
+      ...(uploadResult
+        ? {
+            materialId: uploadResult.materialId || "",
+            syncState: uploadResult.syncState || "synced",
+            sourceKind: uploadResult.sourceKind || upload.sourceKind || "text",
+            visualFidelity:
+              uploadResult.visualFidelity || upload.visualFidelity || "full",
+            statusText: uploadResult.statusText || upload.statusText || "visual fidelity preserved",
+          }
+        : {
+            syncState: "failed",
+            statusText: upload.statusText || "fell back to text extraction",
+          }),
+    });
+  }
+
+  const targetPath = getCurrentClassPath();
+  if (!targetPath) {
+    return;
+  }
+
+  const nextFolders = updateFolderAtPath(targetPath, (item) => {
+    const nextMaterialItem = normalizeClassMaterialItem({
+      ...classMaterialItem,
+      uploads: migratedUploads,
+      updatedAt: new Date().toISOString(),
+      createdAt: classMaterialItem?.createdAt || new Date().toISOString(),
+    });
+    const nextChildren = Array.isArray(item.children) ? [...item.children] : [];
+    const existingIndex = nextChildren.findIndex((child) => child?.type === "material");
+    if (existingIndex >= 0) {
+      nextChildren[existingIndex] = nextMaterialItem;
+    } else {
+      nextChildren.unshift(nextMaterialItem);
+    }
+    const { classMaterial: legacyClassMaterial, ...rest } = item;
+    void legacyClassMaterial;
+    return {
+      ...rest,
+      children: nextChildren,
+    };
+  });
+  await persistFolders(nextFolders);
+  await syncClassMaterialCorpusWithBackend(getFolderAtPath(targetPath), migratedUploads);
+}
+
 function openSessionSummary(session) {
   if (!requireSignedIn("view saved sessions")) {
     return;
@@ -2824,6 +3032,7 @@ function resetQuizModalState() {
   activeQuiz = null;
   uploadedQuizMaterial = "";
   uploadedQuizMaterialSummary = "";
+  uploadedQuizMaterialRecord = null;
   selectedQuizClassMaterialKeys = new Set();
   quizClassMaterialSelectionInitialized = false;
   quizHasBeenChecked = false;
@@ -3164,6 +3373,26 @@ function normalizeClassMaterialUploads(uploads) {
         name: typeof upload.name === "string" ? upload.name.trim() : "file",
         content,
         handler: typeof upload.handler === "string" ? upload.handler : "text",
+        materialId:
+          typeof upload.materialId === "string" && upload.materialId.trim()
+            ? upload.materialId.trim()
+            : "",
+        syncState:
+          typeof upload.syncState === "string" && upload.syncState.trim()
+            ? upload.syncState.trim()
+            : "pending",
+        sourceKind:
+          typeof upload.sourceKind === "string" && upload.sourceKind.trim()
+            ? upload.sourceKind.trim()
+            : "text",
+        visualFidelity:
+          typeof upload.visualFidelity === "string" && upload.visualFidelity.trim()
+            ? upload.visualFidelity.trim()
+            : "full",
+        statusText:
+          typeof upload.statusText === "string" && upload.statusText.trim()
+            ? upload.statusText.trim()
+            : "",
         originalCharacters: Number(upload.originalCharacters) || content.length,
         compressedCharacters:
           Number(upload.compressedCharacters) || content.length,
@@ -3256,7 +3485,14 @@ function getClassMaterialReferenceOptions(
     name: upload.name,
     content: upload.content,
     handler: upload.handler || "text",
-    meta: `${(upload.handler || "text").toUpperCase()} • ${upload.content.length.toLocaleString()} chars`,
+    materialId: upload.materialId || "",
+    meta: [
+      (upload.handler || "text").toUpperCase(),
+      `${upload.content.length.toLocaleString()} chars`,
+      upload.statusText || null,
+    ]
+      .filter(Boolean)
+      .join(" • "),
   }));
   const pastedText = material.text.trim();
   if (pastedText) {
@@ -3269,6 +3505,7 @@ function getClassMaterialReferenceOptions(
       name: "Class Material Notes",
       content: pastedText,
       handler: "text",
+      materialId: "",
       meta: `${pastedText.length.toLocaleString()} chars`,
     });
   }
@@ -3302,11 +3539,24 @@ function getSelectedClassMaterialSources(
       : new Set(options.map((option) => option.key));
   return options
     .filter((option) => activeKeys.has(option.key))
-    .map(({ name, content, handler }) => ({
+    .map(({ name, content, handler, materialId }) => ({
       name,
       content,
       handler,
+      materialId: materialId || "",
     }));
+}
+
+function getSelectedClassMaterialIds(
+  selectionSet,
+  classFolder = getCurrentClassFolder(),
+) {
+  return uniqueStrings(
+    getSelectedClassMaterialSources(selectionSet, classFolder).map(
+      (source) => source.materialId,
+    ),
+    24,
+  );
 }
 
 function formatSelectedClassMaterialText(
@@ -3387,6 +3637,7 @@ function getClassMaterialAssessmentSources(
 
 function renderQuizClassMaterialPicker() {
   const options = getClassMaterialReferenceOptions(activeQuizClassFolder);
+  void ensureClassMaterialUploadsSynced(activeQuizClassFolder);
   selectedQuizClassMaterialKeys = syncClassMaterialSelection(
     selectedQuizClassMaterialKeys,
     options,
@@ -3411,6 +3662,7 @@ function renderQuizClassMaterialPicker() {
 
 function renderCramClassMaterialPicker() {
   const classFolder = getCurrentClassFolder();
+  void ensureClassMaterialUploadsSynced(classFolder);
   const options = getClassMaterialReferenceOptions(classFolder);
   selectedCramClassMaterialKeys = syncClassMaterialSelection(
     selectedCramClassMaterialKeys,
@@ -3468,7 +3720,8 @@ function getCramUploadSummaryText() {
 
   if (uploadedCramMaterials.length === 1) {
     const file = uploadedCramMaterials[0];
-    return file.handler ? `${file.name} (${file.handler})` : file.name;
+    const baseLabel = file.handler ? `${file.name} (${file.handler})` : file.name;
+    return file.statusText ? `${baseLabel} • ${file.statusText}` : baseLabel;
   }
 
   return `${uploadedCramMaterials.length} files selected`;
@@ -3582,6 +3835,7 @@ function renderAssessmentClassMaterialPicker() {
   const classFolder = activeAssessmentClassPath
     ? getFolderAtPath(activeAssessmentClassPath)
     : null;
+  void ensureClassMaterialUploadsSynced(classFolder);
   const options = getClassMaterialReferenceOptions(classFolder);
   selectedAssessmentClassMaterialKeys = syncClassMaterialSelection(
     selectedAssessmentClassMaterialKeys,
@@ -3621,6 +3875,17 @@ function openClassMaterialModal() {
   );
   renderClassMaterialRollup();
   classMaterialBackdrop.hidden = false;
+  void ensureClassMaterialUploadsSynced(classFolder).then(() => {
+    const refreshed = getClassMaterialForCurrentClass();
+    if (!refreshed) {
+      return;
+    }
+    classMaterialUploads = [...refreshed.uploads];
+    classMaterialFileStatus.textContent = getClassMaterialUploadStatusText(
+      classMaterialUploads.length,
+    );
+    renderClassMaterialRollup();
+  });
 }
 
 function closeClassMaterialModal() {
@@ -3660,31 +3925,37 @@ async function handleClassMaterialFileUpload(files) {
     return;
   }
 
+  const classFolder = getCurrentClassFolder();
+  const classId = classFolder?.dbClassId || null;
   classMaterialFileStatus.textContent = "Processing...";
   saveClassMaterialButton.disabled = true;
 
   try {
-    const results = await Promise.allSettled(
-      Array.from(files).map((file) =>
-        extractStudyMaterialFromFiles([file], "quiz"),
-      ),
-    );
-    const successfulFiles = results
-      .filter((result) => result.status === "fulfilled")
-      .map((result) => result.value[0])
-      .filter((result) => result?.content)
-      .map((result) => ({
-        name: result.name || "file",
-        content: result.content,
-        handler: result.handler || "text",
-        originalCharacters:
-          Number(result.originalCharacters) || result.content.length,
-        compressedCharacters:
-          Number(result.compressedCharacters) || result.content.length,
-        estimatedTokenSavings: Number(result.estimatedTokenSavings) || 0,
-        addedAt: new Date().toISOString(),
-      }));
-    const failedCount = results.length - successfulFiles.length;
+    const successfulFiles = [];
+    let failedCount = 0;
+
+    for (const file of Array.from(files)) {
+      try {
+        const [extracted] = await extractStudyMaterialFromFiles([file], "quiz");
+        const uploadResult = await uploadStudyMaterialFile(file, {
+          classId,
+          scope: classId ? "class_saved" : "request_ephemeral",
+        });
+        const record = mergeStudyMaterialUploadRecord(file, extracted, uploadResult, {
+          classId,
+          scope: classId ? "class_saved" : "request_ephemeral",
+        });
+        if (record.content) {
+          successfulFiles.push(record);
+        } else {
+          failedCount += 1;
+        }
+      } catch (error) {
+        console.error("Failed to read or upload class material file", file.name, error);
+        failedCount += 1;
+      }
+    }
+
     classMaterialUploads = [...classMaterialUploads, ...successfulFiles];
     classMaterialFileStatus.textContent =
       failedCount > 0
@@ -3701,11 +3972,40 @@ async function handleClassMaterialFileUpload(files) {
   }
 }
 
+async function syncClassMaterialCorpusWithBackend(classFolder, uploads) {
+  if (!classFolder || !classFolder.dbClassId) {
+    return;
+  }
+
+  const materialIds = uniqueStrings(
+    uploads.map((upload) => upload.materialId || ""),
+    32,
+  );
+  if (materialIds.length === 0) {
+    return;
+  }
+
+  if (typeof window.overlayApi?.syncClassMaterials !== "function") {
+    return;
+  }
+
+  try {
+    await window.overlayApi.syncClassMaterials({
+      classId: classFolder.dbClassId,
+      materialIds,
+    });
+  } catch (error) {
+    console.warn("[materials] failed to sync class corpus", error);
+  }
+}
+
 async function saveClassMaterial() {
   const classPath = getCurrentClassPath();
   if (!classPath) {
     return;
   }
+
+  await ensureClassMaterialUploadsSynced(getCurrentClassFolder());
 
   saveClassMaterialButton.disabled = true;
   saveClassMaterialButton.textContent = "Saving...";
@@ -3741,6 +4041,10 @@ async function saveClassMaterial() {
       };
     });
     await persistFolders(nextFolders);
+    await syncClassMaterialCorpusWithBackend(
+      getFolderAtPath(classPath),
+      classMaterialUploads,
+    );
     closeClassMaterialModal();
   } finally {
     saveClassMaterialButton.disabled = false;
@@ -3792,6 +4096,7 @@ function closeQuizModal() {
 
 function resetCramSetupState() {
   uploadedCramMaterials = [];
+  uploadedCramMaterialRecords = [];
   activeCramPlan = null;
   activeCramTaskIndex = 0;
   selectedCramClassMaterialKeys = new Set();
@@ -4708,6 +5013,7 @@ function buildCramPlanEntry(response, values) {
     recommendedFirstTask: response.recommendedFirstTask,
     sessionIds: values.sessionIds,
     uploadedMaterial: values.uploadedMaterial,
+    materialIds: values.materialIds || [],
     currentUnit: values.currentUnit,
     gapFocus: values.gapFocus,
     tasks,
@@ -4754,6 +5060,16 @@ async function generateCramPlanForCurrentClass() {
   ]
     .filter(Boolean)
     .join("\n\n");
+  const materialIds = uniqueStrings(
+    [
+      ...getSelectedClassMaterialIds(
+        selectedCramClassMaterialKeys,
+        classFolder,
+      ),
+      ...uploadedCramMaterials.map((material) => material.materialId || ""),
+    ],
+    32,
+  );
   const materialValidation = validateCramMaterialPayload(uploadedMaterial);
   if (!materialValidation.ok) {
     if (cramMaterialStatus) {
@@ -4776,6 +5092,7 @@ async function generateCramPlanForCurrentClass() {
   const availableMinutes = timeAvailableToMinutes(
     cramTimeAvailableSelect?.value || "1 hour",
   );
+  const managedMaterialPipeline = await isManagedMaterialPipelineAvailable();
   const values = {
     name: examName,
     deadline: buildCramDeadlineFromAvailability(
@@ -4783,6 +5100,7 @@ async function generateCramPlanForCurrentClass() {
     ),
     availableMinutes,
     uploadedMaterial: materialValidation.normalizedMaterial,
+    materialIds: managedMaterialPipeline ? materialIds : [],
     currentUnit: buildCurrentUnitPathLabel(),
     additionalNotes: cramAdditionalNotes?.value.trim() || null,
     gapFocus: 50,
@@ -4826,7 +5144,7 @@ async function generateCramPlanForCurrentClass() {
       }
     }
 
-    const response = await window.overlayApi.generateCramPlanFromSessions({
+    const cramPlanPayload = {
       classId: dbClassId,
       sessionIds,
       examName,
@@ -4839,7 +5157,13 @@ async function generateCramPlanForCurrentClass() {
       teacherAssessmentProfile: selectedAssessmentProfile
         ? getTeacherAssessmentProfilePayload(selectedAssessmentProfile)
         : null,
-    });
+    };
+    if (managedMaterialPipeline) {
+      cramPlanPayload.materialIds = materialIds;
+    }
+    const response = await window.overlayApi.generateCramPlanFromSessions(
+      cramPlanPayload,
+    );
     const cramPlanError = toOverlayResultError(
       response,
       "Cram plan failed.",
@@ -5171,6 +5495,7 @@ async function buildSavedQuizForCramTask(plan, task, classId, targetPath) {
       includeKeyTopics: true,
       includeUploadedMaterial: true,
       uploadedMaterial: quizMaterial || null,
+      materialIds: plan.materialIds || [],
       titleHint,
       gapFocus: plan.gapFocus || 50,
     }, "quiz.generate.cram");
@@ -5431,12 +5756,23 @@ async function generateQuizForActiveSession() {
   const uploadedMaterial = [classMatl, uploadedQuizMaterial, pastedMaterial]
     .filter(Boolean)
     .join("\n\n");
+  const materialIds = uniqueStrings(
+    [
+      ...getSelectedClassMaterialIds(
+        selectedQuizClassMaterialKeys,
+        activeQuizClassFolder,
+      ),
+      uploadedQuizMaterialRecord?.materialId || "",
+    ],
+    24,
+  );
   const classId = await ensureBackendClassId(activeQuizClassFolder);
   const selectedSessionIds = Array.from(
     quizSessionPicker.querySelectorAll('input[type="checkbox"]:checked'),
   )
     .map((input) => Number(input.value))
     .filter((value) => Number.isFinite(value));
+  const managedMaterialPipeline = await isManagedMaterialPipelineAvailable();
 
   const payload = {
     classId,
@@ -5457,6 +5793,9 @@ async function generateQuizForActiveSession() {
         )
       : null,
   };
+  if (managedMaterialPipeline) {
+    payload.materialIds = materialIds;
+  }
 
   const targetPath = [...currentPath];
   const processingEntry = buildProcessingQuizEntry();
@@ -6585,17 +6924,26 @@ assessmentMaterialFile?.addEventListener("change", async () => {
     return;
   }
 
-  const results = await Promise.allSettled(
-    files.map((file) => extractStudyMaterialFromFiles([file], "quiz")),
-  );
-  const successfulFiles = results
-    .filter((result) => result.status === "fulfilled")
-    .map((result) => result.value[0])
-    .map((upload) => ({
-      ...upload,
-      id: makeId(),
-    }));
-  const failedCount = results.length - successfulFiles.length;
+  const successfulFiles = [];
+  let failedCount = 0;
+  for (const file of files) {
+    try {
+      const [extracted] = await extractStudyMaterialFromFiles([file], "quiz");
+      const uploadResult = await uploadStudyMaterialFile(file, {
+        scope: "request_ephemeral",
+      });
+      const record = mergeStudyMaterialUploadRecord(file, extracted, uploadResult, {
+        scope: "request_ephemeral",
+      });
+      successfulFiles.push({
+        ...record,
+        id: makeId(),
+      });
+    } catch (error) {
+      console.error("Failed to read or upload assessment material file", file.name, error);
+      failedCount += 1;
+    }
+  }
   const nextDraft = getAssessmentDraft();
   nextDraft.uploads = [...nextDraft.uploads, ...successfulFiles];
   assessmentUploadError = failedCount
@@ -6621,19 +6969,33 @@ quizMaterialFile.addEventListener("change", async () => {
   if (!file) {
     uploadedQuizMaterial = "";
     uploadedQuizMaterialSummary = "";
+    uploadedQuizMaterialRecord = null;
     quizFileName.textContent = "No file selected";
     return;
   }
 
   try {
     const [result] = await extractStudyMaterialFromFiles([file], "quiz");
-    uploadedQuizMaterial = result.content;
-    uploadedQuizMaterialSummary = `${result.handler.toUpperCase()} condensed from ${result.originalCharacters.toLocaleString()} to ${result.compressedCharacters.toLocaleString()} chars`;
+    const uploadResult = await uploadStudyMaterialFile(file, {
+      scope: "request_ephemeral",
+    });
+    const record = mergeStudyMaterialUploadRecord(file, result, uploadResult, {
+      scope: "request_ephemeral",
+    });
+    uploadedQuizMaterialRecord = {
+      ...record,
+      id: makeId(),
+    };
+    uploadedQuizMaterial = record.content;
+    uploadedQuizMaterialSummary = record.statusText
+      ? `${record.statusText} • ${result.handler.toUpperCase()} condensed from ${result.originalCharacters.toLocaleString()} to ${result.compressedCharacters.toLocaleString()} chars`
+      : `${result.handler.toUpperCase()} condensed from ${result.originalCharacters.toLocaleString()} to ${result.compressedCharacters.toLocaleString()} chars`;
     quizFileName.textContent = `${file.name} • condensed`;
     quizSourceUploaded.checked = true;
   } catch (error) {
     uploadedQuizMaterial = "";
     uploadedQuizMaterialSummary = "";
+    uploadedQuizMaterialRecord = null;
     quizFileName.textContent = "File couldn't be condensed";
     console.error("Failed to process quiz material file", error);
   }
@@ -7130,11 +7492,17 @@ async function handleCramFilesUploaded(files) {
     for (const file of files) {
       try {
         const [extracted] = await extractStudyMaterialFromFiles([file], "cram");
+        const uploadResult = await uploadStudyMaterialFile(file, {
+          scope: "request_ephemeral",
+        });
         if (extracted) {
-          extracted.sizeText = formatFileSize(file.size);
-          extracted.uploadedAt = Date.now();
-          extracted.timeText = "Uploaded just now";
-          successfulFiles.push(extracted);
+          const record = mergeStudyMaterialUploadRecord(file, extracted, uploadResult, {
+            scope: "request_ephemeral",
+          });
+          record.sizeText = formatFileSize(file.size);
+          record.uploadedAt = Date.now();
+          record.timeText = record.statusText || "Uploaded just now";
+          successfulFiles.push(record);
         } else {
           failedCount++;
         }
@@ -7163,7 +7531,7 @@ async function handleCramFilesUploaded(files) {
       : "";
     cramMaterialUploadSummary =
       successfulFiles.length > 0
-        ? `Condensed ${successfulFiles.length} upload${successfulFiles.length === 1 ? "" : "s"} from ${totalOriginalCharacters.toLocaleString()} to ${totalCompressedCharacters.toLocaleString()} characters.`
+        ? `${successfulFiles[0]?.statusText || "visual fidelity preserved"} • Condensed ${successfulFiles.length} upload${successfulFiles.length === 1 ? "" : "s"} from ${totalOriginalCharacters.toLocaleString()} to ${totalCompressedCharacters.toLocaleString()} characters.`
         : "";
     
     renderCramUploadedFilesList();

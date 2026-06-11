@@ -8,6 +8,15 @@ import {
 } from "../schema";
 import type { CramPlanRequest, CramPlanResponse } from "../type";
 import { getClassProfileById } from "./classes";
+import {
+  buildDirectMaterialInputContent,
+  buildInlineMaterialText,
+  createEphemeralMaterialVectorStore,
+  getClassMaterialVectorStoreId,
+  getMaterialRecordsByIds,
+  retrieveMaterialEvidence,
+  shouldUseFileSearchForMaterials,
+} from "./materials";
 import { withLangfuseObservation } from "../../../desktop/src/shared/langfuse.ts";
 
 type SessionRow = {
@@ -124,13 +133,20 @@ function getTopGaps(classId: number): GapRow[] {
   ).all(classId) as GapRow[];
 }
 
-function buildCramPlanPrompt(input: CramPlanRequest): string {
+function buildCramPlanPrompt(
+  input: CramPlanRequest,
+  materialContext: {
+    materialText?: string | null;
+    retrievedText?: string | null;
+  } | null = null,
+): string {
   const sessions = getSessionRows(input.sessionIds);
   const classProfile = getClassProfileById(input.classId);
   const keyTopics = [
     ...new Set(sessions.flatMap((session) => parseKeyTopics(session.key_topics))),
   ];
   const gapRows = getTopGaps(input.classId);
+  const uploadedMaterial = input.uploadedMaterial || "";
 
   return JSON.stringify(
     {
@@ -148,7 +164,13 @@ function buildCramPlanPrompt(input: CramPlanRequest): string {
         started_at: session.started_at,
         ended_at: session.ended_at,
       })),
-      uploaded_material: input.uploadedMaterial,
+      uploaded_material: [
+        uploadedMaterial,
+        materialContext?.materialText || null,
+        materialContext?.retrievedText || null,
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
       additional_notes: input.additionalNotes,
       teacher_assessment_profile: input.teacherAssessmentProfile,
       high_priority_gaps: gapRows,
@@ -182,6 +204,12 @@ export async function generateCramPlan(
   input: unknown,
 ): Promise<CramPlanResponse> {
   const parsedInput = cramPlanRequestSchema.parse(input);
+  const fileMaterials = getMaterialRecordsByIds(parsedInput.materialIds || []);
+  const inlineMaterialText = parsedInput.uploadedMaterial || "";
+  const fileBackedMaterialText = buildInlineMaterialText(fileMaterials);
+  const useFileSearch =
+    fileMaterials.length > 0 &&
+    shouldUseFileSearchForMaterials(fileMaterials, inlineMaterialText.length);
   return withLangfuseObservation(
     "cram-plan.generate",
     {
@@ -194,6 +222,7 @@ export async function generateCramPlan(
         sessionIds: parsedInput.sessionIds,
         hasUploadedMaterial: Boolean(parsedInput.uploadedMaterial),
         uploadedMaterialLength: parsedInput.uploadedMaterial?.length ?? 0,
+        materialIdCount: parsedInput.materialIds?.length ?? 0,
         hasTeacherAssessmentProfile: Boolean(parsedInput.teacherAssessmentProfile),
       },
       metadata: {
@@ -212,6 +241,35 @@ export async function generateCramPlan(
     },
     async () => {
       const client = getOpenAIClient();
+      const observedClient = client
+        ? client
+        : null;
+      let retrievalText = "";
+      if (useFileSearch && observedClient) {
+        const vectorStoreId =
+          getClassMaterialVectorStoreId(parsedInput.classId) ||
+          (await createEphemeralMaterialVectorStore(
+            fileMaterials,
+            `Cram plan materials for class ${parsedInput.classId}`,
+          ));
+        if (vectorStoreId) {
+          const retrieval = await retrieveMaterialEvidence({
+            client: observedClient,
+            model: getOpenAIModel(),
+            vectorStoreIds: [vectorStoreId],
+            query: [
+              "Retrieve the highest-yield cram plan evidence.",
+              "Prioritize high-yield topics, formulas, repeated definitions, and testable relationships.",
+              parsedInput.examName ? `Exam name: ${parsedInput.examName}` : null,
+              inlineMaterialText ? `Inline notes:\n${inlineMaterialText}` : null,
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
+            featureLabel: "cram-plan",
+          });
+          retrievalText = retrieval.text;
+        }
+      }
       const response = await client.responses.parse({
         model: getOpenAIModel(),
         input: [
@@ -224,8 +282,14 @@ export async function generateCramPlan(
             content: [
               {
                 type: "input_text",
-                text: buildCramPlanPrompt(parsedInput),
+                text: buildCramPlanPrompt(parsedInput, {
+                  materialText: useFileSearch
+                    ? retrievalText
+                    : fileBackedMaterialText,
+                  retrievedText: retrievalText,
+                }),
               },
+              ...(!useFileSearch ? buildDirectMaterialInputContent(fileMaterials) : []),
             ],
           },
         ],
