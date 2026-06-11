@@ -109,6 +109,7 @@ export function buildQuizSystemInstructions(
     "You are generating a study quiz for a desktop learning product.",
     "Return clean structured JSON only.",
     "Make the quiz concise, useful, and grounded in the provided material.",
+    "Ground the questions and title strictly in the content of the selected/included sources (e.g. uploaded materials, session summaries, session notes). Do not genericize the quiz to the class profile's subject (e.g., if the class subject/name is 'biology' but the uploaded material is about 'history', the quiz must be entirely about the 'history' content inside the uploaded material).",
     "Write a short, specific quiz title that clearly tells the student what is inside.",
     "Generate exactly the requested number of questions from the quiz constraints.",
     "Use the gap focus slider as a weighting signal: higher values should target weak spots more aggressively.",
