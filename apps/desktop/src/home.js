@@ -5704,16 +5704,11 @@ function renderQuizQuestions(quiz) {
       input.name = `quiz-question-${index}`;
       input.value = String(optionIndex);
 
-      const letter = document.createElement("span");
-      letter.className = "quiz-option-letter";
-      letter.setAttribute("aria-hidden", "true");
-      letter.textContent = String.fromCharCode(65 + optionIndex);
-
       const text = document.createElement("span");
       text.className = "quiz-option-copy";
       text.textContent = option;
 
-      label.append(input, letter, text);
+      label.append(input, text);
       options.appendChild(label);
     });
 
