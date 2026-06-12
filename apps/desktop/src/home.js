@@ -5669,14 +5669,15 @@ function renderQuizQuestions(quiz) {
     const header = document.createElement("div");
     header.className = "quiz-question-header";
 
-    const statusDot = document.createElement("span");
-    statusDot.className = "quiz-question-status";
-    statusDot.textContent = String(index + 1);
-    statusDot.setAttribute("aria-label", `Question ${index + 1}`);
-
     const prompt = document.createElement("h3");
     prompt.className = "quiz-question-title";
-    prompt.textContent = question.prompt;
+
+    const statusDot = document.createElement("span");
+    statusDot.className = "quiz-question-status";
+    statusDot.textContent = `${index + 1}. `;
+    statusDot.setAttribute("aria-label", `Question ${index + 1}`);
+
+    prompt.append(statusDot, question.prompt);
 
     const explainButton = document.createElement("button");
     explainButton.type = "button";
@@ -5689,7 +5690,7 @@ function renderQuizQuestions(quiz) {
       showQuizExplanation(question, index);
     });
 
-    header.append(statusDot, prompt, explainButton);
+    header.append(prompt, explainButton);
 
     const options = document.createElement("div");
     options.className = "quiz-option-list";

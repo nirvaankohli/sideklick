@@ -5956,23 +5956,17 @@ button {
 
 .quiz-question-header {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: 14px;
 }
 
 .quiz-question-status {
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: transparent;
+  display: inline;
   color: rgba(245, 249, 255, 0.82);
-  font-size: 1.08rem;
-  font-weight: 600;
-  box-shadow: none;
+  font-size: inherit;
+  font-weight: inherit;
+  margin-right: 0.25em;
 }
 
 .quiz-question-status[data-result="correct"] {
