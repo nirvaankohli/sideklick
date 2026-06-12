@@ -5999,6 +5999,8 @@ button {
   white-space: nowrap;
   border-radius: 8px;
   min-width: 124px;
+  background: transparent;
+  box-shadow: none;
 }
 
 .quiz-explain-button.is-locked,
@@ -6006,7 +6008,7 @@ button {
   opacity: 0.55;
   cursor: not-allowed;
   border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  background: transparent;
 }
 
 .quiz-option-list {
@@ -6327,6 +6329,17 @@ button {
   background: transparent;
   color: #6b7280;
   box-shadow: none;
+}
+
+.window-shell[data-tone="light"] .quiz-explain-button {
+  background: transparent;
+  box-shadow: none;
+}
+
+.window-shell[data-tone="light"] .quiz-explain-button.is-locked,
+.window-shell[data-tone="light"] .quiz-explain-button:disabled {
+  background: transparent;
+  border-color: rgba(42, 55, 74, 0.1);
 }
 
 .window-shell[data-tone="light"] .quiz-option {
