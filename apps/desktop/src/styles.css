@@ -6055,7 +6055,7 @@ button {
   margin: 2px 0 0;
   border-radius: 999px;
   border: 1px solid rgba(216, 226, 238, 0.34);
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
   accent-color: #d8e2ee;
   transition:
     background 140ms ease-in-out,
@@ -6068,7 +6068,7 @@ button {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: #07121f;
+  background: var(--accent);
   opacity: 0;
   transform: scale(0.5);
   transition:
@@ -6078,7 +6078,7 @@ button {
 
 .quiz-option input[type="radio"]:checked {
   border-color: rgba(148, 163, 184, 0.96);
-  background: var(--accent);
+  background: transparent;
   box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.12);
 }
 
@@ -6348,12 +6348,16 @@ button {
 
 .window-shell[data-tone="light"] .quiz-option input[type="radio"] {
   border-color: rgba(42, 55, 74, 0.24);
-  background: rgba(255, 255, 255, 0.9);
+  background: transparent;
+}
+
+.window-shell[data-tone="light"] .quiz-option input[type="radio"]::before {
+  background: var(--accent-strong);
 }
 
 .window-shell[data-tone="light"] .quiz-option input[type="radio"]:checked {
   border-color: rgba(156, 163, 175, 0.95);
-  background: var(--accent-strong);
+  background: transparent;
   box-shadow: 0 0 0 4px rgba(156, 163, 175, 0.12);
 }
 
