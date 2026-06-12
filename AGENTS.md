@@ -45,4 +45,4 @@ When pushing with a release tag, update the Electron version if it is being upda
 - **Accent color is for fills/strokes only**: Use the accent color on icon fills, text, borders, and underlines — never as a background color.
 - **No colored backgrounds**: UI surfaces and containers use neutral/transparent backgrounds only. Color belongs on content (text, icons, borders), not on the container behind it. Unless its a button.
 
-Commit after request, however if it is a big one commit after every change. However do not commit it.
+Commit after request, however if it is a big one commit after every change. However do not commit it. Only if code is changed.
