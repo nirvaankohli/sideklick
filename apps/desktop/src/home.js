@@ -156,7 +156,6 @@ const closeQuizModalButton = document.querySelector("#close-quiz-modal");
 const quizThemeToggle = document.querySelector("#quiz-theme-toggle");
 const quizMinimizeNative = document.querySelector("#quiz-minimize-native");
 const quizModalTitle = document.querySelector("#quiz-modal-title");
-const quizModalSubtitle = document.querySelector("#quiz-modal-subtitle");
 const quizSessionMeta = document.querySelector("#quiz-session-meta");
 const quizSessionPicker = document.querySelector("#quiz-session-picker");
 const quizSetupView = document.querySelector("#quiz-setup-view");
@@ -4067,8 +4066,8 @@ function openQuizModalForCurrentClass() {
     currentClassFolder.assessmentProfile,
   );
   quizModalTitle.textContent = `Quiz: ${currentClassFolder.name || "Class"}`;
-  if (quizModalSubtitle) {
-    quizModalSubtitle.textContent = "Build a quiz from sessions, class material, and saved context.";
+  if (quizSubtitle) {
+    quizSubtitle.textContent = "Build a quiz from sessions, class material, and saved context.";
   }
   quizSessionMeta.textContent = assessmentSummary.testFormat
     ? `Teacher style: ${assessmentSummary.testFormat}. Pick sessions or add material below.`
@@ -5271,9 +5270,8 @@ function loadQuizIntoView(quiz, options = {}) {
   quizHasBeenChecked = false;
   activeQuizExplanationIndex = null;
   setQuizExplanationFollowScroll(true);
-  quizSubtitle.textContent = quiz.subtitle;
-  if (quizModalSubtitle) {
-    quizModalSubtitle.textContent = quiz.subtitle || "";
+  if (quizSubtitle) {
+    quizSubtitle.textContent = quiz.subtitle || "";
   }
   renderQuizQuestions(quiz);
   quizSetupView.hidden = true;
@@ -5319,8 +5317,8 @@ function openSavedQuiz(quizItem) {
   quizReturnPath = [...currentPath];
   resetQuizModalState();
   quizModalTitle.textContent = quizItem.name || "Saved Quiz";
-  if (quizModalSubtitle) {
-    quizModalSubtitle.textContent = quizItem.quizData?.subtitle || quizItem.summary || "";
+  if (quizSubtitle) {
+    quizSubtitle.textContent = quizItem.quizData?.subtitle || quizItem.summary || "";
   }
   quizSessionMeta.textContent = `${quizItem.questionCount || 0} questions • Saved ${formatSessionDate(quizItem.createdAt)}`;
   loadQuizIntoView(quizItem.quizData, {
