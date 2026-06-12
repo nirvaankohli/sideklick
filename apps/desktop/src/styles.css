@@ -6035,6 +6035,7 @@ button {
   box-shadow: none;
   cursor: pointer;
   overflow: hidden;
+  outline: none;
   transition:
     border-color 120ms ease-in-out,
     background 120ms ease-in-out,
@@ -6046,6 +6047,10 @@ button {
   transform: translateX(2px);
   border-color: rgba(216, 226, 238, 0.2);
   background: transparent;
+}
+
+.quiz-option:hover .quiz-option-copy {
+  transform: scale(1.025);
 }
 
 .quiz-option:has(input:checked) {
@@ -6099,6 +6104,9 @@ button {
   min-width: 0;
   line-height: 1.55;
   color: rgba(245, 249, 255, 0.84);
+  display: inline-block;
+  transform-origin: left center;
+  transition: transform 120ms ease-in-out;
 }
 
 .quiz-option.correct {
@@ -6388,6 +6396,9 @@ button {
 
 .window-shell[data-tone="light"] .quiz-option-copy {
   color: rgba(17, 24, 39, 0.9);
+  display: inline-block;
+  transform-origin: left center;
+  transition: transform 120ms ease-in-out;
 }
 
 .window-shell[data-tone="light"] .quiz-option.correct {
