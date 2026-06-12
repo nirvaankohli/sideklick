@@ -6577,7 +6577,7 @@ function applyTransparencyPreference(preferences) {
       ? preferences.transparencyMode
       : preferences?.reduceTransparency
         ? "reduced"
-        : "normal";
+        : "solid";
 
   root.dataset.transparencyMode = transparencyMode;
   root.dataset.reduceTransparency =
@@ -6592,7 +6592,7 @@ function applyTransparencyPreference(preferences) {
         ? "Background blur is stronger and the shell is less see-through."
         : transparencyMode === "solid"
           ? "Solid mode removes the glass effect."
-          : "Use the default lighter glass effect.";
+          : "Use a lighter glass effect with transparency.";
   }
 }
 

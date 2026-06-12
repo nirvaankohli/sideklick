@@ -399,7 +399,7 @@ function readPreferences() {
   }
 }
 
-function normalizeTransparencyMode(value, fallback = "normal") {
+function normalizeTransparencyMode(value, fallback = "solid") {
   return ALLOWED_TRANSPARENCY_MODES.has(value) ? value : fallback;
 }
 
@@ -417,7 +417,7 @@ function getPreferenceSnapshot() {
   const preferences = readPreferences();
   const transparencyMode = normalizeTransparencyMode(
     preferences.transparencyMode ||
-      (preferences.reduceTransparency ? "reduced" : "normal"),
+      (preferences.reduceTransparency ? "reduced" : "solid"),
   );
   return {
     themeSource: ALLOWED_THEME_SOURCES.has(preferences.themeSource)
@@ -1786,7 +1786,7 @@ ipcMain.handle("preferences:update", (_event, patch) => {
       ? normalizeTransparencyMode(
           patch.transparencyMode,
           normalizeTransparencyMode(
-            patch.reduceTransparency ? "reduced" : "normal",
+            patch.reduceTransparency ? "reduced" : "solid",
           ),
         )
       : normalizeTransparencyMode(
