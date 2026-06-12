@@ -6001,13 +6001,19 @@ button {
   min-width: 124px;
   background: transparent;
   box-shadow: none;
+  opacity: 0.65;
+  transition: opacity 120ms ease-in-out, border-color 120ms ease-in-out;
+}
+
+.quiz-explain-button:hover:not(:disabled):not(.is-locked) {
+  opacity: 1;
 }
 
 .quiz-explain-button.is-locked,
 .quiz-explain-button:disabled {
-  opacity: 0.55;
+  opacity: 0.22;
   cursor: not-allowed;
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.06);
   background: transparent;
 }
 
@@ -6334,12 +6340,18 @@ button {
 .window-shell[data-tone="light"] .quiz-explain-button {
   background: transparent;
   box-shadow: none;
+  opacity: 0.65;
+}
+
+.window-shell[data-tone="light"] .quiz-explain-button:hover:not(:disabled):not(.is-locked) {
+  opacity: 1;
 }
 
 .window-shell[data-tone="light"] .quiz-explain-button.is-locked,
 .window-shell[data-tone="light"] .quiz-explain-button:disabled {
   background: transparent;
-  border-color: rgba(42, 55, 74, 0.1);
+  border-color: rgba(42, 55, 74, 0.08);
+  opacity: 0.22;
 }
 
 .window-shell[data-tone="light"] .quiz-option {
