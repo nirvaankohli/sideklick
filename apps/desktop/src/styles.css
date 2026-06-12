@@ -6031,7 +6031,7 @@ button {
   padding: 11px 12px;
   border-radius: 11px;
   background: transparent;
-  border: 1px solid rgba(216, 226, 238, 0.1);
+  border: 1px solid transparent;
   box-shadow: none;
   cursor: pointer;
   overflow: hidden;
@@ -6045,7 +6045,7 @@ button {
 
 .quiz-option:hover {
   transform: translateX(2px);
-  border-color: rgba(216, 226, 238, 0.2);
+  border-color: transparent;
   background: transparent;
 }
 
@@ -6054,7 +6054,7 @@ button {
 }
 
 .quiz-option:has(input:checked) {
-  border-color: rgba(148, 163, 184, 0.46);
+  border-color: transparent;
   background: transparent;
   box-shadow: none;
 }
@@ -6364,17 +6364,17 @@ button {
 
 .window-shell[data-tone="light"] .quiz-option {
   background: transparent;
-  border-color: rgba(42, 55, 74, 0.1);
+  border-color: transparent;
   box-shadow: none;
 }
 
 .window-shell[data-tone="light"] .quiz-option:hover {
-  border-color: rgba(42, 55, 74, 0.18);
+  border-color: transparent;
   background: transparent;
 }
 
 .window-shell[data-tone="light"] .quiz-option:has(input:checked) {
-  border-color: rgba(156, 163, 175, 0.48);
+  border-color: transparent;
   background: transparent;
   box-shadow: none;
 }
