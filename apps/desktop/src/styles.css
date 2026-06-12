@@ -169,11 +169,11 @@ button {
 .window-shell[data-reduce-transparency="true"][data-tone="dark"] .overlay-card {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
-    rgba(16, 18, 22, 0.95);
+    rgba(17, 17, 17, 0.95);
 }
 
 .window-shell[data-transparency-mode="solid"][data-tone="dark"] .overlay-card {
-  background: rgba(16, 18, 22, 1);
+  background: rgba(17, 17, 17, 1);
 }
 
 .window-shell[data-tone="light"] .overlay-card {
@@ -4329,7 +4329,7 @@ button {
 .window-shell[data-transparency-mode="reduced"][data-tone="dark"] .session-card {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012)),
-    rgba(16, 18, 22, 0.74);
+    rgba(17, 17, 17, 0.74);
 }
 
 .window-shell[data-tone="light"] .session-card {
@@ -5483,7 +5483,6 @@ button {
 }
 
 #save-quiz-button:hover {
-  transform: translateY(-1px);
   border-color: rgba(148, 163, 184, 0.28);
   background: rgba(148, 163, 184, 0.08);
 }
@@ -5569,7 +5568,6 @@ button {
 }
 
 .quiz-question-count-option:hover {
-  transform: translateY(-1px);
   color: rgba(245, 249, 255, 0.82);
 }
 
@@ -5709,7 +5707,6 @@ button {
 }
 
 .quiz-session-option:hover {
-  transform: translateY(-1px);
   border-color: rgba(148, 163, 184, 0.24);
   background: rgba(148, 163, 184, 0.08);
   box-shadow: 0 12px 24px rgba(3, 8, 20, 0.12);
@@ -5756,7 +5753,6 @@ button {
 }
 
 .quiz-source-option:hover {
-  transform: translateY(-1px);
   border-color: rgba(148, 163, 184, 0.24);
 }
 
@@ -5863,7 +5859,6 @@ button {
 }
 
 .quiz-file-button:hover {
-  transform: translateY(-1px);
   border-color: rgba(148, 163, 184, 0.5);
   box-shadow: 0 12px 24px rgba(156, 163, 175, 0.12);
 }
@@ -6046,13 +6041,11 @@ button {
 }
 
 .quiz-option:hover {
-  transform: translateX(2px);
   border-color: transparent;
   background: transparent;
 }
 
 .quiz-option:hover .quiz-option-copy {
-  transform: scale(1.025);
 }
 
 .quiz-option:has(input:checked) {
