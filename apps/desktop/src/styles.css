@@ -6133,8 +6133,7 @@ button {
   gap: 12px;
   padding: 4px 0 0 24px;
   position: sticky;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 24px;
   align-self: start;
   max-height: min(72vh, 680px);
   overflow: auto;
@@ -6142,8 +6141,7 @@ button {
 }
 
 .quiz-explanation-panel.is-follow-scroll-off {
-  top: 0;
-  transform: none;
+  position: static;
 }
 
 .quiz-results-bar {
