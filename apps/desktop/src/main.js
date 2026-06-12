@@ -834,6 +834,9 @@ function createManagedWindow(
 
   win.once("ready-to-show", () => {
     win.show();
+    if (process.env.SIDEKLICK_OPEN_DEVTOOLS === "true") {
+      win.webContents.openDevTools({ mode: "detach" });
+    }
     sendThemeState();
     const state = windowState.get(win.id);
     if (!state) {

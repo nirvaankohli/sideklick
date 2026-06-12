@@ -17,6 +17,7 @@
   "scripts": {
     "start": "pnpm run rebuild:native:electron && electron .",
     "dev": "pnpm run desktop:dev",
+    "dev:tools": "node scripts/dev-desktop-open-devtools.mjs",
     "env:split": "node scripts/split-env.mjs",
     "dev:desktop:local-backend": "node scripts/dev-desktop-local-backend.mjs",
     "desktop:start": "pnpm run rebuild:native:electron && electron .",
