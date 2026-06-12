@@ -142,8 +142,8 @@ button {
   background:
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.08),
-      rgba(255, 255, 255, 0.025)
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.015)
     ),
     var(--dark-shell);
   box-shadow:
@@ -158,8 +158,8 @@ button {
 
 .window-shell[data-tone="dark"] .overlay-card {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
-    rgba(20, 20, 23, 0.9);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.008)),
+    rgba(14, 14, 16, 0.92);
   border-color: rgba(255, 255, 255, 0.08);
   box-shadow:
     0 28px 72px rgba(0, 0, 0, 0.42),
@@ -168,12 +168,12 @@ button {
 
 .window-shell[data-reduce-transparency="true"][data-tone="dark"] .overlay-card {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
-    rgba(17, 17, 17, 0.95);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012)),
+    rgba(12, 12, 14, 0.97);
 }
 
 .window-shell[data-transparency-mode="solid"][data-tone="dark"] .overlay-card {
-  background: rgba(17, 17, 17, 1);
+  background: rgba(12, 12, 14, 1);
 }
 
 .window-shell[data-tone="light"] .overlay-card {
