@@ -5968,37 +5968,29 @@ button {
   width: 34px;
   height: 34px;
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.04)),
-    rgba(13, 20, 30, 0.56);
+  background: transparent;
   color: rgba(245, 249, 255, 0.82);
-  font-size: 0.85rem;
+  font-size: 1.08rem;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(216, 226, 238, 0.14);
+  box-shadow: none;
 }
 
 .quiz-question-status[data-result="correct"] {
-  background:
-    linear-gradient(135deg, rgba(111, 214, 141, 0.36), rgba(111, 214, 141, 0.1)),
-    rgba(7, 18, 31, 0.42);
-  color: #bff5cf;
-  box-shadow: inset 0 0 0 1px rgba(111, 214, 141, 0.48);
+  background: transparent;
+  color: #6fd68d;
+  box-shadow: none;
 }
 
 .quiz-question-status[data-result="incorrect"] {
-  background:
-    linear-gradient(135deg, rgba(255, 107, 114, 0.34), rgba(255, 107, 114, 0.1)),
-    rgba(7, 18, 31, 0.42);
-  color: #ffd1d4;
-  box-shadow: inset 0 0 0 1px rgba(255, 107, 114, 0.46);
+  background: transparent;
+  color: #ff6b72;
+  box-shadow: none;
 }
 
 .quiz-question-status[data-result="unanswered"] {
-  background:
-    linear-gradient(135deg, rgba(156, 163, 175, 0.32), rgba(156, 163, 175, 0.1)),
-    rgba(7, 18, 31, 0.42);
-  color: #d8edff;
-  box-shadow: inset 0 0 0 1px rgba(156, 163, 175, 0.44);
+  background: transparent;
+  color: #9ca3af;
+  box-shadow: none;
 }
 
 .quiz-question-title {
@@ -6387,22 +6379,29 @@ button {
 }
 
 .window-shell[data-tone="light"] .quiz-question-status {
-  background:
-    linear-gradient(135deg, rgba(42, 55, 74, 0.08), rgba(42, 55, 74, 0.03)),
-    rgba(255, 255, 255, 0.82);
+  background: transparent;
   color: rgba(42, 55, 74, 0.74);
-  box-shadow: inset 0 0 0 1px rgba(36, 72, 122, 0.14);
+  box-shadow: none;
 }
 
 .window-shell[data-tone="light"] .quiz-question-status[data-result="correct"] {
+  background: transparent;
   color: #22733b;
-  box-shadow: inset 0 0 0 1px rgba(54, 154, 83, 0.34);
+  box-shadow: none;
 }
 
 .window-shell[data-tone="light"]
   .quiz-question-status[data-result="incorrect"] {
+  background: transparent;
   color: #b72f3a;
-  box-shadow: inset 0 0 0 1px rgba(202, 62, 73, 0.34);
+  box-shadow: none;
+}
+
+.window-shell[data-tone="light"]
+  .quiz-question-status[data-result="unanswered"] {
+  background: transparent;
+  color: #6b7280;
+  box-shadow: none;
 }
 
 .window-shell[data-tone="light"] .quiz-option {
