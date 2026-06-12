@@ -190,7 +190,7 @@ const quizInsights = document.querySelector("#quiz-insights");
 const quizStrengths = document.querySelector("#quiz-strengths");
 const quizGaps = document.querySelector("#quiz-gaps");
 const quizQuestions = document.querySelector("#quiz-questions");
-const quizExplainHint = document.querySelector("#quiz-explain-hint");
+
 const quizExplanationToggle = document.querySelector("#quiz-explanation-toggle");
 const quizExplanationFollowToggle = document.querySelector(
   "#quiz-explanation-follow-toggle",
@@ -3066,10 +3066,7 @@ function resetQuizModalState() {
   quizInsights.hidden = true;
   quizStrengths.textContent = "";
   quizGaps.textContent = "";
-  if (quizExplainHint) {
-    quizExplainHint.textContent =
-      "Answer explanations unlock after you check answers.";
-  }
+
   if (quizExplanationToggle) {
     quizExplanationToggle.hidden = true;
     quizExplanationToggle.disabled = true;
@@ -5428,9 +5425,7 @@ function prepareCramQuizLoadingState(task) {
   quizInsights.hidden = true;
   setQuizExplanationSidebarOpen(false);
   quizSubtitle.textContent = `Building a checkpoint for ${task.title}...`;
-  if (quizExplainHint) {
-    quizExplainHint.textContent = "Generating questions for this section.";
-  }
+
   if (quizExplanationToggle) {
     quizExplanationToggle.hidden = true;
     quizExplanationToggle.disabled = true;
@@ -5925,10 +5920,7 @@ async function gradeQuiz() {
   quizStrengths.textContent = insights.strengths;
   quizGaps.textContent = insights.gaps;
   quizSubmitButton.disabled = true;
-  if (quizExplainHint) {
-    quizExplainHint.textContent =
-      "Pick any question to open the full answer explanation.";
-  }
+
   if (quizExplanationToggle) {
     quizExplanationToggle.hidden = false;
     quizExplanationToggle.disabled = false;
